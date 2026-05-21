@@ -5,10 +5,32 @@
 
 # Node artifact files
 node_modules/
-dist/
+data/
+doc/
+__pycache__/
+config.py
+passagecache.txt
+_error.txt
+urnlist.txt
+*.docu.txt
+
+.ht*
+*.zip
 
 # Compiled Java class files
 *.class
+*.jpg
+*.jpeg
+*.mp4
+*.mp3
+
+*.jpg
+*.jpeg
+*.mp4
+*.mp3
+
+config.py
+_error.py
 
 # Compiled Python bytecode
 *.py[cod]
