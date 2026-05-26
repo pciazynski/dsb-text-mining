@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"></div>
+<script>
+
+	var summe = function(N){
+		sum = 0
+		for (var i=0;i<N.length;i++){sum+=parseFloat(N[i]);}
+		return sum
+	}
+
+	var durchschnitt = function(N){
+		return summe(N)/N.length
+	}
+
+	var linreg = function(Y){
+		X = [1]
+		for (var i=2;i<=Y.length;i++){X.push(i);}
+		yavg = durchschnitt(Y)
+		xavg = durchschnitt(X)
+		divident = 0
+		divisor = 0
+		for (var i=0;i<X.length;i++){
+			divident += ( (X[i] - xavg) * ( Y[i] - yavg ) )
+			divisor += ( (X[i] - xavg) * (X[i] - xavg) )
+		}
+		
+		b1 = divident / divisor
+		b0 = yavg - ( b1 * xavg )
+		SQT = 0;SQE = 0; SQR = 0
+		for (var i=0;i<Y.length;i++){
+			yest = b0 + ( b1 * X[i])
+			SQT += ( Y[i] - yavg ) * ( Y[i] - yavg)
+			SQR += ( Y[i] - yest ) * ( Y[i] - yest)
+			SQE += ( yavg - yest ) * ( yavg - yest)
+		}
+		R2 = SQE/SQT
+	}
+	data = getQueryVariable("data")
+	var filter = getQueryVariable("filter")
+	var n = getQueryVariable("n")
+	dataset = data +"?filter="+filter+"&sort&n="+n
+	dataset = readPHP(dataset).split("\n");
+	var vorhersage = getQueryVariable("vorhersage")
+	decimals = getQueryVariable("decimals")
+	if (decimals.length==0){decimals=3}
+	x1 = []
+	y1 = []
+	minY = 10000000000
+	maxY = -100000000000
+	diagramtitle = minDate + " - " +maxDate
+	yearmapping=[]
+
+	for (var i = 0; i < dataset.length; i++) {
+		tmparr = dataset[i].split(sep)
+		year = parseInt(tmparr[1])
+		val = parseInt(tmparr[2])
+		yearmapping[year] = val
+	}
+
+	for (var i = minDate; i < maxDate; i++) {
+		x1.push(i-minDate)
+		val = 0
+		if (yearmapping[i] != null){val = yearmapping[i]}
+		maxY = Math.max(maxY,val)
+		minY = Math.min(minY,val)
+		y1.push(val)
+	}
+	
+
+	linreg (y1)
+	if (vorhersage.length==0){vorhersage=x1.length+1}else{vorhersage=parseInt(vorhersage)}
+	name1=filter;color1=getColor(filter)
+
+	minY = Math.min(minY,b0 - 5)
+	maxY = Math.max(maxY,b0 + ( b1 * vorhersage))
+	var data = [{
+	x: x1,
+	y: y1,
+	mode: 'markers',name:name1,
+	type: 'scatter',
+		marker: {
+			color: color1,
+			size:5
+		}
+	},{
+		x: [0,vorhersage],
+		y: [b0 ,b0 + ( b1 * vorhersage)],
+		type: "line",mode: "lines",name:"Ŷ = " + b0.toFixed(decimals)+ " + " +b1.toFixed(decimals)+" * X ",
+		line: {color: "black", dash:"line",width:2}
+	}];
+
+	var layout = {
+		hovermode:"closest",
+		title: {
+			text:diagramtitle,
+			font:diagramfont
+			},
+		xaxis: {
+			zeroline:false,
+			title: {
+				text:"X",
+				font:diagramfont
+			},
+			tickangle:0,
+			tickformat: ',d',
+			range:[0,vorhersage+1],
+			font:diagramfont
+			},
+		yaxis:{
+			zeroline:false,
+			range:[minY-1,5+maxY],
+			title: {
+				font:diagramfont
+				}
+			},
+		annotations: watermarke()
+	};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+
+</script>
+</body>

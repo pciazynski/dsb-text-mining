@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	var dataset = getQueryVariable("data")
+	var token = getQueryVariable("token")
+	var jitter = getQueryVariable("jitter")
+	if(jitter.length==0){jitter=defjitter}else{jitter = parseFloat(jitter)}
+	dataset = dataset +"?token="+token+"&sort"
+	data_arr = readPHP(dataset).split("\n");
+	if(data_arr.length>resultsetmax){document.write(lang_error_resultset_too_large);}
+	else{
+		maxval = 0
+		minval = 10000000
+
+		date= []
+		count = []
+		hovers = []
+		colors = []
+		diagramtitle = ""
+		tokenarr = token.split(",")
+		if (tokenarr.length>1){
+			for (var i = 0; i < tokenarr.length; i++){
+				diagramtitle += "<span style='color:"+getColor(tokenarr[i])+";'>"+tokenarr[i]+" <span>"
+			}
+		}else{
+			diagramtitle = token
+		}
+		for (var i = 0; i < data_arr.length; i++) {
+			line = data_arr[i];
+			if(line.length>1)
+			{	
+				tmp = line.split(sep)
+				value = parseInt(tmp[2])
+				jittervalue = value + (jitter*(Math.random()))
+				date.push(tmp[1])
+				count.push(jittervalue)
+				hovers.push(tmp[1]+":"+tmp[0]+" "+value)
+				colors.push(getColor(tmp[0]))
+				if (value<minval ){minval = value}
+				if (value>maxval ) {maxval = value}
+			}
+		}
+		var data = [{
+			x: date,
+			y: count,
+			name: 'Token Count',
+			hovertemplate: '%{text}',
+			type: 'scatter',
+			mode: "markers",
+			text:hovers,
+			marker: {
+				size:markersize(data_arr.length),
+				color: colors,
+				opaciy:0.2
+			}
+		}];
+
+		if (getQueryVariable("scale")==="log"){minval = Math.log(1);maxval=Math.log(maxval)}else{minval=0;maxval=maxval+(maxval/10)+1}
+		var layout = {
+			hovermode:"closest",
+			title:{
+				text:diagramtitle,
+				font:diagramfont
+			},
+			xaxis: {
+				automargin: true,
+				range:[minDate-2,maxDate+2],
+				linewidth: 1,
+				title: {
+					font:diagramfont
+				},
+				tickangle:90,
+				tickfont:diagramfont
+			},
+			yaxis: {
+				type:scale,
+				range: [minval, maxval],
+				title: {
+					text: 'Häufigkeit (Abs)',
+					font:diagramfont
+				}
+			},
+			annotations: watermarke()
+		};
+
+		myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	}
+</script>
+</body>

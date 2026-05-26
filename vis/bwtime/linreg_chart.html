@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"></div>
+<script>
+
+	var summe = function(N){
+		sum = 0
+		for (var i=0;i<N.length;i++){sum+=parseFloat(N[i]);}
+		return sum
+	}
+
+	var durchschnitt = function(N){
+		return summe(N)/N.length
+	}
+
+	var linreg = function(Y){
+		X = [1]
+		for (var i=2;i<=Y.length;i++){X.push(i);}
+		yavg = durchschnitt(Y)
+		xavg = durchschnitt(X)
+		divident = 0
+		divisor = 0
+		for (var i=0;i<X.length;i++){
+			divident += ( (X[i] - xavg) * ( Y[i] - yavg ) )
+			divisor += ( (X[i] - xavg) * (X[i] - xavg) )
+		}
+		
+		b1 = divident / divisor
+		b0 = yavg - ( b1 * xavg )
+		SQT = 0;SQE = 0; SQR = 0
+		for (var i=0;i<Y.length;i++){
+			yest = b0 + ( b1 * X[i])
+			SQT += ( Y[i] - yavg ) * ( Y[i] - yavg)
+			SQR += ( Y[i] - yest ) * ( Y[i] - yest)
+			SQE += ( yavg - yest ) * ( yavg - yest)
+		}
+		R2 = SQE/SQT
+	}
+	var dataset = getQueryVariable("data")
+	data_arr = readTextFile(dataset).split("\n");
+	maxval = 0
+	minval = 10000000
+	date= []
+	count = []
+	hovers = []
+	yearcount = []
+	if(dataset.includes("_minmaxyearmax")){
+		diagramtitle = "Worttot"
+		row = 1
+	}else{
+		diagramtitle = "Wortgenese"
+		row = 0
+	}
+	
+	var vorhersage = getQueryVariable("vorhersage")
+
+	x1 = []
+	y1 = []
+	minY = 10000000000
+	maxY = -100000000000
+	yearmapping=[]
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i];
+		if(line.length>1)
+		{	
+			tmp = line.split(sep)
+			year = tmp[row]
+			if(yearcount[year] != null){
+				yearcount[year] = yearcount[year] + tmp[2].split(",").length
+			}else{
+				yearcount[year] = tmp[2].split(",").length
+			}
+		}
+	}
+
+	for (var i = minDate; i < maxDate; i++) {
+		x1.push(i-minDate)
+		val = 0
+		if (yearcount[i] != null){val = yearcount[i]}
+		maxY = Math.max(maxY,val)
+		minY = Math.min(minY,val)
+		y1.push(val)
+	}
+
+	linreg (y1)
+	if (vorhersage.length==0){vorhersage=x1.length+1}else{vorhersage=parseInt(vorhersage)}
+
+	minY = Math.min(minY,b0 - 5)
+	maxY = Math.max(maxY,b0 + ( b1 * vorhersage))
+	var data = [{
+	x: x1,
+	y: y1,
+	mode: 'markers',
+	type: 'scatter',
+		marker: {
+			color: "black",
+			size:5
+		}
+	},{
+		x: [0,vorhersage],
+		y: [b0 ,b0 + ( b1 * vorhersage)],
+		type: "line",mode: "lines",name:"Ŷ = " + b0.toFixed(2)+ " + " +b1.toFixed(2)+" * X ",
+		line: {color: "gray", dash:"line",width:2}
+	}];
+
+	var layout = {
+		title: {
+			text:diagramtitle,
+			font:diagramfont
+			},
+		xaxis: {
+			zeroline:false,
+			title: {
+				text:"X",
+				font:diagramfont
+			},
+			tickangle:0,
+			tickformat: ',d',
+			range:[-1,vorhersage+1],
+			font:diagramfont
+			},
+		yaxis:{
+			zeroline:false,
+			range:[minY-1,5+maxY],
+			title: {
+				font:diagramfont
+				}
+			},
+		annotations: watermarke()
+	};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	document.title=diagramtitle
+
+</script>
+</body>

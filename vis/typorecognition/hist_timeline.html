@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script type="module">
+	var dataset = getQueryVariable("data")
+	var print = getQueryVariable("print")
+
+	var data_arr = (await readTextFile_async(dataset)).trim().split("\n");
+
+	var date= []
+	var count = []
+	var labels = []
+	var texts = []
+	var diagramtitle = dataset.split("/")[1]
+	var countarr = []
+	diagramtitle = dataset
+
+	for (var i = 0; i < data_arr.length; i++) {
+		var line = data_arr[i];
+		if(line.length>1){
+			var tmp = line.split(sep)
+			var year = parseInt(tmp[1])
+			if(countarr[year] === undefined){
+				countarr[year] = 1
+				labels[year] = tmp[0]
+			}else{
+				countarr[year]=countarr[year]+1
+				labels[year] = (labels[year]+"<br>"+tmp[0])
+			}
+		}
+	}
+	var sorted_keys = Object.keys(countarr).sort()
+	var maxval = 0
+	for (var i = 0;i<sorted_keys.length;i++){
+		var key = sorted_keys[i]
+		var tmparr = labels[key].split("<br>")
+		var tmpstr = ""
+		date.push(key)
+		tmp = parseInt(countarr[key])
+		count.push(tmp)
+		for(var j = 0; j<Math.min(20,tmparr.length);j++){
+			tmpstr+=tmparr[j]+"<br>"
+		}
+		
+		texts.push(tmpstr)
+		if(tmp>maxval){maxval=tmp}
+	}
+	
+	var data = [{
+		x: date,
+		y: count,
+		text:texts,
+		type: "bar",
+		marker: {
+			color: "black"
+		}
+	}];
+
+	var layout = {
+		title:{
+			text:diagramtitle,
+			font: diagramfont
+		},
+		xaxis: {
+			automargin: true,
+			range:[minDate-2,maxDate+2],
+			linewidth: 1,
+			title:{
+				font:diagramfont
+			},
+			tickangle:90,
+			tickfont:diagramfont
+		},
+		yaxis:{
+			automargin: true,
+			type:scale,
+			range: [0, maxval],
+			title:{
+				text: lang_count,
+				font:diagramfont
+				}
+			},
+			zeroline:false,
+		annotations: watermarke()
+	};
+
+	Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	var myPlot = document.getElementById('myDiv')
+	myPlot.on('plotly_click', function(data) {
+		if(parent.timelineclick !== undefined){
+			parent.timelineclick(data.points[0].x)
+		}
+		else{
+			alert(labels[data.points[0].x].replaceAll("<br>","\n"))
+		}
+	});
+
+	document.title = diagramtitle
+
+</script>
+</body>

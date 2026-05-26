@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../_assets/gui.js"></script>
+	<script src="../../_assets/autocomplete.js"></script>
+	<link rel="stylesheet" href="../../digilabstyles.css">
+</head>
+
+<body style="background-color:lightgray">
+
+<script>document.write(header())</script>
+
+<table class="optionmenu" align="center" style="width:80%;">
+	<tr>
+	<tr  style="text-align:center;">
+		<td>
+		<button onclick="location.href='../bwlemma?headerconf='+headerconf;"><script>document.write(lang_lemmafy)</script></button>
+		</td>
+		<td>
+		<button onclick="location.href='../bwnorm?headerconf='+headerconf;"><script>document.write(lang_normify)</script></button>
+		</td>
+		<td>
+		<button onclick="location.href='../bwword?headerconf='+headerconf;"><script>document.write(lang_words)</script></button>
+		</td>
+	</tr>
+</table>
+
+<br><br>
+
+<table class="optionmenu" align="center">
+	<tr>
+		<td></td>
+		<td>
+			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet)</script></input>
+		</td>
+	</tr>
+	<tr>
+		<td style="text-align:center;"><script>document.write(lang_searchitem)</script></td>
+		<td>
+			<div class="autocomplete">
+				<input style="width:60%" id="norm" type="text"> 
+				<button onclick = "updateTimeline()"><script>document.write(lang_ambigsearch)</script></button> 
+			</div>
+			<script>
+				autocomplete("norm", "prefixnormsearch.php?limit=30&sortby=alphabet&norm=", ""); 
+			</script>
+		</td>
+		<td><script>document.write(lang_example)</script> Chóśebuz</td>
+		<td style="text-align:left;"><script>document.write(lang_redirect)</script> <button onclick = "addToList()">&#10149;<script>document.write(lang_list)</script></button> <button onclick = "callNormtree()">&#10149;<script>document.write(lang_variation)</script></button> <button onclick = "callDolnoserbski()">&#10149;dolnoserbski.de</button></td>
+	</tr>
+	<tr>
+		<td style="text-align:center;">Regex</td>
+		<td>
+			<div>
+				<input style="width:70%" id="regexsearch" type="text" placeholder="^ und $ werden angefügt" onchange = "">
+				<button onclick = "updateTimelineRegex()"><script>document.write(lang_enter)</script></button> 
+			</div>
+		</td>
+		<td style="text-align:center;"> <script>document.write(lang_example)</script>  te(j|n)</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="text-align:center;"><script>document.write(lang_list)</script></td>
+		<td>
+			<div>
+				<input style="width:70%" id="normlist" type="text" onchange = "">
+				<button onclick = "updateTimelineList()"><script>document.write(lang_enter)</script></button> 
+			</div>
+		</td>
+		<td style="text-align:center;"><script>document.write(lang_example)</script> tej,ten</td>
+	</tr>
+</table>
+
+
+<br>
+
+
+
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 19%;">
+				<button class = "iframebutton" onclick="embedding('normgroup');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('normgroup');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('normgroup');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+			<td style = "width: 60%;">
+				<button class = "iframebutton" onclick="embedding('timeline');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('timeline');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('timeline');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+			<td style = "width: 19%;">
+				<button class = "iframebutton" onclick="embedding('tokengroup');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('tokengroup');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('tokengroup');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td valign="top" style = "text-align:right;">
+				<iframe class="resized"  width="100%" height="440px" id="normgroup" scrolling="yes"></iframe>
+				<button id = "focusbutton0" class = "iframebutton" onclick="updateFocus(0);">↪</button>
+			</td>
+			<td>
+				<iframe class="resized" width="100%" height="475px" id="timeline" scrolling="yes"></iframe>
+			</td>
+			<td valign="top" style = "text-align:left;">
+				<iframe class="resized" width="100%" height="440px" id="tokengroup" scrolling="yes"></iframe>
+				<button id = "focusbutton3" class = "iframebutton" onclick = "updateFocus(3);">↩</button>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td></td>
+			<td>
+				<button id = "switchpercenttimelinebutton" class = "iframebutton" onclick="switchpercenttimeline('timeline');"><script>document.write(lang_switchpercenttimeline)</script></button>
+				<button id = "switchtimelinesumbutton" class = "iframebutton" onclick="switchtimelinesum('timeline');"><script>document.write(lang_switchtimelinesum)</script></button>
+				<button class = "iframebutton" onclick="switchLogScale('timeline');"><script>document.write(lang_switchlogscale)</script></button>
+				<button class = "iframebutton" onclick="hidewatermark('timeline');"><script>document.write(lang_source)</script></button>
+			</td>
+			<td></td>
+		</tr>
+	</table>
+
+	<br/><br/>
+	<table align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr>
+			<td style = "width: 19%;"></td>
+			<td style="background-color:white;text-align:center;">
+				<span id="yearminvalue">_</span> - <span id="yearmaxvalue">_</span>
+				<br>
+				<input type="range" class="slider" id="yearminslider" onchange="updateTravizYear()">
+				<br>
+				<input type="range" class="slider" id="yearmaxslider" onchange="updateTravizYear()">
+			</td>
+			<td style = "width: 19%;"></td>
+		</tr>
+	</table>
+	
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 69%;">
+				<button class = "iframebutton" onclick="embedding('traviz');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('traviz');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('traviz');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+			<td style = "width: 30%;">
+				<button class = "iframebutton" onclick="embedding('docref');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('docref');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('docref');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td>
+				<iframe class="resized" width="100%" height="300px" id="traviz" scrolling="yes"></iframe>
+			</td>
+			<td>
+				<iframe class="resized" width="100%" height="300px" id="docref" scrolling="yes"></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td>
+			</td>
+			<td>
+				<button class = "iframebutton" onclick="switchDtsCts();"><script>document.write(lang_switch_CTS_DTS)</script></button>
+			</td>
+		</tr>
+	</table>
+	
+</div>
+
+<script>
+	yearminslider.oninput = function() {
+		otherslider=document.getElementById("yearmaxslider")
+		otherslider.value=Math.max(otherslider.value,this.value)
+		yearminvalue.innerHTML = this.value
+		yearmaxvalue.innerHTML = otherslider.value
+	}
+
+	yearmaxslider.oninput = function() {
+		otherslider=document.getElementById("yearminslider")
+		otherslider.value=Math.min(otherslider.value,this.value)
+		yearminvalue.innerHTML = otherslider.value
+		yearmaxvalue.innerHTML = this.value
+	}
+	yearminslider.min=minDate
+
+	
+	yearmaxslider.min = minDate
+	yearmaxslider.max = maxDate
+	yearminslider.min = minDate
+	yearminslider.max = maxDate
+	yearminslider.value = minDate
+	yearmaxslider.value = maxDate
+	yearminvalue.innerHTML=minDate
+	yearmaxvalue.innerHTML = maxDate
+
+</script>
+
+<br><br>
+<script>
+
+	var switchDtsCts = function(){
+		elsrc = document.getElementById('docref').src;
+		if(elsrc.includes("&textapi=dts")){
+			document.getElementById('docref').src = elsrc.replace("&textapi=dts","")
+		}else{
+			document.getElementById('docref').src = elsrc+"&textapi=dts"
+		}
+	}
+	
+	var switchPrefixsearch = function(){
+		tmp = document.getElementById('prefixsearchCheckBox').checked
+		if(tmp){tmp = 'alphabet'}else{tmp = 'frequency'}
+		autocomplete("norm", "prefixnormsearch.php?limit=30&sortby="+tmp+"&norm=", ""); 
+	}
+
+	var switchpercenttimeline  = function(elid){
+		tmp = document.getElementById(elid)
+		url = tmp.src.replaceAll("sum.html",".html")
+		if(url.includes("percenttimeline")){
+			tmp.src = url.replace("percenttimeline","timeline")
+		}else{
+			tmp.src = url.replace("timeline","percenttimeline")
+		}
+	}
+	
+	var switchtimelinesum = function(elid){
+		tmp = document.getElementById(elid)
+		url = tmp.src.replaceAll("percent","")
+		if(tmp.src.includes("timelinesum")){
+			tmp.src = url.replace("timelinesum","timeline")
+		}else{
+			tmp.src = url.replace("timeline","timelinesum")
+		}
+	}
+
+	
+	var addToList = function(){
+		tmp = document.getElementById("norm").value.trim()
+		tmp2 = document.getElementById("normlist").value.trim()
+		str = ""
+		if(tmp.length>0){
+			if(tmp2.length>0){str = ","}
+			str = tmp2+str+tmp
+			document.getElementById("normlist").value = str
+			updateTimelineList()
+		}
+	}
+
+	var updateTimelineList = function(){
+		curitem = document.getElementById("normlist").value.trim()
+		if(curitem.length>0){
+			loading("timeline")
+			loading("normgroup")
+			loading("tokengroup")
+			if(focus==3){funcall = "normcountperyear"}else{funcall="normsumperyear"}
+			document.getElementById("timeline").src="timelinesumlist.html?data="+funcall+".php&norm="+curitem+"&sort&focus="+focus
+			document.getElementById("normgroup").src="normlist.html?data=normgroup.php&norm="+curitem+"&sort"
+			document.getElementById("tokengroup").src="tokenlist.html?data=normtoken.php&norm="+curitem+"&sort"
+			document.getElementById("focusbutton0").style.boxShadow  = "none"
+			document.getElementById("focusbutton3").style.boxShadow  = "none"
+			document.title=lang_normify+" "+curitem
+			document.getElementById('traviz').src = 'error_docref.html'
+			document.getElementById('docref').src = 'error_docref.html'
+			document.getElementById('switchtimelinesumbutton').disabled = true;
+			document.getElementById('switchpercenttimelinebutton').disabled = true;
+		}
+	}
+
+	var updateYearlabel = function(){
+		tmp = parseInt(document.getElementById("yearminslider").value)
+		document.getElementById("yearlabel").innerHTML = tmp
+	}
+
+	
+	var updateTravizYear = function(){
+		if(exactitem.trim().length>0){
+			loading("traviz")
+			url = document.getElementById("traviz").src.split("&year")[0]
+			yearfrom = document.getElementById("yearminslider").value
+			yearto = document.getElementById("yearmaxslider").value
+			year = "BETWEEN " + yearfrom + " AND " + yearto
+			document.getElementById("traviz").src = "traviz.html?data=normtokenperyear.php&norm="+exactitem+"&exact=1&sort&year="+year
+			document.getElementById('docref').src = 'doclist.html?data=urnbynorm.php&norm='+exactitem+"&year="+year
+		}
+	}
+	
+	var callDolnoserbski = function(){
+		curitem = document.getElementById("norm").value.trim()
+		if(curitem.length>0){
+			window.open("https://dolnoserbski.de/ortografija/slownik?wuraz="+curitem, "_blank")
+		}
+	}
+	
+	var callNormtree = function(){
+		curitem = document.getElementById("norm").value.trim()
+		if(curitem.length>0){
+			window.open("../normvariation?norm="+curitem, "_blank")
+		}
+	}
+	
+	var updateFocus = function(newfocus){
+		if(curitem.length>0){
+			focus = newfocus
+			sourcearr = document.getElementById("timeline").src.split("&focus=")
+			source = sourcearr[0]+sourcearr[1].slice(1)+"&focus="+focus
+			if(source.includes("timelinesumlist")){source = source.replaceAll("timelinesumlist","timeline")}
+			if(focus==3){
+				document.getElementById("focusbutton0").style.boxShadow  = "none"
+				document.getElementById("focusbutton3").style.boxShadow  = "-7px 0px 3px 6px white"
+				source = source.replace("normsumperyear","normcountperyear")}
+			else{
+				document.getElementById("focusbutton3").style.boxShadow  = "none"
+				document.getElementById("focusbutton0").style.boxShadow  = "7px 0px 3px 6px white"
+				source = source.replace("normcountperyear","normsumperyear")
+			}
+			loading("timeline")
+			document.getElementById("timeline").src=source
+			document.title=lang_normify+" "+curitem
+			document.getElementById('docref').src = 'error_docref.html'
+			document.getElementById('switchtimelinesumbutton').disabled = false;
+			document.getElementById('switchpercenttimelinebutton').disabled = false;
+		}
+	}
+	
+	var updateTimelineRegex = function(){
+		curitem = document.getElementById("regexsearch").value.trim()
+		if(curitem.length>0){
+			loading("timeline")
+			loading("normgroup")
+			loading("tokengroup")
+				document.getElementById("timeline").src="timeline.html?data=normregexsearch.php&norm="+curitem+"&sort&focus="+focus
+				document.getElementById("normgroup").src="normlist.html?data=normregexgroup.php&norm="+curitem+"&sort"
+				document.getElementById("tokengroup").src="tokenlist.html?data=normregex2token.php&norm="+curitem+"&sort"
+			document.getElementById('docref').src = 'error_docref.html'
+			document.getElementById('traviz').src = 'error_docref.html'
+			document.title=lang_normify+" "+curitem
+			document.getElementById('switchtimelinesumbutton').disabled = false;
+			document.getElementById('switchpercenttimelinebutton').disabled = false;
+		}
+	}
+	
+	var updateTimeline = function(){
+		curitem = document.getElementById("norm").value.trim()
+		if(curitem.length>0){
+			loading("timeline")
+			loading("normgroup")
+			loading("tokengroup")
+			if(focus==3){funcall = "normcountperyear"}else{funcall="normsumperyear"}
+				document.getElementById("timeline").src="timeline.html?data="+funcall+".php&norm="+curitem+"&sort&focus="+focus
+				document.getElementById("normgroup").src="normlist.html?data=normgroup.php&norm="+curitem+"&sort"
+				document.getElementById("tokengroup").src="tokenlist.html?data=normtoken.php&norm="+curitem+"&sort"
+			document.getElementById('docref').src = 'error_docref.html'
+			document.getElementById('traviz').src = 'error_docref.html'
+			document.getElementById('switchtimelinesumbutton').disabled = false;
+			document.getElementById('switchpercenttimelinebutton').disabled = false;
+			document.title=lang_normify+" "+curitem
+		}
+	}
+
+	var itemClick = function(item){
+		loading("timeline")
+		loading("tokengroup")
+		loading("traviz")
+		exactitem=item
+		if(focus==3){funcall = "normcountperyear"}else{funcall="normsumperyear"}
+		document.getElementById("traviz").src="traviz.html?data=normtoken.php&norm="+exactitem+"&sort&exact=1"
+		document.getElementById("timeline").src="timeline.html?data="+funcall+".php&norm="+exactitem+"&exact=1&focus="+focus
+		document.getElementById("tokengroup").src="tokenlist.html?data=normtoken.php&norm="+exactitem+"&sort&exact=1"
+		url = document.getElementById("traviz").src.split("&year")[0]
+		yearfrom = document.getElementById("yearminslider").value
+		yearto = document.getElementById("yearmaxslider").value
+		year = "BETWEEN " + yearfrom + " AND " + yearto
+		document.getElementById("traviz").src = "traviz.html?data=normtokenperyear.php&norm="+exactitem+"&exact=1&sort&year="+year
+		document.getElementById('docref').src = 'doclist.html?data=urnbynorm.php&norm='+exactitem+"&year="+year
+		document.getElementById('switchtimelinesumbutton').disabled = false;
+		document.getElementById('switchpercenttimelinebutton').disabled = false;
+		document.title=lang_normify+" "+exactitem
+	}
+	
+	var focus = 0;
+	document.getElementById("focusbutton0").style.boxShadow  = "7px 0px 3px 6px white"
+	curitem = getQueryVariable("norm")
+	exactitem = ""
+	if(curitem.length>0){
+		document.getElementById("norm").value = curitem
+		updateTimeline()
+		document.getElementById("norm").scrollIntoView()
+	}
+	else{
+		document.getElementById('timeline').src="error_token.html"
+		document.getElementById('normgroup').src="error_token.html"
+		document.getElementById('tokengroup').src="error_token.html"
+	}
+	
+	document.title=lang_normify+" "+curitem
+
+</script>
+<br><br>
+<script>
+	document.write(footer())
+</script>
+</body>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body style="text-align:left;">
+<script>
+
+	var dataset = getQueryVariable("data")
+	var frequency = getQueryVariable("frequency")
+	var n = getQueryVariable("n")
+	if(frequency.length==0){frequency = 10}else{frequency=parseInt(frequency)}
+	dataset = dataset +"?frequency="+frequency+"&sort&n="+n
+	var filter = getQueryVariable("filter")
+	if(filter.length>0){dataset += "&filter="+filter}
+	
+	data_arr = readPHP(dataset).trim().split("\n");
+	
+	
+	str = "<table style='border-collapse: collapse;text-align:left;'>";
+	str = str + "<tr><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>nGram</th><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>Anzahl</th>"
+	str = str +"</tr>"
+
+	for (var i = 0; i < data_arr.length; i++) {
+		arr = data_arr[i].split(sep)
+		tmp = arr[0].split(" ")
+		onclickfunction="ngramClick('"+tmp[0]+"')"
+		ngramstr='<span style="cursor:pointer; color:'+getColor(tmp[0])+';" onclick ="'+onclickfunction+'">'+tmp[0]
+		for (var j = 1; j < tmp.length; j++){
+			onclickfunction="ngramClick('"+tmp[j]+"')"
+			ngramstr += '</span> <span style="cursor:pointer; color:'+getColor(tmp[j])+';" onclick ="'+onclickfunction+'">'+tmp[j]
+		}
+		ngramstr += '</span>'
+		str = str + "<tr><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>"+ngramstr+"</td><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>"+arr[1]+"</td>"
+		str = str +"</tr>"
+	}
+
+	var ngramClick = function(token){
+		parent.document.getElementById("filter").value = token
+		parent.updateNGram()
+	}
+
+	str=str.replaceAll('>'+filter+'</a>','><span class="highlight">'+filter+' </span></a>')
+	str = str + "</table>";
+	document.write(str)
+	data_arr = ""
+	str = ""
+
+</script>
+</body>

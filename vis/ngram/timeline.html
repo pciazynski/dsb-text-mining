@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	var dataset = getQueryVariable("data")
+	var filter = getQueryVariable("filter")
+	var n = getQueryVariable("n")
+	var jitter = getQueryVariable("jitter")
+	if(jitter.length==0){jitter=defjitter}else{jitter = parseFloat(jitter)}
+
+	dataset = dataset +"?filter="+filter+"&frequency=10&n="+n
+	data_arr = readPHP(dataset).split("\n");
+	allText=""
+	maxval = 0
+
+	date= []
+	count = []
+	colors = []
+	hovers = []
+
+	diagramtitle = filter
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i];
+		if(line.length>1)
+		{
+			tmp = line.split(sep)
+			ngram = tmp[0].trim()
+			value  = parseInt(tmp[2])
+			jittervalue = value + (jitter*(Math.random()))
+			date.push(tmp[1])
+			count.push(jittervalue)
+			hovers.push(ngram+"("+tmp[1]+"):"+value)
+			colors.push(getColor(ngram))
+			if (jittervalue>maxval ) {maxval = jittervalue}
+		}
+	}
+
+	var data = [{
+		x: date,
+		y: count,
+		type: 'scatter',
+		mode: "markers",
+		text:hovers,
+		hovertemplate: '%{text}',
+		marker: {
+			size:markersize(data_arr.length),
+			color: colors,
+			opaciy:0.2
+		}
+	}];
+
+	var layout = {
+		hovermode:"closest",
+		title: {
+			text:diagramtitle,
+			font: diagramfont
+			},
+		xaxis: {
+			automargin: true,
+			range:[minDate-3,maxDate+3],
+			linewidth: 1,
+			title: {
+				font: diagramfont
+			},
+			tickangle:90,
+			tickfont:diagramfont
+		},
+		yaxis: {
+			automargin: true,
+type:scale,
+			title: 	{
+				text: 'Häufigkeit (Abs)',
+				font: diagramfont
+				}
+			},
+		annotations: watermarke()
+		};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+
+</script>
+</body>

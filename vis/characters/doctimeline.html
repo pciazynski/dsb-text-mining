@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	var dataset = getQueryVariable("data")
+	var token = getQueryVariable("char")
+	dataset = dataset +"?char="+token+"&sort"
+	diagramtitle = "Doc. with character:"+ token
+	data_arr = readPHP(dataset).trim().split("\n");
+	maxval = 0
+	minval = 10000000
+
+	date= []
+	count = []
+	hovers = []
+	colors = []
+
+	dateval = []
+	
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i];
+		if(line.length>1){
+			tmp = line.split(sep)
+			if (tmp[1] in dateval){value = dateval[tmp[1]] + 1}
+			else{value = 1}
+			dateval[tmp[1]] = value
+
+			date.push(tmp[1])
+			count.push(value)
+			urnarr = tmp[0].split(":")[3].replaceAll("."," ").replaceAll("_"," ").split(" ")
+			tmpname = ""
+			for (var j = 0; j < urnarr.length; j++){
+				tmpname += " "+urnarr[j].charAt(0).toUpperCase() + urnarr[j].slice(1)
+			}
+		
+			hovers.push(tmp[1]+":"+tmpname)
+			colors.push(getColor(tmp[0].replace(/[0-9]/g,"")))
+			if (value<minval ){minval = value}
+			if (value>maxval ) {maxval = value}
+		}
+	}
+	var data = [{
+		x: date,
+		y: count,
+		name: '',
+		hovertemplate: '%{text}',
+		type: 'scatter',
+		mode: "markers",
+		text:hovers,
+		marker: {
+			size:markersize(data_arr.length),
+			color: colors,
+			opaciy:0.2
+		}
+	}];
+
+	var layout = {
+		hovermode:"closest",
+		title:{
+			text:diagramtitle,
+			font:diagramfont
+		},
+		xaxis: {
+			automargin: true,
+			range:[minDate-2,maxDate+2],
+			linewidth: 1,
+			title: {
+				font:diagramfont
+			},
+			tickangle:90,
+			tickfont:diagramfont
+		},
+		yaxis: {
+			automargin: true,
+			range:[0,maxval+maxval/10],
+			title: {
+				text: 'Dokumente',
+				font:diagramfont
+			}
+		},
+		annotations: watermarke()
+	};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	document.title = diagramtitle
+</script>
+</body>

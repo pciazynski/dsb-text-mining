@@ -1,0 +1,106 @@
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv" style="height:100%"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	var dataset = getQueryVariable("data")
+	var max = getQueryVariable("max")
+	var min = getQueryVariable("min")
+	var limit = getQueryVariable("limit")
+	var offset = getQueryVariable("offset")
+	if(offset.length==0){offset=0}
+	
+	if(dataset.includes(".php")){
+		dataset+="?sort&year="+getQueryVariable("year")
+		if(limit.length>0){dataset+="&limit="+limit+"&offset="+offset}
+		data_arr = readPHP(dataset).split("\n");
+		diagramtitle = "Tokenhäufigkeiten "+getQueryVariable("year")
+		offset=0;
+	}
+	else{
+		data_arr = readTextFile(dataset).split("\n");
+		diagramtitle = "Tokenhäufigkeiten "+dataset.split("/")[1]
+	}
+	maxval = 0
+	
+	
+	date= []
+	count = []
+	depth = []
+	
+	hovers = []
+	colors = []
+
+	limit=parseInt(limit)
+	if(limit.length==0 || limit>data_arr.length){limit=data_arr.length}
+	for (var i = offset; i < limit; i++) {
+	line = data_arr[i];
+		if(line.length>1){	
+			tmp = line.split(sep)
+			value  = parseInt(tmp[1])
+			if(max.length>0 & value > parseInt(max)){continue}
+			if(min.length>0 & value < parseInt(min)){continue}
+			date.push(tmp[0])
+			count.push(value)
+			depth.push(tmp[0].length)
+			colors.push(getColor(tmp[0]))
+			hovers.push(tmp[0]+":"+value)
+			if (value>maxval ) {maxval = value}
+		}
+	}
+
+	var data = [{
+		x: date,
+		z: count,
+		y: depth,
+		type: 'scatter3d',
+		hovertemplate: '%{text}',
+		text: hovers,
+		mode: "markers",
+		marker: {
+			size:markersize(data_arr.length),
+			color: colors,
+			opaciy:0.2
+			}
+	}];
+
+	var layout = {
+		title:diagramtitle,
+		scene:{
+			xaxis:{
+				showticklabels:false,
+				title: "Häufigkeitsrang"
+			},
+			yaxis:{
+				type:scale,
+				title: "Tokenlänge"
+			},
+			zaxis:{
+				type:scale,
+				title: "Häufigkeit (Abs)"
+			}
+		},
+		annotations: watermarke()
+	};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+
+	myPlot = document.getElementById('myDiv')
+
+	if(parent.document.getElementById('token') != undefined){
+		myPlot.on('plotly_click', function(data) {
+			token=data.points[0].x;
+			parent.document.getElementById('token').value = token
+			parent.updateTimeline()
+		});
+	}
+	document.title = diagramtitle
+
+</script>
+</body>

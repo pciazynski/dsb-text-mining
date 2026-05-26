@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+	<link rel="stylesheet" href="../../digilabstyles.css">
+</head>
+
+<body style="text-align:left;">
+<script type="module">
+	var dataset = getQueryVariable('data')
+	var restricted = getQueryVariable('restricted')
+	var year = getQueryVariable("year")
+	var textapi = getQueryVariable("textapi").toLowerCase()
+	if(textapi!=="dts"){textapi="cts"}
+	dataset+="?sort&restricted="+restricted
+	if(year.length>0){dataset+="&year="+year}
+	var diagramtitle = dataset
+	var data_arr = (await readPHP_async(dataset)).trim("\n").split('\n');
+	
+	var restr_arr = (await readPHP_async("metadata.php?restricted=1&slim")).trim("\n").split('\n')
+	var param=""
+	var str = '<head><link rel="stylesheet" href="../../digilabstyles.css"></head><table class="clicktable">'+
+	'<tr><th>'+lang_year+'</th><th>'+lang_faksimilie+'<br>'+lang_digbibliothek+'</th><th>'+lang_textapi + " ("+textapi.toUpperCase()+")"+'</th></tr>'
+
+	for (var i = 0; i < data_arr.length; i++) {
+		var arr = data_arr[i].split(sep)
+		var urnarr = arr[0].split(":")[3].replaceAll("."," ").replaceAll("_"," ").split(" ")
+		var bibname = ""
+		var tmpname = arr[1]
+		for (var j = 0; j < urnarr.length; j++){
+			bibname += " "+urnarr[j].charAt(0).toUpperCase() + urnarr[j].slice(1)
+		}
+		//Remove Versioning Timestamp
+		bibname = bibname.substring(0,bibname.lastIndexOf(" "))
+		if(tmpname.length<1){
+			tmpname = bibname
+		}
+		
+		//Copyright restricted
+		if(restr_arr.includes(arr[0])){
+			str += '<tr><td>'+arr[2]+'</td><td onclick="'+onclickfun2+'">&#128274;'+tmpname+'</td>'
+		}
+		//Copyright Free
+		else{
+			
+			//var onclickfun1 = "window.open('"+ctsurl.slice(0,-5)+"/fancy/ebook.php?urn="+arr[0]+"', '_blank')"
+			if(textapi==="cts"){
+				var onclickfun2 = "window.open('"+ctsurl+"?request=GetPassage&urn="+arr[0]+param+"', '_blank')"
+			}
+			else{
+				var onclickfun2 = "window.open('"+ctsurl.slice(0,-5)+"/dts/document/?id="+arr[0]+"', '_blank')"
+			}
+			var onclickfun5 = "window.open('https://dolnoserbski.de/biblioteka/pokaz/"+bibname.toLowerCase().trim().replaceAll(" ","-")+"', '_blank')"
+			str += '<tr><td>'+arr[2]+'</td><td onclick="'+onclickfun5+'"> &#128247; </td><td onclick="'+onclickfun2+'">'+tmpname+'</td></tr>'
+		}
+	}
+	str += '</table>';
+	document.write(str)
+	data_arr = ""
+	str = ""
+	document.title = diagramtitle
+</script>
+</body>

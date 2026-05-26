@@ -1,0 +1,139 @@
+<!doctype html>
+<head>
+	<meta charset="utf-8">
+	<script src="../../lib/cytoscape.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<style>
+	#cy {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0px;
+		left: 0px;
+	}
+</style>
+
+<body>
+<div id="cy"></div>
+
+<script>
+
+	nodes = []
+	edges = []
+	var dataset = getQueryVariable('data')
+	var frequency = getQueryVariable('frequency')
+	var left = getQueryVariable('left').trim()
+	var right = getQueryVariable('right').trim()
+	dataset = dataset +'?left='+left+'&frequency='+frequency+'&right='+right+'&limit=500&sortBy=frequency'
+	if(typeof deulist === 'undefined'){deulist = readTextFile("langDetect3/deu_slim").split("n")}
+	
+	network = readPHP(dataset).trim().split('\n')
+	if(network.length<100){lay='cose'}else{lay='random'}
+
+	for (key in network){
+		tmp = network[key].split(sep)
+		if(tmp.length>=2){
+			if(nodes[tmp[0]] == null){nodes [tmp[0]] =  2*Math.log(tmp[2]+1)}
+			nodes [tmp[1]] = 2*Math.log(tmp[2]+1)
+			edges [tmp[0]+sep+tmp[1]] = 1
+		}
+	}
+	
+	var cy = cytoscape({
+	container: document.getElementById('cy'),
+	style: [{
+		selector: 'node',
+		css: {
+			'label': 'data(id)', 
+			'text-valign': 'center',
+			'text-halign': 'center',
+			'text-wrap': 'wrap',
+			'height': function(ele){ return 10*Math.max(1,(""+ele.outdegree()).length);},
+			'font-size': defNodeFont,
+			'width': function(ele){ return 10*Math.max(1,(""+ele.indegree()).length);},
+			'background-color': 'data(color)',
+			'borderColor':'darkgray',
+			'borderWidth':'1',
+			'shape': 'circle'
+			}
+		},
+		{
+		selector: 'node.highlight',
+		style: {
+			'label': 'data(id)',
+			'text-valign': 'center',
+			'color':'white',
+			'text-outline-color': 'data(color)',
+			'text-outline-width': 2
+			}
+		},
+		{
+			selector: "edge",
+			css: {
+			'curve-style': 'bezier',
+			'control-point-step-size': '40',
+			'width': 'data(weight)',
+			'line-color':'gray',
+			'target-arrow-shape': 'triangle',
+			'target-arrow-color': 'black'
+		}
+	}]});
+
+	
+	for (var key in nodes){
+		if( key.length>0)
+		{
+			cy.add({
+				data: { id: key,
+				color:getColor(key),
+				width:nodes[key],
+				height:nodes[key]
+			}});
+		}
+	}
+
+	for (var key in edges)  
+		if( key.length>0)
+		{
+			tmp = key.split(sep)
+			cy.add({
+			data: {
+				source:tmp[0],
+				weight:1,
+				target:tmp[1],
+				}
+			});
+		}
+
+	cy.layout({
+		name: lay,
+		minNodeSpacing:1
+	}).run();
+
+
+
+	cy.on('click ', 'node', function(event) {
+		parent.investigatefurther(event.target.id())
+	});
+
+	var labeltmp = '' 
+	cy.on('mouseover', 'node', function(event) {
+		node = event.target
+		labeltmp = node.style('label')
+		node.style('text-background-color','white')
+		node.style('text-background-opacity','0.7')
+		node.style('label',labeltmp+'\nIn:'+node.indegree()+'\nOut:'+node.outdegree())
+	});
+
+	cy.on('mouseout', 'node', function(event) {
+		node = event.target
+		node.style('label',labeltmp)
+		node.style('text-background-opacity','0.0')
+		labeltmp = ''
+	});
+
+</script>
+</body>

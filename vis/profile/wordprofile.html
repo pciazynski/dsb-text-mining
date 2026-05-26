@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+</head>
+<body style="background-color:white">
+
+<script>
+	
+	word = getQueryVariable('word').toLowerCase()
+	clickable = getQueryVariable('clickable')
+	if(word.length>0){
+		today = new Date();
+		dd = String(today.getDate()).padStart(2, '0');
+		mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+		yyyy = today.getFullYear();
+		today = dd + '.' + mm + '.' + yyyy;
+		data = readPHP("wordprofile.php?word="+word).split("\n")
+		if(data.length>1){
+			infotext = '<table align=center style="valign:top;border: 2px solid black;border-collapse: collapse;">'
+			lemma = data[2].split(":")[0]
+			frequ = parseInt(data[0].split("\t"))
+			
+			if (clickable == 1){
+				if(data[2] != ":"){
+					tmparr = data[2].split("\t")
+					data[2] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[2] += '<a href="lemmaprofile.html?lemma='+token_count[0]+'&clickable=1">'+token_count[0]+'</a>\t'
+					}
+					data[2] = data[2].trim()
+				}
+				if(data[3] != null){
+					tmparr = data[3].split("\t")
+					data[3] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[3] += '<a href="normprofile.html?norm='+token_count[0]+'&clickable=1">'+token_count[0]+'</a>\t'
+					}
+					data[3] = data[3].trim()
+				}
+				if(data[5] != null){
+					tmparr = data[5].split("\t")
+					data[5] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[5] += '<a href="wordprofile.html?word='+token_count[0]+'&clickable=1">'+tmparr[key]+'</a>\t'
+					}
+					data[5] = data[5].trim()
+				}
+				if(data[6] != null){
+					tmparr = data[6].split("\t")
+					data[6] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[6] += '<a href="wordprofile.html?word='+token_count[0]+'&clickable=1">'+tmparr[key]+'</a>\t'
+					}
+					data[6] = data[6].trim()
+				}
+			}
+			
+			infotext+='<tr><td>Häufigkeit</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/statsword/zipf.html?data=bagofwords/_all&token='+word+'&limit=100">❧</a>&nbsp;<a target="_blank" href = "../../data/bagofwords/_all.txt">➚</a></td>'}
+			infotext+='<td> '+data[0].split("\t")[0]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Rang</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/statsword/zipf.html?data=bagofwords/_all&token='+word+'&limit=100">❧</a>&nbsp;<a target="_blank" href = "../../data/bagofwords/_all.txt">➚</a></td>'}
+			infotext+='<td> '+data[0].split("\t")[1]+'</td></tr>'
+			infotext+='<tr><td>Erster&nbsp;Beleg</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/bwword/timeline.html?data=tokencountperyear.php&print&hidewatermark&sort&token='+word+'">❧</a> <a target="_blank" href = "../../php/tokencountperyear.php?sort&token='+word+'">➚</a></td>'}
+			infotext+='<td>'+data[1].split("\t")[0]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Letzter&nbsp;Beleg</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/bwword/timeline.html?data=tokencountperyear.php&print&hidewatermark&sort&token='+word+'">❧</a> <a target="_blank" href = "../../php/tokencountperyear.php?sort&token='+word+'">➚</a></td>'}
+			infotext+='<td>'+data[1].split("\t")[1]+'</td></tr>'
+			infotext+='<tr><td>Lemma</td>'
+			if(clickable==1 & data[2]!=":"){infotext+='<td><a target="_blank" href = "../../vis/bwlemma/timeline.html?data=lemmasumperyear.php&sort&focus=0&exact=1&lemma='+lemma+'">❧</a>&nbsp;<a target="_blank" href = "../../php/lemmasumperyear.php?sort&exact=1&lemma='+lemma+'">➚</a></td>'}
+			if(data[2]==":"){data[2] = ""}
+			infotext+='<td> '+data[2]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Normierte&nbsp;Form</td>'
+			if(clickable==1){infotext+='<td></td>'}
+			infotext+='<td> '+data[3]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Linke&nbsp;Nachbarn(LogDice)</td>'
+			if(clickable==1 & data[5]!=undefined){infotext+='<td><a target="_blank" href = "../../vis/collocation/tokenwordnet.html?data=collocation.php&right='+word+'&logdice=0-14&sortBy=logdice&limit=10">❧</a>&nbsp;<a target="_blank" href = "../../php/collocation.php?right='+word+'&logdice=0-14&sortBy=logdice&limit=10">➚</a></td>'}
+			if(data[5]==undefined){data[5] = ""}
+			infotext+='<td> '+data[5]+'</td></tr>'
+			infotext+='<tr><td>Rechte&nbsp;Nachbarn(LogDice)</td>'
+			if(clickable==1 & data[6]!=undefined){infotext+='<td><a target="_blank" href = "../../vis/collocation/tokenwordnet.html?data=collocation.php&left='+word+'&logdice=0-14&sortBy=logdice&limit=10">❧</a>&nbsp;<a target="_blank" href = "../../php/collocation.php?left='+word+'&logdice=0-14&sortBy=logdice&limit=10">➚</a></td>'}
+			if(data[6]==undefined){data[6] = ""}
+			infotext+='<td> '+data[6]+'</td><td></td><td></td></tr>'
+			infotext+='<tr><td>Typ</td>'
+			if(clickable==1){infotext+='<td></td>'}
+			infotext+='<td> '+data[4]+'</td></tr>'
+			if(clickable==1){infotext+='<tr style="background-color:#F0F3FA;"><td>Verwendungen</td><td><a target="_blank" href="'+ctsurl.replace('/cts/','')+'/plain/textexamples.php?limit=5&deletexml&snippet='+word+'">➚</a></td><td id = "examplesentece"> </td></tr>'}
+			infotext=infotext.replaceAll("\t",", ")
+			if (clickable == 1){
+				infotext += '<tr><tr><td></td><td></td><td>'+wm_title+'</td></tr></table>'
+			}
+			else{
+				infotext += '<tr><td></td><td>'+wm_title+'</td></tr></table>'
+			}
+		}
+		else{
+			infotext = "<br>Keine Daten"
+		}
+		clicktext = '<table align=center style="valign:top;border-collapse: collapse;"><tr>'
+		if(clickable==1){clicktext += '<td><a href="?word='+word+'">Interaktionselemente entfernen</a></td>'}
+		else{clicktext += '<td><a href="?word='+word+'&clickable=1">Interaktionselemente anzeigen</a></td>'}
+		clicktext += '</table>'
+
+		document.write('<h1 style="text-align:center;">Wortprofil '+word+'</h1><p style="text-align:center;">Die Vollständigkeit der Daten entspricht dem Bearbeitungsstand des Textkorpus.</p>'+clicktext+infotext)
+	}
+</script>
+
+<script>
+	document.title='Wortprofil '+word
+</script>
+
+</body>

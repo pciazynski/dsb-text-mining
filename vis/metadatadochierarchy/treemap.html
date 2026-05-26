@@ -1,0 +1,63 @@
+<!doctype html>
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<div id="myDiv" style="width: 100%;height:100vh;"><!-- Plotly chart will be drawn inside this DIV --></div>
+
+<script type = "module">
+
+	var dataset = getQueryVariable('data')
+	dataset+="?sort"
+	var diagramtitle = dataset
+	var data_arr = (await readPHP_async(dataset)).trim("\n").split('\n');
+	var i;
+	var date = []
+	var parents = []
+	var ns = "urn:cts:"+data_arr[0].split(":")[2]+":"
+	date.push(ns)
+	parents.push("")
+	var included = []
+	var parentsincluded = []
+	for (i = 0; i < data_arr.length; i++) {
+		var linearr = data_arr[i].replace("plomje_","plomje.").replace("wossady_","wossady.").replace("wossadu_","wossadu.").replace("boh_","boh.").replace("glosy_","glosy.").replace("rozhlad_","rozhlad.").replace("letopis_","letopis.").replace("letopisa_","letopisa.").replace("nowiny_","nowiny.").replace("ik_1","ik.1").replace("ik_2","ik.2").replace("ja_1","ja.1").replace("ja_2","ja.2").split(sep)
+		var urnarr = linearr[0].split(":")
+		var docurnarr = urnarr[3].split(".")
+		var urnpart = ns
+		var oldurn = ns
+		for (var j = 0;j<docurnarr.length;j++){
+			(j == docurnarr.length-1) ? urnpart += docurnarr[j]+":":urnpart += docurnarr[j]+".";
+			if (included[urnpart] == null){
+				date.push(urnpart.replace("plomje.","plomje_").replace("wossady.","wossady_").replace("wossadu.","wossadu_").replace("boh.","boh_").replace("glosy.","glosy_").replace("rozhlad.","rozhlad_").replace("nowiny.","nowiny_").replace("letopis.","letopis_").replace("letopisa.","letopisa_").replace("ik.1","ik_1").replace("ik.2","ik_2").replace("ja.1","ja_1").replace("ja.2","ja_2"))
+				parents.push(oldurn.replace("plomje.","plomje_").replace("wossady.","wossady_").replace("wossadu.","wossadu_").replace("boh.","boh_").replace("glosy.","glosy_").replace("rozhlad.","rozhlad_").replace("nowiny.","nowiny_").replace("letopis.","letopis_").replace("letopisa.","letopisa_").replace("ik.1","ik_1").replace("ik.2","ik_2").replace("ja.1","ja_1").replace("ja.2","ja_2"))
+				included[urnpart]=1
+			}
+			oldurn += docurnarr[j]+".";
+		}
+	}
+	
+	
+	var data = [{
+		type: "treemap",
+		labels: date,
+		parents: parents
+
+	}];
+	var layout = {
+		annotations: watermarke()
+	};
+
+	Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	var myPlot = document.getElementById('myDiv')
+	myPlot.on("plotly_click", function(data) {
+		if(parent.treeleafclick != null){
+			var tmplabel = data.points[0].label
+			if (parentkeys[tmplabel] == null){
+				parent.treeleafclick(tmplabel)
+			}
+		}
+	});	
+</script>
+</body>

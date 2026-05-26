@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+	<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body style="text-align:left;">
+<script>
+	var dataset = getQueryVariable("data")
+	var lemma = getQueryVariable("lemma")
+	dataset = dataset +"?lemma="+lemma+"&sort"
+	data_arr = readPHP(dataset).split("\n");
+
+	str = "Work in Progress"
+	
+	document.write(str)
+	data_arr = ""
+	str = ""
+</script>
+</body>

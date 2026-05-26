@@ -1,0 +1,138 @@
+<!doctype html>
+<head>
+	<meta charset="utf-8">
+	<script src="../../lib/cytoscape.min.js"></script>
+	<script src="../../lib/klay.js"></script>
+	<script src="../../lib/cytoscape-klay.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<style>
+	#cy {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0px;
+		left: 0px;
+	}
+</style>
+
+<body>
+<div id="cy"></div>
+
+<script>
+
+
+	nodes = []
+	edges = []
+	var dataset = getQueryVariable('data')
+	var lemma = getQueryVariable('lemma')
+	dataset = dataset +'?lemma='+lemma
+	if (getQueryVariable("inclusive").length>0){dataset+="&inclusive"}
+	
+	network = readPHP(dataset).split('\n')
+	lay='klay'
+	nodes['###root###'] = 1
+	for (key in network)
+	{
+		tmp = network[key].split(sep)
+		if(tmp.length>=2)
+		{
+			if(nodes[tmp[0]] == null){
+				nodes [tmp[0]] =  1
+				edges['###root###'+sep+tmp[0]] = 1
+			}
+			nodes [tmp[1]] = tmp[2]
+			edges [tmp[0]+sep+tmp[1]] = 1
+		}
+	}
+	
+	var cy = cytoscape({
+	container: document.getElementById('cy'),
+	style: [{
+		selector: 'node',
+		css: {
+			'label': 'data(id)', 
+			'text-valign': 'center',
+			'text-halign': 'center',
+			'text-wrap': 'wrap',
+			'height': '19',
+			'font-size': defNodeFont,
+			'width': '19',
+			'background-color': 'red',
+			'borderColor':'darkgray',
+			'borderWidth':'1',
+			'shape': 'circle'
+			}
+		},
+		{
+		selector: 'node.highlight',
+		style: {
+			'label': 'data(id)',
+			'text-valign': 'center',
+			'color':'white',
+			'text-outline-color': 'red',
+			'text-outline-width': 2
+			}
+		},
+		{
+			selector: "edge",
+			css: {
+			'curve-style': 'bezier',
+			'control-point-step-size': '40',
+			'width': '1',
+			'line-color':'gray',
+			'target-arrow-shape': 'triangle',
+			'target-arrow-color': 'black'
+		}
+	}]});
+
+	for (var key in nodes){
+		if( key.length>0)
+		{
+			cy.add({
+				data: { id: key,
+				color:defNodeCol,
+				width:nodes[key],
+				height:nodes[key]
+			}});
+		}
+	}
+
+	for (var key in edges)  
+		if( key.length>0)
+		{
+			tmp = key.split(sep)
+			cy.add({
+			data: {
+				source:tmp[0],
+				weight:1,
+				target:tmp[1],
+				}
+			});
+		}
+
+	cy.layout({
+		name: lay,
+		minNodeSpacing:1
+	}).run();
+
+	var labeltmp = '' 
+	cy.on('mouseover', 'node', function(event) {
+		node = event.target
+		labeltmp = node.style('label')
+		node.style('text-background-color','white')
+		node.style('text-background-opacity','0.7')
+		node.style('label',labeltmp+'\nIn:'+node.indegree()+'\nOut:'+node.outdegree())
+	});
+
+	cy.on('mouseout', 'node', function(event) {
+		node = event.target
+		node.style('label',labeltmp)
+		node.style('text-background-opacity','0.0')
+		labeltmp = ''
+	});
+
+</script>
+</body>

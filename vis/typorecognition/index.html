@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<meta charset='utf-8'>
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src='../../_assets/datahandler.js'></script>
+	<script src='../../_assets/gui.js'></script>
+	<script src='../../_assets/autocomplete.js'></script>
+	<link rel='stylesheet' href='../../digilabstyles.css'>
+</head>
+<body style='background-color:lightgray'>
+<script>document.write(header())</script>
+<br><br>
+<br><br>
+
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button class = "iframebutton" onclick="embedding('timeline');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('timeline');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('timeline');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr>
+			<td style = "width: 100%;">		
+				<iframe class="resized" width="100%" height="475px" id="timeline" scrolling="yes"></iframe>
+			</td>
+		</tr>
+	</table>
+</div>
+<div style="text-align:center;"><span style="font-size:2rem;color:black">&#8595;</span><script>document.write(lang_year)</script></div>
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button class = "iframebutton" onclick="embedding('typolist');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('typolist');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('typolist');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr>
+			<td style = "width: 100%;">
+				<iframe class='resized' width='100%' height='150' id='typolist' scrolling='yes'></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button class = "iframebutton" onclick="resettypolist();"><script>document.write(lang_reset)</script></button>
+			</td>
+		</tr>
+		<tr>
+		<table align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+			<tr style = "text-align:center;">
+				<td>
+					<span style="font-size:2rem;color:black">&#8595;</span><script>document.write(lang_count)</script>
+				</td>
+				<td>
+					<span style="font-size:2rem;color:black">&#8595;</span><script>document.write(lang_docreferences)</script>
+				</td>
+			</tr>
+
+			<tr style = "text-align:right;">
+				<td style = "width: 49%;">
+					<button class = "iframebutton" onclick="embedding('typo');"><script>document.write(lang_htmlembedding)</script></button>
+					<button class = "iframebutton" onclick="diagrammlink('typo');"><script>document.write(lang_fullscreen)</script></button>
+					<button class = "iframebutton" onclick="datalink('typo');"><script>document.write(lang_rawdata)</script></button>
+				</td>
+				<td style = "width: 50%;">
+					<button class = "iframebutton" onclick="embedding('doclist');"><script>document.write(lang_htmlembedding)</script></button>
+					<button class = "iframebutton" onclick="diagrammlink('doclist');"><script>document.write(lang_fullscreen)</script></button>
+					<button class = "iframebutton" onclick="datalink('doclist');"><script>document.write(lang_rawdata)</script></button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<iframe class='resized' width='100%' height='100px' id='typo' scrolling='yes'></iframe>
+				</td>
+				<td>
+					<iframe class='resized' width='100%' height='100px' id='doclist' scrolling='yes'></iframe>
+				</td>
+			</tr>
+			<tr style = "text-align:right;">
+				<td>
+				</td>
+				<td>
+					<button class = "iframebutton" onclick="switchDtsCts();"><script>document.write(lang_switch_CTS_DTS)</script></button>
+				</td>
+			</tr>
+		</table>
+		</tr>
+	</table>
+</div>
+			<td>
+			</td>
+
+<script>
+
+
+	var switchDtsCts = function(){
+		elsrc = document.getElementById('doclist').src;
+		if(elsrc.includes("&textapi=dts")){
+			document.getElementById('doclist').src = elsrc.replace("&textapi=dts","")
+		}else{
+			document.getElementById('doclist').src = elsrc+"&textapi=dts"
+		}
+	}
+	
+	var updateWord = function(){
+		if(curtypo.length>0){
+			loading('doclist')
+			document.getElementById('typo').src = 'item.html?data=typorecognition/typos&item='+curtypo
+			document.getElementById('doclist').src = 'doclist.html?data=urnbyword.php&word='+curtypo
+		}
+	}
+	
+	var itemclick = function(item){
+		curtypo = item
+		updateWord()
+	}
+	
+	var resettypolist = function(){
+		document.getElementById('typolist').src = 'itemlist.html?data=typorecognition/typowords&unique=1'
+	}
+	
+	var timelineclick = function(item){
+		document.getElementById('typolist').src = 'itemlist.html?data=typorecognition/typowords&unique=1&year='+item
+		document.getElementById('typo').src = "error_selecttoken.html"
+		document.getElementById('doclist').src = "error_selecttoken.html"
+	}
+	
+	
+	document.getElementById('typolist').src = 'itemlist.html?data=typorecognition/typowords&unique=1'
+	document.getElementById('timeline').src = 'hist_timeline.html?data=typorecognition/typowords'
+	document.getElementById('typo').src = "error_selecttoken.html"
+	document.getElementById('doclist').src = "error_selecttoken.html"
+	document.title=lang_typorec
+	curtypo = getQueryVariable("typo")
+	updateWord()
+
+</script>
+
+<br><br>
+<script>
+	document.write(footer())
+</script>
+
+</body>

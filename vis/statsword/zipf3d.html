@@ -1,0 +1,119 @@
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv" style="height:100%"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	var dataset = getQueryVariable("data")
+	var max = getQueryVariable("max")
+	var min = getQueryVariable("min")
+	var limit = getQueryVariable("limit")
+	var offset = getQueryVariable("offset")
+	if(offset.length==0){offset=0}
+	var token = getQueryVariable("token")
+	
+	if(dataset.includes(".php")){
+		dataset+="?sort&year="+getQueryVariable("year")
+		if(limit.length>0){dataset+="&limit="+limit+"&offset="+offset}
+		data_arr = readPHP(dataset).split("\n");
+		diagramtitle = "Tokenhäufigkeiten "+getQueryVariable("year")
+		offset=0;
+	}
+	else{
+		data_arr = readTextFile(dataset).split("\n");
+		diagramtitle = "Tokenhäufigkeiten "+dataset.split("/")[1]
+	}
+	maxval = 0
+	
+	
+	if(limit.length==0){limit=data_arr.length}
+	limit=parseInt(limit)
+	if(limit>data_arr.length){limit=data_arr.length}
+
+	date= []
+	count = []
+	depth = []
+	
+	hovers = []
+	colors = []
+	add = true
+	if(token.length>0){
+		add = false
+	}
+	for (var i = offset; i < limit; i++) {
+	line = data_arr[i];
+		if(line.length>1){	
+			tmp = line.split(sep)
+			if(token.length>0 && !add){
+				limit = Math.min(limit+1,data_arr.length)
+				if(tmp[0]===token){
+					add = true
+				}
+			}
+			value  = parseInt(tmp[1])
+			if (!add){continue}
+			
+			if(max.length>0 & value > parseInt(max)){continue}
+			if(min.length>0 & value < parseInt(min)){continue}
+			date.push(tmp[0])
+			count.push(value)
+			depth.push(tmp[0].length)
+			colors.push(getColor(tmp[0], false))
+			hovers.push(tmp[0]+":"+value)
+			if (value>maxval ) {maxval = value}
+		}
+	}
+
+	var data = [{
+		x: date,
+		z: count,
+		y: depth,
+		type: 'scatter3d',
+		hovertemplate: '%{text}',
+		text: hovers,
+		mode: "markers",
+		marker: {
+			size:markersize(data_arr.length),
+			color: colors,
+			opaciy:0.2
+			}
+	}];
+
+	var layout = {
+		title:diagramtitle,
+		scene:{
+			xaxis:{
+				showticklabels:false,
+				title: "Häufigkeitsrang"
+			},
+			yaxis:{
+				type:scale,
+				title: "Tokenlänge"
+			},
+			zaxis:{
+				type:scale,
+				title: "Häufigkeit (Abs)"
+			}
+		},
+		annotations: watermarke()
+		};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+
+	myPlot = document.getElementById('myDiv')
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	myPlot = document.getElementById('myDiv')
+	myPlot.on("plotly_click", function(data) {
+		parent.zipfClick(data.points[0].x)
+	});
+	
+	document.title = diagramtitle
+
+</script>
+</body>

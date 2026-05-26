@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	diagramtitle = ""
+	var dataset = getQueryVariable("data")
+	var lemma = getQueryVariable("lemma")
+	var exact = getQueryVariable("exact")
+	var focus = getQueryVariable("focus")
+	var jitter = getQueryVariable("jitter")
+	if(jitter.length==0){jitter=defjitter}else{jitter = parseFloat(jitter)}
+	if(focus.length==0){focus=0}else{focus = parseInt(focus)}
+	dataset = dataset +"?lemma="+lemma+"&sort"
+	if(focus==3){diagramtitle = "Relative Jahressumme Token von Lemma "}else{diagramtitle="Relative Jahressumme Lemma "}
+	diagramtitle += lemma
+	
+	if(exact==1){dataset+="&exact"}else{diagramtitle += " inkl. ambig"}
+
+	data_arr = readPHP(dataset).split("\n");
+
+function formattext(labelvalue,val,sum){
+	prc = (val/sum*100).toFixed(1)
+	if (prc<10){prc ="0"+prc}
+	return labelvalue+": " + prc +"%"
+}
+distinctobjects = []
+sumperyear = []
+
+valmatrix = []
+resmatrix = []
+
+for (var i = 0; i < data_arr.length; i++) {
+	if(data_arr[i].trim().length>0){
+		tmp = data_arr[i].split(sep)
+		distinctobjects[tmp[focus]] = 0
+		if(sumperyear[tmp[1]] != undefined){
+			sumperyear[tmp[1]] = sumperyear[tmp[1]] + parseInt(tmp[2])
+		}
+		else{
+			sumperyear[tmp[1]] = parseInt(tmp[2])
+		}
+	}
+}
+
+	for (key in distinctobjects){
+		tmp1 = []
+		tmp2 = []
+		for (year in sumperyear){
+			tmp1[year] = 0
+			tmp2[year] = 0
+		}
+		valmatrix[key] = tmp1
+		resmatrix[key] = tmp2
+	}
+
+sum = 0
+
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i].trim();
+		if(line.length>1){
+			tmp = line.split(sep)
+			key = tmp[focus]
+			year = tmp[1]
+			val = parseInt(tmp[2])
+			
+			if(valmatrix[key][year] == 0){valmatrix[key][year] = val}else{valmatrix[key][year] = valmatrix[key][year]+val}
+			res = (valmatrix[key][year] / sumperyear[year] ) * 100
+			resmatrix[key][year] = res
+		}
+	}
+
+var data = []
+var years = []
+
+for (key in sumperyear){
+	years.push(key)
+}
+
+for (key in resmatrix){
+	ys = []
+	for (year in sumperyear){
+		ys.push(resmatrix[key][year])
+	}
+	
+	var trace = {
+		x:years,
+		name:key,
+		y:ys,
+		hovertemplate:"%{x} "+key+" %{y}%",
+		type: 'bar',
+		marker: {color: getColor(key)}
+	};
+	data.push(trace)
+}
+
+var layout = {
+	barmode: 'stack',
+	showlegend:false,
+	title:diagramtitle,
+	hovermode:'closest',
+	xaxis: 	{
+			automargin: true,
+			range:[minDate-2,maxDate+2],
+			linewidth: 1,
+			title:{
+				font:diagramfont
+			},
+			tickangle:90,
+			tickfont:diagramfont
+		},
+			yaxis:{
+			hoverformat: '.3f',
+			range:[0,110],
+			title:{
+				text: 'Häufigkeit (%)',
+				font:diagramfont
+				}
+			},
+	legend:{
+		x:0.1, 
+		y:0.1, 
+		//traceorder:"normal",
+		font:{
+			family:diagramfont,
+			size:9
+		},
+	},
+	annotations: watermarke(),
+	updatemenus: [{
+		type: 'buttons',
+		buttons: [{
+			label: 'Filter',
+			method: 'relayout',
+			args: ['showlegend', false],
+			args2: ['showlegend', true]
+			}]
+	}]
+};
+
+Plotly.newPlot('myDiv', data, layout,plotlyconfiguration);
+
+</script>
+
+
+
+

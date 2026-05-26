@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+	var dataset = getQueryVariable("data")
+	var frequency = getQueryVariable("frequency")
+	var n = getQueryVariable("n")
+	var year = getQueryVariable("year")
+	dataset = dataset +"?frequency="+frequency+"&sort&n="+n
+	if(year.length>0){dataset+="&year="+year}
+	data_arr = readPHP(dataset).split("\n");
+
+	maxval = 0
+	date= []
+	count = []
+	colors = []
+
+	diagramtitle = ""
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i];
+		if(line.length>1){
+			tmp = line.split(sep)
+			ngram = tmp[0].trim()
+			if(year.length==0){value  = parseInt(tmp[1])}
+			else{value  = parseInt(tmp[2])}
+			date.push(ngram)
+			count.push(value)
+			colors.push(getColor(ngram, false))
+			if (value>maxval ) {maxval = value}
+		}
+	}
+
+	var data = [{
+		x: date,
+		y: count,
+		type: 'bar',
+		marker: {
+			color: colors
+		}
+	}];
+
+	var layout = {
+		barmode: 'stack',
+		hovermode:'x',
+		legend: {
+			x: 0,
+			y: 1.2,
+			font: diagramfont
+			},
+		xaxis:{
+			automargin: true,
+			linewidth: 1,
+			title: {
+				font: diagramfont
+			},
+			tickangle:90,
+			tickfont:diagramfont
+			},
+		yaxis: {
+			automargin: true,
+			type:scale,
+			title: 	{
+				text: 'Häufigkeit (Abs)',
+				font: diagramfont
+				}
+			},
+		annotations: watermarke()
+		};
+
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+
+	myPlot = document.getElementById('myDiv')
+
+	myPlot.on("plotly_click", function(data) {
+		parent.document.getElementById("filter").value = data.points[0].x
+		parent.updateNGram()
+	});
+
+</script>
+</body>

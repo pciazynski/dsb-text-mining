@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<!-- Plotly.js -->
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../_assets/gui.js"></script>
+	<script src="../../_assets/autocomplete.js"></script>
+	<link rel="stylesheet" href="../../digilabstyles.css">
+</head>
+
+<body style="background-color:lightgray">
+<script>document.write(header())</script>
+
+<table class="optionmenu" align="center" style="width:80%;">
+	<tr>
+	<tr  style="text-align:center;">
+		<td>
+		<button onclick="location.href='../ngram?n=2&headerconf='+headerconf;">n=2</button>
+		</td>
+		<td>
+		<button onclick="location.href='../ngram?n=3&headerconf='+headerconf;">n=3</button>
+		</td>
+		<td>
+		<button onclick="location.href='../ngram?n=5&headerconf='+headerconf;">n=5</button>
+		</td>
+	</tr>
+</table>
+
+<br><br>
+
+<table cla
+
+<br><br>
+
+
+<script>
+	n = getQueryVariable("n")
+	if(n.length==0){n=3}
+</script>
+
+<table class="optionmenu" align="center">
+	<tr>
+		<td style="text-align:right;"><script>document.write(lang_frequency)</script></td>
+		<td>
+			<input type="number" value="500" id="min" onchange="updateZipf()">
+		</td>
+</table>
+
+<br/><br/>
+
+<div class = "iframediv">
+	<button class = "iframebutton" onclick="embedding('zipf');"><script>document.write(lang_htmlembedding)</script></button>
+	<button class = "iframebutton" onclick="diagrammlink('zipf');"><script>document.write(lang_fullscreen)</script></button>
+	<button class = "iframebutton" onclick="datalink('zipf');"><script>document.write(lang_rawdata)</script></button>
+
+	<div style="text-align:center;">
+		<iframe class="resized" width="100%" height="475px" id="zipf" scrolling="yes"></iframe>
+	</div>
+<button class = "iframebutton" onclick="switchLogScale('zipf');"><script>document.write(lang_switchlogscale)</script></button>
+	<button class = "iframebutton" onclick="hidewatermark('zipf');"><script>document.write(lang_source)</script></button>
+</div>
+
+<br/><br/>
+
+<table class="optionmenu" align="center">
+	<tr>
+		<td style="text-align:center;"><script>document.write(lang_searchitem)</script></td>
+		<td>
+			<div class="autocomplete">
+				<input id="filter" type="text">
+			</div>
+			<script>
+				autocomplete("filter", "prefixngramsearch.php?n="+n+"&limit=30&token=", "updateNGram"); 
+			</script>
+		</td>
+	</tr>
+	
+</table>
+
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:90%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 80%;">
+				<button class = "iframebutton" onclick="embedding('timeline');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('timeline');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('timeline');"><script>document.write(lang_rawdata)</script></button>			</td>
+			<td style = "width: 20%;">
+				<button class = "iframebutton" onclick="embedding('ngram');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('ngram');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('ngram');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr>
+			<td style = "width: 80%;">
+				<iframe class="resized" width="100%" height="475px" id="timeline" scrolling="yes"></iframe>
+			</td>
+			<td style = "width: 20%;">		
+				<iframe class="resized" width="100%" height="475px" id="ngram" scrolling="yes"></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td style = "width: 80%;">
+				<button class = "iframebutton" onclick="linreg('timeline');"><script>document.write(lang_linreg + lang_single_element) </script></button>
+<button class = "iframebutton" onclick="switchLogScale('timeline');"><script>document.write(lang_switchlogscale)</script></button>
+				<button class = "iframebutton" onclick="hidewatermark('timeline');"><script>document.write(lang_source)</script></button>
+			</td>
+			<td style = "width: 20%;">
+			</td>
+		</tr>
+	</table>
+</div>
+
+<br><br>
+<script>
+
+	var linreg = function(iframeid){
+		tmp = document.getElementById("filter").value.trim()
+		if(tmp.length>0){
+			if(document.getElementById(iframeid).src.includes("timeline.html") && tmp.split(" ").length==3){
+				loading(iframeid)
+				document.getElementById(iframeid).src=document.getElementById(iframeid).src.replaceAll("timeline.html","linreg_chart.html")
+			}else if(document.getElementById(iframeid).src.includes("linreg_chart.html")){
+				loading(iframeid)
+				document.getElementById(iframeid).src=document.getElementById(iframeid).src.replaceAll("linreg_chart.html","timeline.html")
+			}
+		}
+	}
+	
+	var updateNGram = function(){
+		loading('ngram')
+		loading('timeline')
+		tmp = document.getElementById("filter").value.trim()
+		if(tmp.split(" ").length==n){
+			document.getElementById('timeline').src = "timeline.html?data=ngramperyearexact.php&filter="+tmp+"&n="+n
+			document.getElementById('ngram').src = "ngram.html?data=ngramexact.php&frequency=1&n="+n+"&filter="+tmp
+		}else{
+			document.getElementById('timeline').src = "timeline.html?data=ngramperyear.php&filter="+tmp+"&n="+n
+			document.getElementById('ngram').src = "ngram.html?data=ngram.php&frequency=1&n="+n+"&filter="+tmp
+		}
+	}
+	
+	var updateZipf = function(){
+		loading('zipf')
+		min = document.getElementById("min").value.trim()
+		document.getElementById('zipf').src="zipf.html?data=ngram.php&frequency="+min+"&n="+n
+	}
+
+	if(n.length==0){n=3}
+
+	updateZipf()
+	document.title=n+"Gram "
+
+//	updateNGram()
+
+</script>
+<br><br>
+<script>
+	document.write(footer())
+</script>
+</body>

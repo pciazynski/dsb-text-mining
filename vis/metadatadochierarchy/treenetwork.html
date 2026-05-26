@@ -1,0 +1,176 @@
+<!doctype html>
+<head>
+	<meta charset="utf-8">
+	<script src="../../lib/cytoscape.min.js"></script>
+	<script src="../../lib/klay.js"></script>
+	<script src="../../lib/cytoscape-klay.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<style>
+	#cy {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0px;
+		left: 0px;
+	}
+</style>
+
+<body>
+<div id="cy"></div>
+
+<script type = "module">
+
+
+	var nodes = []
+	var edges = []
+	
+	var nodelabel = []
+	var nodecolor = []
+	var nodeweights = []
+	
+	var dataset = getQueryVariable('data')
+	dataset+="?sort"
+	var diagramtitle = dataset
+	var data_arr = (await readPHP_async(dataset)).trim("\n").split('\n');
+	var i;
+	var date = []
+	var ns = data_arr[0].split(":")[2]+":"
+	var nodefocus = getQueryVariable('nodefocus')
+	if(nodefocus.length==0){nodefocus=ns}
+	var networkstr = ""
+	for (i = 0; i < data_arr.length; i++) {
+		var linearr = data_arr[i].split(sep)
+		var urnarr = linearr[0].split(":")
+		var docurnarr = urnarr[3].replace("plomje_","plomje.").replace("wossady_","wossady.").replace("wossadu_","wossadu.").replace("boh_","boh.").replace("glosy_","glosy.").replace("rozhlad_","rozhlad.").replace("letopis_","letopis.").replace("letopisa_","letopisa.").replace("nowiny_","nowiny.").replace("ik_1","ik.1").replace("ik_2","ik.2").replace("ja_1","ja.1").replace("ja_2","ja.2").split(".")
+		var urnpart = ""
+		var oldurnpart = ns
+		var oldurn = ns
+		for (var j = 0;j<docurnarr.length;j++){
+			urnpart += docurnarr[j]+".";
+			var testurn=urnpart
+			testurn = ns+testurn.replace("plomje.","plomje_").replace("wossady.","wossady_").replace("wossadu.","wossadu_").replace("boh.","boh_").replace("glosy.","glosy_").replace("rozhlad.","rozhlad_").replace("nowiny.","nowiny_").replace("letopis.","letopis_").replace("letopisa.","letopisa_").replace("ik.1","ik_1").replace("ik.2","ik_2").replace("ja.1","ja_1").replace("ja.2","ja_2")
+			if (testurn === nodefocus || oldurn === nodefocus){
+				(nodeweights[testurn] == null) ? nodeweights[testurn] = 1:nodeweights[testurn]=nodeweights[testurn]+1;
+				(nodeweights[oldurn] == null) ? nodeweights[oldurn] = 1:nodeweights[oldurn]=nodeweights[oldurn]+1;
+				nodelabel[testurn] = docurnarr[j]
+				nodelabel[oldurn] = oldurnpart
+				networkstr += oldurn+sep+testurn+"\n"
+			}
+			oldurnpart = docurnarr[j]
+			oldurn += oldurnpart+".";
+			oldurn = oldurn.replace("plomje.","plomje_").replace("wossady.","wossady_").replace("wossadu.","wossadu_").replace("boh.","boh_").replace("glosy.","glosy_").replace("rozhlad.","rozhlad_").replace("nowiny.","nowiny_").replace("letopis.","letopis_").replace("letopisa.","letopisa_").replace("ik.1","ik_1").replace("ik.2","ik_2").replace("ja.1","ja_1").replace("ja.2","ja_2")
+		}
+	}
+	
+	var network = networkstr.split('\n')
+	var lay='klay'
+	var tmp;
+	for (var key in network){
+		tmp = network[key].split(sep)
+		if(tmp.length>=2){
+			if(nodes[tmp[0]] == null){
+				nodes [tmp[0]] =  1
+			}
+			if(nodes[tmp[1]] == null){
+				nodes [tmp[1]] =  1
+			}
+			edges [tmp[0]+sep+tmp[1]] = 1
+		}
+	}
+	var cy = cytoscape({
+	container: document.getElementById('cy'),
+	style: [{
+		selector: 'node',
+		css: {
+			'label': 'data(label)', 
+			'text-valign': 'center',
+			'text-halign': 'center',
+			'text-wrap': 'wrap',
+			'height': 'data(height)',
+			'font-size': '3',
+			'width': 'data(width)',
+			'background-color': 'data(color)',
+			'borderColor':'darkgray',
+			'borderWidth':'1',
+			'shape': 'circle'
+			}
+		},
+		{
+		selector: 'node.highlight',
+		style: {
+			'label': 'data(label)',
+			'text-valign': 'center',
+			'color':'white',
+			'text-outline-color': 'red',
+			'text-outline-width': 2
+			}
+		},
+		{
+			selector: "edge",
+			css: {
+			'curve-style': 'bezier',
+			'control-point-step-size': '40',
+			'width': '1',
+			'line-color':'gray',
+			'target-arrow-shape': 'triangle',
+			'target-arrow-color': 'darkgray'
+		}
+	}]});
+
+	for (var key in nodes){
+		if( key.length>0){
+			var nodeweight = Math.log(nodeweights[key])
+			cy.add({
+				data: { id: key,
+				color:getColor(key.replace(/[0-9]/g,"")),
+				label:nodelabel[key],
+				width:5+nodeweight,
+				height:5+nodeweight
+			}});
+		}
+	}
+
+	for (var key in edges)  
+		if( key.length>0)
+		{
+			tmp = key.split(sep)
+			cy.add({
+			data: {
+				source:tmp[0],
+				weight:1,
+				target:tmp[1],
+				}
+			});
+		}
+
+	cy.layout({
+		name: lay,
+		minNodeSpacing:1
+	}).run();
+
+	var labeltmp = '' 
+	cy.on('mouseover', 'node', function(event) {
+		var node = event.target
+		labeltmp = node.style('label')
+		node.style('text-background-color','white')
+		node.style('text-background-opacity','0.9')
+		node.style('label',labeltmp)
+	});
+
+	cy.on('mouseout', 'node', function(event) {
+		var node = event.target
+		node.style('label',labeltmp)
+		node.style('text-background-opacity','0.0')
+		labeltmp = ''
+	});
+	
+	cy.on('tap', function(event) {
+		var tappedNow = event.target;
+		parent.nodeclick(tappedNow.id())
+	});
+	
+</script>
+</body>

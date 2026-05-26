@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	var dataset = getQueryVariable("data")+"?sort"
+	data_arr = readPHP(dataset).split("\n");
+	diagramtitle = dataset.replace("metadata","").split(".")[0]
+	diagramtitle = diagramtitle.charAt(0).toUpperCase() + diagramtitle.slice(1)
+	maxval = 0
+	
+	date= []
+	count = []
+	colors = []
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i];
+		if(line.length>1){	
+			tmp = line.split(sep)
+			value  = parseInt(tmp[1])
+			date.push(tmp[0])
+			count.push(value)
+			colors.push(getColor(tmp[0]))
+			if (value>maxval ) {maxval = value}
+		}
+	}
+
+	var data = [{
+		x: date,
+		y: count,
+		type: 'bar',
+		marker: {
+			color: colors
+		}
+	}];
+
+	if (getQueryVariable("scale")==="log"){minval = Math.log(1);maxval=Math.log(maxval)}else{minval=0;maxval=maxval+(maxval/10)+1}
+	var layout = {
+		barmode: 'stack',
+		title:{
+			text:diagramtitle,
+			font: diagramfont
+		},
+		xaxis: {
+			automargin: true,
+			linewidth: 1,
+			title: {
+				font: diagramfont
+			},
+			tickangle:45,
+			tickfont:diagramfont
+			},
+		yaxis:{
+			type:scale,
+			range: [minval, maxval],
+			title: {
+				text: 'Häufigkeit (Abs)',
+				font: diagramfont
+				}
+			},
+		annotations: watermarke()
+		};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+
+	myPlot = document.getElementById('myDiv')
+
+	myPlot.on('plotly_click', function(data) {
+		parent.metadataclick(data.points[0].x,"")
+	});
+	
+	document.title = diagramtitle
+
+</script>
+</body>

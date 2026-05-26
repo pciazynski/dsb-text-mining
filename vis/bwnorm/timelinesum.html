@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	diagramtitle = ""
+	var dataset = getQueryVariable("data")
+	var norm = getQueryVariable("norm")
+	var exact = getQueryVariable("exact")
+	var focus = getQueryVariable("focus")
+	var jitter = getQueryVariable("jitter")
+	if(jitter.length==0){jitter=defjitter}else{jitter = parseFloat(jitter)}
+	if(focus.length==0){focus=0}else{focus = parseInt(focus)}
+	dataset = dataset +"?norm="+norm+"&sort"
+	if(focus==3){diagramtitle = "Jahressumme Token von Normierung "}else{diagramtitle="Jahressumme Normierung "}
+	diagramtitle += norm
+	
+	if(exact==1){dataset+="&exact"}else{diagramtitle += " inkl. ambig"}
+
+	data_arr = readPHP(dataset).split("\n");
+	if(data_arr.length>resultsetmax){document.write(lang_error_resultset_too_large);}
+	else{
+		maxval = 0
+		minval = 10000000
+
+		aggrodata = []
+		for (var i = 0; i < data_arr.length; i++) {
+			if(data_arr[i].trim().length>0){
+				tmp = data_arr[i].split(sep)
+				if(aggrodata[tmp[1]] != undefined){
+					aggrodata[tmp[1]] = aggrodata[tmp[1]] + parseInt(tmp[2])
+				}
+				else{
+					aggrodata[tmp[1]] = parseInt(tmp[2])
+				}
+			}
+		}
+		date= []
+		count = []
+
+		for (key in aggrodata){
+			date.push(key)
+			count.push(aggrodata[key])
+			if (aggrodata[key]<minval ){minval = aggrodata[key]}
+			if (aggrodata[key]>maxval ) {maxval = aggrodata[key]}
+		}
+	
+		var data = [{
+			x: date,
+			y: count,
+			mode: 'markers',
+			marker: {
+				size:markersize(date.length)/2,
+				opaciy:0.2,
+				color:"black"
+			},
+			line:{
+				color:"gray",
+				width: 1
+			}
+		}];
+
+		if (getQueryVariable("scale")==="log"){minval = Math.log(1);maxval=Math.log(maxval)}else{minval=0;maxval=maxval+(maxval/10)+1}
+		var layout = {
+			hovermode:"closest",
+			title:{
+				text:diagramtitle,
+				font:diagramfont
+				},
+			xaxis:{
+				automargin: true,
+				range:[minDate-2,maxDate+2],
+				linewidth: 1,
+				title:{
+					font:diagramfont
+				},
+				tickangle:90,
+				tickfont:diagramfont
+			},
+			yaxis:{
+				type:scale,
+				range: [minval, maxval],
+				title:{
+					text: 'Häufigkeit (Abs)',
+					font:diagramfont
+					}
+				},
+			annotations: watermarke()
+		};
+
+		myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	}
+</script>
+</body>

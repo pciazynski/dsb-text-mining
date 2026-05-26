@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../_assets/gui.js"></script>
+	<link rel="stylesheet" href="../../digilabstyles.css">
+</head>
+
+<body style="background-color:lightgray">
+
+<script>document.write(header())</script>
+<p style="text-align:center;">
+	Tiepmar, J. (2026). n-Gram based Language Separation for Minority Languages. Zenodo. https://doi.org/10.5281/zenodo.19111631</br>
+</p>
+
+<br><br>
+
+<div class="explain">
+	<p>
+		Hier Text einfügen:
+	</p>
+</div>
+
+<table class='optionmenu' align='center'>
+	<tr>
+		<td>
+			<textarea  style="width:90%;height:200px;" value = "" type="text" id="inputtext" onchange="recognise()"></textarea >
+		</td>
+	</tr>
+</table>
+
+<br>
+<div class = "explain">
+	<p>
+		<span style="color:green;"> ▮ </span>Bestätigt DSB<br>
+		<span style="color:blue;"> ▮</span><span style="color:cyan;">▮ </span>Unsicher<br>
+		<span style="color:red;"> ▮ </span>Deutsch<br>
+		<span style="color:black;"> ▮ </span>Wort nicht als Trigramm vorhanden<br>
+		
+	</p>
+</div>
+<table class='optionmenu' align='center'>
+	<tr>
+		<td>
+			<div style="width:90%;background-color:white;">
+				<label  style="width:90%;height:200px;" value = "" type="text" id="langrec" onchange="recognise()"></label >
+			</div>
+		</td>
+	</tr>
+</table>
+<script>
+
+	var recognise = function(){
+	//var punctRE = /[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,.\/:;=?@\[\]^_`{|}~]/g;
+	var punctRE = /[-\\'!"#$%&()„*+,.\/:;=?@\[\]^_`{|}~]/g;
+		document.getElementById('langrec').innerHTML = "Loading..."
+		text = " "+document.getElementById("inputtext").value.replaceAll("\n", ' <br> ').replace(punctRE, ' ').toLowerCase()+" "
+		textarr = text.split(" ").sort()
+		oldword = ""
+		nl = "\n"
+		tab="\t"
+		sp=" "
+		dsblist = nl+readTextFile("langDetect3/dsb_slim")+nl;
+		mix1list = nl+readTextFile("langDetect3/mix1")+nl;
+		mix2list = nl+readTextFile("langDetect3/mix2")+nl;
+		deulist = nl+readTextFile("langDetect3/deu_slim")+nl;
+
+		for (var i = 0;i<textarr.length;i++){
+			word = textarr[i].trim()
+			if(oldword!== word){
+				onclickfun = "window.open('../../vis/bwword/?word="+word+"')"
+				if(deulist.includes(nl+word+nl)){
+					text = text.replaceAll(sp+word+sp, ' <span class="clickabletoken" style="cursor:pointer;color:red;" onclick="'+onclickfun+'">'+word+'</span> ')
+				}
+				else {
+					if(mix2list.includes("\n"+word+tab)){
+						text = text.replaceAll(sp+word+sp, ' <span class="clickabletoken" style="cursor:pointer;color:cyan;" onclick="'+onclickfun+'">'+word+'</span> ')
+					}
+					else{
+						if(mix1list.includes(nl+word+tab)){
+							text = text.replaceAll(sp+word+sp, ' <span class="clickabletoken" style="cursor:pointer;color:blue;" onclick="'+onclickfun+'">'+word+'</span> ')
+						}
+						else{
+							if(dsblist.includes(nl+word+nl)){
+								text = text.replaceAll(sp+word+sp, ' <span class="clickabletoken" style="cursor:pointer;color:green;" onclick="'+onclickfun+'">'+word+'</span> ')
+							}
+						else{
+								text = text.replaceAll(sp+word+sp, ' <span class="clickabletoken" style="cursor:pointer;color:black;" onclick="'+onclickfun+'">'+word+'</span> ')
+							}}}}
+				oldword = word
+			}
+		}
+		
+		document.getElementById('langrec').innerHTML=text
+	}
+	document.title="Sprachmarkierung"
+
+
+</script>
+
+<br><br>
+
+<script>
+	document.write(footer())
+</script>
+
+</body>

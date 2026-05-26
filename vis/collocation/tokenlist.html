@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<link rel="stylesheet" href="../../digilabstyles.css">
+</head>
+
+<body>
+<div id="myDiv"></div>
+<script>
+
+	var dataset = getQueryVariable("data")
+	var token = getQueryVariable("token")
+	var frequency = getQueryVariable('frequency')
+	var logdice = getQueryVariable('logdice')
+	var left = getQueryVariable('left')
+	var right = getQueryVariable('right')
+	var sortBy = getQueryVariable('sortBy')
+	if(sortBy.length>0){sortBy="&sortBy="+sortBy}
+	dataset = dataset +'?left='+left+'&right='+right+'&frequency='+frequency+'&logdice='+logdice+sortBy
+	
+	data_arr = readPHP(dataset).split("\n");
+	onclickfun1 = "parent.sortTokenlistBy('frequency')"
+	onclickfun2 = "parent.sortTokenlistBy('logdice')"
+	str = '<table class="clicktable"><tr><th>Links</th><th>Rechts</th><th style="cursor:nw-resize;" onclick='+onclickfun1+'>Abs. Häufigkeit</th><th  style="cursor:nw-resize;" onclick='+onclickfun2+'>LogDice</th></tr>';
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr [i];
+		if(line.length>1){
+			arr = line.split(sep)
+			onclickfun1 = 'parent.updateLeftRightNeighbors("'+arr[0]+'")'
+			onclickfun2 = 'parent.updateLeftRightNeighbors("'+arr[1]+'")'
+			str = str + '<tr><td onclick='+onclickfun1+'>' + arr[0] + '</td><td onclick='+onclickfun2+'>' + arr[1] + '</td>'
+			for (var j = 2;j<arr.length;j++){
+				str = str + '<td>'+arr[j]+'</td>';
+			}
+			str = str +"</tr>"
+		}
+	}
+	str = str + "</table>";
+	document.write(str)
+	//var node = document.getElementById('myDiv');
+	//node.innerHTML=str;
+
+</script>
+</body>

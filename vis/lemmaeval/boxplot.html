@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	var dataset = getQueryVariable("data")
+	data_arr = readTextFile(dataset).split("\n");
+	diagramtitle = "Lemmaeindeutigkeit"
+	count = []
+
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i];
+		if(line.length>1)
+		{
+			tmp = line.split(sep)
+			value = parseFloat(tmp[1])
+			count.push(value)
+		}
+	}
+	var data = [{
+		y: count,
+		name:"",
+		type: 'box',
+		marker:{
+			color:"black",
+			size:2,
+			line:{
+				outlierwidth:1
+			}
+		}
+	}];
+	var layout = {
+		title:{
+			text:diagramtitle,
+			font: diagramfont
+		},
+		annotations: watermarke()
+	};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	document.title = diagramtitle
+
+</script>
+</body>

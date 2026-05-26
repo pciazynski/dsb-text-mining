@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+</head>
+<body style="background-color:white">
+
+<script>
+	
+	norm = getQueryVariable('norm')
+	clickable = getQueryVariable('clickable')
+	if(norm.length>0){
+		today = new Date();
+		dd = String(today.getDate()).padStart(2, '0');
+		mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+		yyyy = today.getFullYear();
+		today = dd + '.' + mm + '.' + yyyy;
+		data = readPHP("normprofile.php?norm="+norm).split("\n")
+		if(data.length>1){
+			data[5] = ""
+			if(data[4] != null){
+				tmparr = data[4].split("\t")
+				tmparrseen = data[3].split("\t")
+				for (var i = 0;i<tmparr.length;i++){
+					if(!data[3].includes(tmparr[i]))
+					data[5]+=tmparr[i]+"\t"
+				}
+				data[5] = data[5].trim()
+			}
+			if (clickable == 1){
+				if(data[2] != null){
+					tmparr = data[2].split("\t")
+					data[2] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[2] += '<a href="normprofile.html?norm='+token_count[0]+'&clickable=1">'+tmparr[key]+'</a>\t'
+					}
+					data[2] = data[2].trim()
+				}
+				if(data[3] != null){
+					tmparr = data[3].split("\t")
+					data[3] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[3] += '<a href="wordprofile.html?word='+token_count[0]+'&clickable=1">'+tmparr[key]+'</a>\t'
+					}
+					data[3] = data[3].trim()
+				}
+				if(data[4] != null){
+					tmparr = data[4].split("\t")
+					data[4] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[4] += '<a href="wordprofile.html?word='+token_count[0]+'&clickable=1">'+tmparr[key]+'</a>\t'
+					}
+					data[4] = data[4].trim()
+				}
+				if(data[5] != null){
+					tmparr = data[5].split("\t")
+					data[5] = ""
+					for (key in tmparr){
+						token_count=tmparr[key].split(":")
+						data[5] += '<a href="wordprofile.html?word='+token_count[0]+'&clickable=1">'+tmparr[key]+'</a>\t'
+					}
+					data[5] = data[5].trim()
+				}			}
+			infotext = '<table align=center style="valign:top;border: 2px solid black;border-collapse: collapse;">'
+			
+			infotext+='<tr><td>Häufigkeit</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/statsnorm/zipf.html?data=normmapping/_normbag&norm='+norm+'&limit=100">❧</a>&nbsp;<a target="_blank" href = "../../data/normmapping/_normbag.txt">➚</a></td>'}
+			infotext+='<td> '+data[0].split("\t")[0]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Rang</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/statsnorm/zipf.html?data=normmapping/_normbag&norm='+norm+'&limit=100">❧</a>&nbsp;<a target="_blank" href = "../../data/normmapping/_normbag.txt">➚</a></td>'}
+			infotext+='<td> '+data[0].split("\t")[1]+'</td></tr>'
+			infotext+='<tr><td>Erster&nbsp;Beleg</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/bwnorm/timeline.html?data=normsumperyear.php&exact=1&focus=0&norm='+norm+'">❧</a> <a target="_blank" href = "../../php/normsumperyear.php?exact&norm='+norm+'">➚</a></td>'}
+			infotext+='<td> '+data[1].split("\t")[0]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Letzter&nbsp;Beleg</td>'
+			if(clickable==1){infotext+='<td> <a target="_blank" href = "../../vis/bwnorm/timeline.html?data=normsumperyear.php&exact=1&focus=0&norm='+norm+'">❧</a> <a target="_blank" href = "../../php/normsumperyear.php?exact&norm='+norm+'">➚</a></td>'}
+			infotext+='<td> '+data[1].split("\t")[1]+'</td></tr>'
+			infotext+='<tr><td>Normierung&nbsp;inkl&nbsp;ambig</td>'
+			if(clickable==1){infotext+='<td><a target="_blank" href = "../../vis/bwnorm/timeline.html?data=normsumperyear.php&sort&focus=0&exact=0&norm='+norm+'">❧</a>&nbsp;<a target="_blank" href = "../../php/normsumperyear.php?sort&norm='+norm+'">➚</a></td>'}
+			infotext+='<td> '+data[2]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Belegte&nbsp;Wortformen nicht ambig</td>'
+			if(clickable==1){infotext+='<td><a target="_blank" href = "../../vis/bwnorm/traviz.html?data=normtoken.php&sort&focus=0&exact=1&norm='+norm+'">❧</a>&nbsp;<a target="_blank" href = "../../php/normtoken.php?sort&focus=0&exact=1&norm='+norm+'">➚</a></td>'}
+			infotext+='<td> '+data[3]+'</td></tr>'
+			infotext+='<tr><td>Belegte&nbsp;Wortformen&nbsp;nur&nbsp;ambig</td>'
+			if(clickable==1){infotext+='<td></td>'}
+			infotext+='<td> '+data[5]+'</td></tr>'
+			infotext+='<tr style="background-color:#F0F3FA;"><td>Belegte&nbsp;Wortformen&nbsp;ambig</td>'
+			if(clickable==1){infotext+='<td><a target="_blank" href = "../../vis/bwnorm/traviz.html?data=normtoken.php&sort&focus=0&norm='+norm+'">❧</a>&nbsp;<a target="_blank" href = "../../php/normtoken.php?sort&focus=0&norm='+norm+'">➚</a></td>'}
+			infotext+='<td> '+data[4]+'</td></tr>'
+			
+			
+			infotext=infotext.replaceAll("\t",", ")
+			if (clickable == 1){
+				infotext += '<tr><td></td><td></td><td>'+wm_title+'</td></tr></table>'
+			}
+			else{
+				infotext += '<tr><td></td><td>'+wm_title+'</td></tr></table>'
+			}
+			clicktext = '<table align=center style="valign:top;border-collapse: collapse;"><tr>'
+			if(clickable==1){clicktext += '<td><a href="?norm='+norm+'">Interaktionselemente entfernen</a></td>'}
+			else{clicktext += '<td><a href="?norm='+norm+'&clickable=1">Interaktionselemente anzeigen</a></td>'}
+			clicktext+='</table>'
+			
+			document.write('<h1 style="text-align:center;">Normierung '+norm+'</h1><p style="text-align:center;">Die Vollständigkeit der Daten entspricht dem Bearbeitungsstand des Textkorpus.</p>'+clicktext+infotext)
+		}
+		else{
+			document.write('<table align=center style="valign:top;border-collapse: collapse;"><tr><td>Normierung existiert <a target="_blank" href="../bwnorm/?headerconf='+getQueryVariable('headerconf')+'&norm='+norm+'">nur ambig</a> oder ein Fehler ist passiert.</td></tr></table>')
+		}
+}
+</script>
+
+<script>
+	document.title='Normierung '+norm
+</script>
+
+</body>

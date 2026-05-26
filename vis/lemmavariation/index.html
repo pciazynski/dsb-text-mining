@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../_assets/gui.js"></script>
+	<script src="../../_assets/autocomplete.js"></script>
+	<link rel="stylesheet" href="../../digilabstyles.css">
+</head>
+
+<body style="background-color:lightgray">
+
+<script>document.write(header())</script>
+
+<table class="optionmenu" align="center" style="width:80%;">
+	<tr>
+	<tr  style="text-align:center;">
+		<td>
+		<button onclick="location.href='../lemmavariation';"><script>document.write(lang_lemmafy)</script></button>
+		</td>
+		<td>
+		<button onclick="location.href='../normvariation';"><script>document.write(lang_normify)</script></button>
+		</td>
+		<td>
+		</td>
+	</tr>
+</table>
+
+<br><br>
+
+<div class = "explain">
+	<p>
+		Hier können Flektionen von Lemmata hierarchisch betrachtet werden. Mehrere Lemmata können in einer Liste übergeben werden. Ist "Inklusive" aktiviert, wird nach Lemmagruppen für jedes einzelne Lemma gesucht. 
+		Über den Link zu dolnoserbski.de finden sich weitere Informationen zu den Einträgen.
+		<br>
+		<strong>Baum</strong>: Linksklick fokussiert Nachbarn des geklickten Knotens. Doppelklick fokussiert das komplette Netzwerk.
+		<br>
+		<strong>Sunburst</strong>:Linksklick im Mittelstreifen fokussiert das gewählte Lemma und zeigt dessen Timeline. Linksklick auf die äußeren Elemente zeigt den Zeitverlauf und Info zur Wortform.
+	</p>
+</div>
+
+<table class="optionmenu" align="center">
+	<tr>
+	<tr>
+		<td></td>
+		<td>
+			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet)</script></input>
+		</td>
+		<td></td>
+	</tr>
+		<td style="text-align:right;">
+			<script>document.write(lang_lemmafy)</script>
+		</td>
+		<td>
+			<div class="autocomplete">
+				<input style="width:70%" id="lemma" type="text"> 
+				<button onclick = "updateTree()"><script>document.write(lang_enter)</script></button> 
+			</div>
+			<script>
+				autocomplete("lemma", "prefixlemmasearch.php?limit=30&lemma=", ""); 
+			</script>
+		</td>
+		<td>
+			<script>document.write(lang_redirect)</script> <button onclick = "addLemmaToList()">&#10149;<script>document.write(lang_list)</script></button> <button onclick = "callDolnoserbski()">&#10149;dolnoserbski.de</button>
+		</td>
+	</tr>
+	<tr>
+		<td style="text-align:right;">
+			<script>document.write(lang_list)</script>
+		</td>
+		<td>
+			<input style="width:70%" id="lemmalist" type="text" onchange = "">
+			<button onclick = "updateTreeFromList()"><script>document.write(lang_enter)</script></button> 
+		</td>
+		<td>
+			<script>document.write(lang_example)</script> MŁYŃSKI,KRABAT
+		</td>
+	</tr>
+	<tr>
+		<td style="text-align:right;">Regex</td>
+		<td>
+			<input style="width:70%" id="lemmaregex" type="text" placeholder="" onchange = "">
+			<button onclick = "updateTreeFromRegex()"><script>document.write(lang_enter)</script></button> 
+		</td>
+		<td>
+			<label><script>document.write(lang_example)</script> TE(J|N)</label>
+		</td>
+	</tr>
+</table>
+
+
+<div class = "iframediv">
+	<button class = "iframebutton" onclick="embedding('traviz');"><script>document.write(lang_htmlembedding)</script></button>
+	<button class = "iframebutton" onclick="diagrammlink('traviz');"><script>document.write(lang_fullscreen)</script></button>
+	<button class = "iframebutton" onclick="datalink('traviz');"><script>document.write(lang_rawdata)</script></button>
+	<div style="text-align:center;">
+		<iframe class="resized" width="100%" height="300px" id="traviz" scrolling="yes"></iframe>
+	</div>
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 69%;">
+				<button class = "iframebutton" onclick="embedding('tree');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('tree');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('tree');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+			<td style = "width: 30%;">
+				<button class = "iframebutton" onclick="embedding('sunburst');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('sunburst');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('sunburst');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr>
+			<td>		
+				<iframe class="resized" width="100%" height="475px" id="tree" scrolling="yes"></iframe>
+			</td>
+			<td>		
+				<iframe class="resized" width="100%" height="475px" id="sunburst" scrolling="yes"></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td>
+				<script>document.write(lang_logweight)</script><input type="checkbox" id="weight" onchange = 'switchweight()' checked="true"/> 
+			</td>
+			<td>
+				<button class = "iframebutton" onclick="hidewatermark('sunburst');"><script>document.write(lang_source)</script></button>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<br>
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr>
+			<td style = "width: 100%;">
+				<iframe class="resized" width="100%" height="100px" id="tokeninfo" scrolling="yes"></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button class = "iframebutton" onclick="embedding('timeline');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('timeline');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('timeline');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr>
+			<td style = "width: 100%;">		
+				<iframe class="resized" width="100%" height="500px" id="timeline" scrolling="yes"></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button class = "iframebutton" onclick="hidewatermark('timeline');"><script>document.write(lang_source)</script></button>
+			</td>
+		</tr>
+	</table>
+</div>
+
+
+<br><br>
+<script>
+
+	var switchPrefixsearch = function(){
+		tmp = document.getElementById('prefixsearchCheckBox').checked
+		if(tmp){tmp = 'alphabet'}else{tmp = 'frequency'}
+		autocomplete("lemma", "prefixlemmasearch.php?limit=30&sortby="+tmp+"&lemma=", ""); 
+	}
+	
+	var tokenclick = function(tmp){
+		loading("timeline")
+		loading("tokeninfo")
+		if(tmp.length>0){
+			document.getElementById("timeline").src="timeline.html?data=tokencountperyear.php&token="+tmp+"&sort"
+			document.getElementById("tokeninfo").src="datalist.html?data=token2lemma.php&token="+tmp
+		}
+	}
+	
+	var lemmaclick = function(tmp){
+		loading("timeline")
+		if(tmp.length>0){
+			document.getElementById("timeline").src="lemmatimeline.html?data=lemmacountperyear.php&lemma="+tmp+"&sort&focus=3&exact=1"
+		}
+	}
+
+	
+	var callDolnoserbski = function(){
+		curlemma = document.getElementById('lemma').value.trim()
+		if(curlemma.length>0){
+			window.open('https://dolnoserbski.de/ortografija/slownik?wuraz='+curlemma, '_blank')
+		}
+	}
+	
+	var switchweight = function(){
+		if(document.getElementById('weight').checked){document.getElementById('tree').src = document.getElementById('tree').src + '&weight'}
+		else{document.getElementById('tree').src = document.getElementById('tree').src.replaceAll('&weight','')}
+	}
+	
+	var updateTreeFromRegex = function(){
+		curlemma = document.getElementById('lemmaregex').value.trim()
+		if(curlemma.length>0){
+			loading("tree")
+			if(document.getElementById('weight').checked){weight='&weight'}else{weight=""}
+			document.getElementById('tree').src='lemmatree_dagre.html?data=lemmatokenregex.php&sort&lemma='+curlemma+weight
+			document.getElementById('sunburst').src='sunburst.html?data=lemmatokenregex.php&sort&lemma='+curlemma+weight
+			document.getElementById('traviz').src='traviz.html?data=lemmatokenregex.php&sort&lemma='+curlemma+weight
+			document.title=curlemma+" Lemmabaum"
+		}
+	}
+	
+	var updateTreeFromList = function(){
+		curlemma = document.getElementById('lemmalist').value.trim()
+		if(curlemma.length>0){
+			loading("tree")
+			if(document.getElementById('weight').checked){weight='&weight'}else{weight=""}
+			document.getElementById('tree').src='lemmatree_dagre.html?data=lemmatoken.php&sort&inclusive&lemma='+curlemma+weight
+			document.getElementById('sunburst').src='sunburst.html?data=lemmatoken.php&sort&inclusive&lemma='+curlemma+weight
+			document.getElementById('traviz').src='traviz.html?data=lemmatoken.php&sort&inclusive&lemma='+curlemma+weight
+			document.title=curlemma
+		}
+	}
+
+	var updateTree = function(){
+		curlemma = document.getElementById('lemma').value.trim()
+		if(curlemma.length>0){
+			loading("tree")
+			if(document.getElementById('weight').checked){weight='&weight'}else{weight=""}
+			document.getElementById('tree').src='lemmatree_dagre.html?data=lemmatoken.php&sort&inclusive&lemma='+curlemma+weight
+			document.getElementById('sunburst').src='sunburst.html?data=lemmatoken.php&sort&inclusive&lemma='+curlemma+weight
+			document.getElementById('traviz').src='traviz.html?data=lemmatoken.php&sort&inclusive&lemma='+curlemma+weight
+			document.title=curlemma
+		}
+	}
+	
+	var addLemmaToList = function(){
+		loading("tree")
+		tmp = document.getElementById("lemma").value.trim()
+		tmp2 = document.getElementById("lemmalist").value.trim()
+		str = ""
+		if(tmp.length>0){
+			if(tmp2.length>0){str = ","}
+			str = tmp2+str+tmp
+			document.getElementById("lemmalist").value = str
+			document.getElementById('tree').src='lemmatree_dagre.html?data=lemmatoken.php&lemma='+curlemma
+		}
+	}
+	
+	curlemma = getQueryVariable('lemma')
+	if(curlemma.length>0){
+		if(curlemma.includes(",")){
+			document.getElementById('lemmalist').value = curlemma
+			updateTreeFromList()
+		
+		}else{
+				document.getElementById('lemma').value = curlemma
+				updateTree()
+			}
+		document.getElementById('lemma').scrollIntoView()
+	}
+	else{
+		document.getElementById('tree').src = 'error_token.html'
+	}
+	document.title=lang_variation+" "+lang_lemmafy
+</script>
+<br><br>
+<script>
+	document.write(footer())
+</script>
+</body>

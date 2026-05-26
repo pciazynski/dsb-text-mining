@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	dataset = getQueryVariable("data")
+	maxYear = getQueryVariable("maxyear")
+	minYear = getQueryVariable("minyear")
+	if(minYear.length==0){minYear = minDate}else{minYear=parseInt(minYear)}
+	if(maxYear.length==0){maxYear = maxDate}else{maxYear=parseInt(maxYear)}
+	data_arr = readTextFile(dataset).split("\n");
+
+	if(dataset.includes("_minmaxyearmax")){
+		diagramtitle = "Worttot"
+	}else{
+		diagramtitle = "Wortgenese"
+	}
+
+	date = []
+	shapes = []
+	delim = ","
+	var labels= []
+
+	function addLabel(key,str){
+		if(labels[key] !=null){
+			labels[key]=(labels[key]+delim+str)
+		} else {
+			labels[key]=str
+		}
+	}
+
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i].trim();
+		if(line.length>1)
+		{	
+			tmp = line.split(sep)
+			dateA = parseInt(tmp[0])
+			dateB = parseInt(tmp[1])
+			if(dateB>maxYear){i=data_arr.length}
+			if(dateA<minYear){continue;}
+			date[dateA] = i
+			if(dataset.includes("_minmaxyearmin")){addLabel(dateA,tmp[2])}
+			if(dataset.includes("_minmaxyearmax")){addLabel(dateB,tmp[2])}
+			if(dateA == dateB){dateB=parseInt(dateB)+0.5}
+			arr = {ysizemode:"scaled",layer:"below","type": 'rect', "xref": 'x',"yref": 'y',"x0": dateA,"y0": i,  "x1": dateB,  "y1": i+0.9,"fillcolor": "black","opacity": 0.6,line:{width:0}}
+			shapes.push(arr)
+		}
+	}
+
+	data = []
+	count=[]
+
+	for (var key in date) {
+		data.push(key)
+		count.push(date[key])
+	}
+
+	var data = [{
+		x: data,
+		y: 1,
+		hovertext:"",
+		hovertemplate:"%{x}",
+		mode: 'markers',
+		marker:{
+			color:"white",
+			opacity:0.0,
+			size:1,
+			line:{
+				width:0
+			}
+		},
+	}];
+
+	var layout = {
+		title:{
+			text:diagramtitle,
+			font:diagramfont
+		},
+		hovermode:'x',
+		xaxis: 	{
+			showgrid:false,
+			automargin: true,
+			range:[minDate-2,maxDate+2],
+			linewidth: 1,
+			title: {
+				font: diagramfont
+				},
+				tickangle:90,
+				tickfont:diagramfont
+		},
+		yaxis: {
+			showgrid:false,
+			showticklabels:false,
+			range:[0,data_arr.length],
+			title: {
+				font:diagramfont
+			},
+		},
+		annotations: watermarke(),
+		shapes: shapes
+	};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+
+	var myPlot = document.getElementById('myDiv')
+	myPlot.on('plotly_click', function(data){
+		if(dataset.includes("_minmaxyearmin")){alert("Wortgenese "+data.points[0].x+":\n"+labels[data.points[0].x]);}
+		if(dataset.includes("_minmaxyearmax")){alert("Worttod "+data.points[0].x+":\n"+labels[data.points[0].x]);}
+	})
+
+	document.title=diagramtitle
+
+</script>
+</body>

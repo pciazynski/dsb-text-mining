@@ -1,0 +1,93 @@
+<!doctype html>
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+
+<script>
+	var dataset = getQueryVariable("data")
+	var lemma = getQueryVariable('lemma')
+	dataset = dataset +'?lemma='+lemma
+	if (getQueryVariable("inclusive").length>0){dataset+="&inclusive"}
+
+	data_arr = readPHP(dataset).split("\n");
+	diagramtitle = dataset
+	date = []
+	count = []
+	parentsarr = []
+	color = []
+	
+	includedlemmas = []
+	
+	for (key in data_arr){
+		tmp = data_arr[key].split(sep)
+		if(tmp.length>=2){
+			tmp[0] = tmp[0]
+			if (tmp[0] in includedlemmas){
+				includedlemmas[tmp[0]] = includedlemmas[tmp[0]] + parseInt(tmp[2])
+			}
+			else{
+				includedlemmas[tmp[0]] = parseInt(tmp[2])
+			}
+			color.push(getColor(tmp[1]))
+			date.push(tmp[1])
+			parentsarr.push(tmp[0])
+			count.push(tmp[2])
+		}
+	}
+
+	sum = 0
+	
+	for (key in includedlemmas){
+		date.unshift(key)
+		parentsarr.unshift(lemma)
+		count.unshift(includedlemmas[key])
+		color.unshift(getColor(key))
+		sum += includedlemmas[key]
+	}
+	date.unshift(lemma)
+	parentsarr.unshift("")
+	count.unshift(sum)
+	color.unshift(getColor(lemma))
+
+	var data = [{
+		type: "sunburst",
+		labels: date,
+		parents: parentsarr,
+		values: count,
+		outsidetextfont: {size: 20, color: "#377eb8"},
+		branchvalues:'total',
+		leaf: {opacity: 0.4},
+		marker: {
+			colors: color,
+			line: {width: 2}
+		},
+	}];
+
+	var layout = {
+		margin: {l: 0, r: 0, b: 50, t: 50},
+		width: 475,
+		height: 475,
+		annotations: watermarke()
+	};
+
+	Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	var myPlot = document.getElementById('myDiv')
+	
+	
+	myPlot.on('plotly_sunburstclick', function(d) {
+		label = d.points[0].label
+		if (label !== lemma && ! label.includes('|')){
+			parent.tokenclick(label)
+		}
+		if(label.includes('|')){
+			parent.lemmaclick(label.slice(1,-1))
+		}
+})
+
+
+</script>
+</body>

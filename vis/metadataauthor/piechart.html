@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script type = "module">
+	var print = getQueryVariable("print")
+
+	var dataset = getQueryVariable("data")+"?sort"
+	var data_arr = (await readPHP_async(dataset)).split("\n");
+
+	var date= []
+	var count = []
+	var colors = []
+
+	var diagramtitle = dataset.replace("metadata","").split(".")[0]
+	diagramtitle = diagramtitle.charAt(0).toUpperCase() + diagramtitle.slice(1)
+
+	for (var i = 0; i < data_arr.length; i++) {
+		var line = data_arr[i];
+		if(line.length>1){
+			var tmp = line.split(sep)
+			var value  = parseInt(tmp[1])
+			date.push(tmp[0])
+			count.push(value)
+//			var col = (tmp[0] == 1) ? "red":"green";
+			colors.push(getColor(tmp[0]))
+		}
+	}
+	
+	var data = [{
+		labels: date,
+		values: count,
+		marker:{
+			colors: colors
+		},
+		textposition: 'inside',
+		type: "pie"
+	}];
+
+	var layout = {
+		title:{
+			text:diagramtitle,
+			font: diagramfont
+		},
+		showlegend:false,
+		annotations: watermarke()
+	};
+
+	var myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	myPlot = document.getElementById('myDiv')
+	myPlot.on('plotly_click', function(data) {
+		parent.metadataclick(data.points[0].label,"")
+	});
+	document.title = diagramtitle
+
+</script>
+</body>

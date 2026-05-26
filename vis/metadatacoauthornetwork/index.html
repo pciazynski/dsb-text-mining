@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<meta charset='utf-8'>
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src='../../_assets/datahandler.js'></script>
+	<script src='../../_assets/gui.js'></script>
+	<link rel='stylesheet' href='../../digilabstyles.css'>
+</head>
+<body style='background-color:lightgray'>
+<script>document.write(header())</script>
+<table class="optionmenu" align="center" style="width:80%;">
+	<tr>
+	<tr  style="text-align:center;">
+		<td>
+			<button onclick="location.href='../metadataauthor'"><script>document.write(lang_author)</script></button>
+		</td>
+		<td>
+			<button onclick="location.href='../metadatacoauthornetwork'"><script>document.write(lang_coauthor+' '+lang_network) </script></button>
+		</td>
+	</tr>
+</table>
+<br><br>
+
+
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button class = "iframebutton" onclick="embedding('coauthornetwork');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('coauthornetwork');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('coauthornetwork');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr>
+			<td>		
+				<iframe class='resized' width='100%' height='475px' id='coauthornetwork' scrolling='yes'></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td>
+				<button class = "iframebutton" onclick="layout('circle');"><script>document.write(lang_circle)</script></button>
+				<button class = "iframebutton" onclick="layout('grid');"><script>document.write(lang_grid)</script></button>
+				<button class = "iframebutton" onclick="layout('cose');"><script>document.write(lang_cose)</script></button>
+				<button class = "iframebutton" onclick="layout('concentric');"><script>document.write(lang_concentric)</script></button>
+				<button class = "iframebutton" onclick="layout('breadthfirst');"><script>document.write(lang_breadthfirst)</script></button>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<script>
+	var layout = function(tmp){
+		loading('coauthornetwork')
+		document.getElementById('coauthornetwork').src='network.html?data=coauthors.php&layout='+tmp
+	}
+
+	document.getElementById('coauthornetwork').src="network.html?data=coauthors.php"
+
+var lang_circle = "Kreis"
+var lang_grid = "Gitter"
+var lang_concentric = "Konzentrisch"
+var lang_breadthfirst = "Breadth First"
+var lang_cose = "CoSE"
+
+</script>
+
+<br><br>
+<script>
+	document.write(footer())
+</script>
+
+</body>

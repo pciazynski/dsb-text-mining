@@ -1,0 +1,109 @@
+@import url("lib/bootstrap/css/bootstrap.css");
+
+body{
+	font-family: 'Roboto', sans-serif;
+	font-size: 0.875rem;
+	font-weight: 400;
+	line-height: 1.5;
+	color: #000;
+	background-color:#F4F4F4;
+}
+
+a, a:hover{
+	color: #993366;
+	text-decoration: underline;
+}
+
+h1{
+	color: #000;
+	text-align:center;
+	font-family: inherit;
+	font-weight: 500;
+	line-height: 1.2;
+	margin-top: 0;
+	box-sizing: border-box;
+	vertical-align: text-bottom;
+}
+
+p, ul{
+	padding-left:5%;
+	padding-right:5%;
+	font-size: 0.875rem;
+}
+
+h2{
+	padding-left:3%;
+	font-size: 1.2rem;
+	padding-bottom: 0.5rem;
+	-moz-hyphens: auto;
+	-o-hyphens: auto;
+	-webkit-hyphens: auto;
+	-ms-hyphens: auto;
+	hyphens: auto;
+	font-weight: bold;
+}
+
+h3{
+	font-size: 1rem;
+	font-weight: bold;
+	padding-left:4%;
+}
+
+ /* The navigation bar */
+.navbar {
+	overflow: hidden;
+	background-color: #006AB2;
+	position: fixed; /* Set the navbar to fixed position */
+	top: 0; /* Position the navbar at the top of the page */
+	width: 100%; /* Full width */
+	font-size:30px;
+	height:50px;
+	padding: 0;
+	margin: 0;
+}
+
+/* Links inside the navbar */
+.navbar a {
+	width:20%;
+	float: left;
+	display: block;
+	color: #fff;
+	text-align: center;
+	text-decoration: none;
+	border-radius: 5px;
+	font-family: 'Roboto', sans-serif;
+	font-size: 1rem;
+}
+
+/* Change background on mouse-over */
+.navbar a:hover {
+	background-color: #white;!important
+	color: red;
+}
+.navbar a:active {
+	background-color: #fff;
+	color: #007377;
+}
+
+
+/* Digilab Navbar on Projectsite */
+.header{
+	margin-left: auto;
+	margin-right: auto;
+	background-color:white;
+	width:80%;
+}
+.header table{
+	width:100%;
+}
+.header th, .header td{
+	padding: 10px;
+	border: 1px solid black;
+}
+
+.header th{
+	text-align: center;
+	background-color:#006AB2;
+	color: #fff;
+}
+

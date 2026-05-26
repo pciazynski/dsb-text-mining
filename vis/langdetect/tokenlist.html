@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+</head>
+
+<body>
+<div id="myDiv"></div>
+<script>
+
+	var n = getQueryVariable("n")
+	var deu = getQueryVariable("deu")
+	var count = getQueryVariable("count")
+	var filter = getQueryVariable("filter")
+	var dataset = getQueryVariable("data")+"?n="+n+"&deu="+deu+"&count="+count+"&filter="+filter
+	data_arr = readPHP(dataset).split("\n");
+	if(count.length == 0 || count>data_arr.length){count = data_arr.length}
+
+	str = '<table style="border-collapse: collapse;">';
+
+	for (var i = 0; i < count; i++) {
+		line = data_arr [i];
+		if(line.length>1 && (("-"+line+"-").includes(filter) | filter.length==0) )
+		{
+			arr = line.split(sep)
+			if( arr.length<3 || arr[2].trim() === n){
+				if(dataset.includes("langDetectnGram")){arr[0] = arr[0].slice(1,-1)}
+				clickfun = 'parent.investigate("'+arr[0]+'")'
+				str = str + '<tr><td onclick = '+clickfun+' style="cursor:pointer; border: 1px solid black;color:'+getColor(arr[0])+';padding:5px 5px 5px 5px;">'+arr[0]+'</td>'
+				for (var j = 1;j<arr.length;j++)
+				{
+					str = str + '<td style="border: 1px solid black;padding:5px 5px 5px 5px;">'+arr[j]+'</td>';
+				}
+				str = str +"</tr>"
+			}
+		}
+	}
+	
+	str = str + "</table>";
+	var node = document.getElementById('myDiv');
+	node.innerHTML=str;
+
+</script>
+</body>

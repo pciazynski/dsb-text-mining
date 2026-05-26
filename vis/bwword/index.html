@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/config.js"></script>
+	<script src="../../lib/def_language.js"></script>
+	<script src="../../lib/my_language.js"></script>
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../_assets/gui.js"></script>
+	<script src="../../_assets/autocomplete.js"></script>
+	<link rel="stylesheet" href="../../digilabstyles.css">
+</head>
+<body style="background-color:lightgray">
+<script>document.write(header())</script>
+
+<table class="optionmenu" align="center" style="width:80%;">
+	<tr>
+	<tr  style="text-align:center;">
+		<td>
+		<button onclick="location.href='../bwlemma?headerconf='+headerconf;"><script>document.write(lang_lemmafy)</script></button>
+		</td>
+		<td>
+		<button onclick="location.href='../bwnorm?headerconf='+headerconf;"><script>document.write(lang_normify)</script></button>
+		</td>
+		<td>
+		<button onclick="location.href='../bwword?headerconf='+headerconf;"><script>document.write(lang_words)</script></button>
+		</td>
+	</tr>
+</table>
+
+<br><br>
+
+<table class="optionmenu" align="center">
+	<tr>
+		<td></td>
+		<td>
+			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet)</script></input>
+		</td>
+	</tr>
+	<tr>
+		<td style="text-align:center;"><script>document.write(lang_searchitem)</script></td>
+		<td>
+			<div class="autocomplete">
+				<input style="width:70%" id="wordinput" type="text">
+				<button onclick = "updateTimeline()"><script>document.write(lang_enter)</script></button> 
+			</div>
+			<script>
+				autocomplete("wordinput", "prefixsearch.php?limit=30&sortby=alphabet&word=", "updateTimeline"); 
+			</script>
+		</td>
+		<td style="text-align:left;"><script>document.write(lang_redirect)</script> <button onclick = "addWordToList()">&#10149;<script>document.write(lang_list)</script></button></td>
+	</tr>
+	<tr>
+		<td style="text-align:center;">Regex ^...$</td>
+		<td>
+			<div>
+				<input style="width:70%" id="regexsearch" type="text" onchange = "">
+				<button onclick = "updateTimelineRegex()"><script>document.write(lang_enter)</script></button> 
+			</div>
+		</td>
+		<td style="text-align:center;"><script>document.write(lang_example)</script> w(o|a)n(a|i)</td>
+	</tr>
+	<tr>
+		<td style="text-align:center;"><script>document.write(lang_list)</script></td>
+		<td>
+			<div>
+				<input style="width:70%" id="wordlist" type="text" onchange = "">
+				<button onclick = "updateTimelineWordList()"><script>document.write(lang_enter)</script></button> 
+			</div>
+		</td>
+		<td style="text-align:center;"><script>document.write(lang_example)</script> druge,woni</td>
+	</tr>
+</table>
+<br><br>
+
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:90%;">
+		<tr>
+			<td style = "width: 100%;">
+				<iframe class="resized" width="50%" height="100px" id="wordinfo" scrolling="yes"></iframe>
+			</td>
+		</tr>
+	</table>
+</div>
+
+
+
+<div class = "iframediv">
+	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:90%;">
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button class = "iframebutton" onclick="embedding('timeline');"><script>document.write(lang_htmlembedding)</script></button>
+				<button class = "iframebutton" onclick="diagrammlink('timeline');"><script>document.write(lang_fullscreen)</script></button>
+				<button class = "iframebutton" onclick="datalink('timeline');"><script>document.write(lang_rawdata)</script></button>
+			</td>
+		</tr>
+		<tr>
+			<td style = "width: 100%;">		
+				<iframe class="resized" width="100%" height="475px" id="timeline" scrolling="yes"></iframe>
+			</td>
+		</tr>
+		<tr style = "text-align:right;">
+			<td style = "width: 100%;">
+				<button id = "switchpercenttimelinebutton" class = "iframebutton" onclick="switchpercenttimeline('timeline');"><script>document.write(lang_switchpercenttimeline)</script></button>
+				<button id = "switchlinreg" class = "iframebutton" onclick="linreg('timeline');"><script>document.write(lang_linreg)</script></button>
+				<button class = "iframebutton" onclick="switchLogScale('timeline');"><script>document.write(lang_switchlogscale)</script></button>
+				<button class = "iframebutton" onclick="hidewatermark('timeline');"><script>document.write(lang_source)</script></button>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<!--
+<br><br>
+
+<hr>
+
+<div class = "explain">
+	<p>
+		Verwendungszeitraum von Wortformen sortiert nach Häufigkeitsrang. Per Linksklick öffnet sich ein Popup-Fenster mit der kommaseparierten Wortliste. 
+		Ein Pfeil markiert die früheste (kaḿeńzu⇒) oder späteste (⇒ṅemėrniki) Verwendung des Wortes. Kein Pfeil bedeutet, dass die Verwendung im selben Jahr startete und endete. 
+	</p>
+</div>
+
+<table class="optionmenu" align="center">
+	<tr>
+		<td style="text-align:right;"><script>document.write(lang_frequency)</script></td>
+		<td>
+			<input type="number" value="15000" id="timespanoffset" onchange="updateTimeSpan()">
+		</td>
+	</tr>
+	<tr>
+		<td style="text-align:right;"><script>document.write(lang_count)</script></td>
+		<td>
+			<input type="number" value="1000" id="timespancount" onchange="updateTimeSpan()">
+		</td>
+	</tr>
+</table>
+<div class = "iframediv">
+	<button class = "iframebutton" onclick="embedding('timespan');"><script>document.write(lang_htmlembedding)</script></button>
+	<button class = "iframebutton" onclick="diagrammlink('timespan');"><script>document.write(lang_fullscreen)</script></button>
+	<button class = "iframebutton" onclick="datalink('timespan');"><script>document.write(lang_rawdata)</script></button>
+	<div style="text-align:center;">
+		<iframe class="resized" width="100%" height="475px" id="timespan" scrolling="yes"></iframe>
+	</div>
+	<button class = "iframebutton" onclick="hidewatermark('timespan');"><script>document.write(lang_source)</script></button>
+</div>
+</div>
+-->
+
+<br><br>
+
+<script>
+
+	var switchPrefixsearch = function(){
+		tmp = document.getElementById('prefixsearchCheckBox').checked
+		if(tmp){tmp = 'alphabet'}else{tmp = 'frequency'}
+		autocomplete("wordinput", "prefixsearch.php?limit=30&sortby="+tmp+"&word=", ""); 
+	}
+
+	var threeD = function(iframeid){
+		loading(iframeid)
+		el = document.getElementById(iframeid)
+		if(el.src.includes("3d.html")){
+			el.src=el.src.replace("3d.html",".html")
+		}else{
+			el.src=el.src.replace(".html","3d.html")
+		}
+	}
+	
+	
+	var linreg = function(iframeid){
+		loading(iframeid)
+		tmp = document.getElementById("wordinput").value.trim()
+		if(tmp.length>0){
+			if(document.getElementById(iframeid).src.includes("timeline.html")){
+				document.getElementById(iframeid).src="linreg_chart.html?data=tokencountperyear.php&token="+tmp+"&sort"
+			}else{
+				document.getElementById(iframeid).src="timeline.html?data=tokencountperyear.php&token="+tmp+"&sort"
+			}
+		}
+	}
+
+	var updateTimelineRegex = function(){
+		loading("timeline")
+		tmp = document.getElementById("regexsearch").value.trim()
+		if(tmp.length>0){
+			document.getElementById("timeline").src="timeline.html?data=regexsearch.php&token="+tmp+"&sort"
+		}
+		document.getElementById('switchlinreg').disabled = true;
+	}
+
+
+	var callDolnoserbski = function(){
+		tmp = document.getElementById("wordinput").value.trim()
+		if(tmp.length>0){
+			window.open("https://dolnoserbski.de/ortografija/slownik?wuraz="+tmp, "_blank")
+		}
+	}
+
+	var switchpercenttimeline  = function(elid){
+		tmp = document.getElementById(elid)
+		url = tmp.src.replaceAll("sum.html",".html").replaceAll('linreg_chart','timeline')
+		if(url.includes("percenttimeline")){
+			tmp.src = url.replace("percenttimeline","timeline")
+		}else{
+			tmp.src = url.replace("timeline","percenttimeline")
+		}
+	}
+
+	var addWordToList = function(){
+		tmp = document.getElementById("wordinput").value.trim()
+		tmp2 = document.getElementById("wordlist").value.trim()
+		str = ""
+		if(tmp.length>0){
+			if(tmp2.length>0){str = ","}
+			str = tmp2+str+tmp
+			document.getElementById("wordlist").value = str
+			updateTimelineWordList()
+		}
+	}
+
+	var updateTimelineWordList = function(){
+		loading("timeline")
+		tmp = document.getElementById("wordlist").value.trim()
+		if(tmp.length>0){
+			document.getElementById("timeline").src="timeline.html?data=tokencountperyear.php&token="+tmp+"&sort"
+		}
+		document.getElementById('switchlinreg').disabled = true;
+	}
+
+	var updateTimeline = function(){
+		tmp = document.getElementById("wordinput").value.trim()
+		if(tmp.length>0){
+			loading("timeline")
+			loading("wordinfo")
+			document.getElementById("timeline").src="timeline.html?data=tokencountperyear.php&token="+tmp+"&sort"
+			document.getElementById("wordinfo").src="wordinfo.html?data=token2lemma.php&token="+tmp
+			document.title="Word "+tmp
+			document.getElementById('switchlinreg').disabled = false;
+		}
+	}
+		
+	curword = getQueryVariable('word')
+	if(curword.length>0){
+		document.getElementById('wordinput').value=curword
+		updateTimeline()
+		document.getElementById("wordinfo").scrollIntoView()
+	}
+	else{
+		document.getElementById('wordinfo').src="error_token.html"
+		document.getElementById('timeline').src="error_token.html"
+	}
+	
+
+	document.title="Wort "+curword
+
+</script>
+
+<br><br>
+
+<script>
+	document.write(footer())
+</script>
+</body>

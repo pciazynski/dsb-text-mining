@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="../../_assets/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body style="text-align:left;">
+<script>
+<!--Async results in Indefinite Loading-->
+
+	var dataset = getQueryVariable('data')
+	var year = getQueryVariable('year')
+	var unique = getQueryVariable('unique')
+	var data_arr = (readTextFile(dataset)).trim("\n").split('\n')
+	
+	var data_arr = data_arr.sort()
+	var str = '<head><link rel="stylesheet" href="../../digilabstyles.css"></head>'
+	if(year.length>0){str+='<strong>'+year+'</strong></br>'}
+	str+='<div>'
+	if(unique === "1"){
+		var unique_arr = []
+		for (var i = 0; i < data_arr.length; i++) {
+			var itemarr = data_arr[i].trim().split(sep)
+			if(itemarr[1] === year || year.length==0){
+				var item = itemarr[0]
+				if (!unique_arr.includes(item)){
+					var onclickfun = "parent.itemclick('"+item+"')"
+					str+= '<span class="clickabletoken" onclick = "'+onclickfun+'">'+item+'</span> '
+					unique_arr.push(item)
+				}
+			}
+		}
+	}
+	else{
+		for (var i = 0; i < data_arr.length; i++) {
+			var itemarr = data_arr[i].trim().split(sep)
+			if(itemarr[1] === year || year.length==0){
+				var item = itemarr[0]
+				var onclickfun = "parent.itemclick('"+item+"')"
+				str+= '<span class="clickabletoken" onclick = "'+onclickfun+'">'+item+'</span> '
+			}
+		}
+	}
+	str += '</div>';
+	document.write(str)
+	data_arr = ""
+	str = ""
+	document.title = dataset
+	
+</script>
+</body>
