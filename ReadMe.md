@@ -10,7 +10,7 @@ See https://bitbucket.org/dhdigilab/dsb-text-mining/src/main/LICENSE.txt
 
 ## Zitation ##
 
-Tiepmar, J. Niedersorbisches Text Mining. Sorbisches Institut e.V, 2026. 
+Tiepmar, J. Niedersorbisches Text Mining. Sorbisches Institut e.V, 2026. Sorbisches Institut e.V. https://doi.org/10.5281/zenodo.20506485
 
 ## Installation ##
 
