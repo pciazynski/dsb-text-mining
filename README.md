@@ -38,25 +38,25 @@ against those generated artifacts.
 
 ## Installation
 
-0. You need as well: `sudo apt install -y php8.3-sqlite3`
+The project has two independent stages: a one-time **build** that generates
+`data/`, and a **serve** stage that exposes the digilab over HTTP. The serve
+stage can be run either with the PHP built-in server (for local development) or
+behind a real web server (for deployment).
 
-1. Clone this fork.
+### Prerequisites
 
-```bash
-git clone https://github.com/pciazynski/dsbwortschatz.git
-```
+- Python 3
+- PHP 8.x with PDO SQLite (e.g. `sudo apt install -y php8.3-sqlite3`)
 
-2. Put the project in a PHP-capable web server directory and enter it.
+### 1. Build the data (required for both modes)
 
-```bash
-cd [www-Ordner]/dsbwortschatz
-```
-
-3. Run the setup script with the CTS namespace you want to build. The optional
-   second argument limits the number of documents processed, which is useful for
-   a first test run.
+Clone the repository and run the setup script with the CTS namespace you want
+to build. The optional second argument limits the number of documents
+processed, which is useful for a first test run.
 
 ```bash
+git clone https://github.com/pciazynski/dsb-text-mining.git
+cd dsb-text-mining
 python3 setup.py dsb
 # or, for a smaller test build:
 python3 setup.py dsb 50
@@ -66,10 +66,27 @@ The default `dsb` namespace is resolved through `https://urncts.eu`. If
 `urnlist.txt` exists, the scripts use it as the document list instead of asking
 the endpoint for the full inventory.
 
-4. Open the digilab in the browser at `[host]/dsbwortschatz`.
+The generated `data/` directory must remain alongside the PHP and frontend
+files for the interface to work.
 
-The generated `data/` directory must be present on the server for the interface
-to work. The PHP endpoints also require PDO SQLite support.
+### 2a. Run locally (development)
+
+From the project root, start the PHP built-in server using the bundled router
+and open the digilab in the browser.
+
+```bash
+php -S 127.0.0.1:8000 router.php
+```
+
+Then open `http://127.0.0.1:8000/`. `router.php` is only needed here — it
+handles the directory-redirect behavior that the built-in server lacks.
+
+### 2b. Deploy (production)
+
+Place the project directory inside the document root of a PHP-capable web
+server (Apache, nginx + PHP-FPM, etc.) and serve it as static content with PHP
+handling for `.php` files. `router.php` is not used in this mode; a real web
+server handles directory indexes and routing on its own.
 
 ## License And Attribution
 
@@ -96,8 +113,8 @@ This repository is a modified fork of the following original work.
 ### Fork Maintainer
 
 - Name: Piotr Ciążyński / Pětš Śěžyński
-- Fork URL: https://github.com/pciazynski/dsbwortschatz
-- Modified since: 2026-04-28 (but sometimes synced to the upstream)
+- Fork URL: https://github.com/pciazynski/dsb-text-mining
+- Modified since: 2026-04-28 (but sometimes synced from the upstream)
 
 ### Modification Log
 
