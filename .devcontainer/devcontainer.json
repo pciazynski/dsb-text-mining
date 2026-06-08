@@ -1,0 +1,51 @@
+{
+  "name": "PHP / Python / JS Sandbox",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly",
+    "source=php-python-js-history,target=/commandhistory,type=volume"
+  ],
+  "remoteEnv": {
+    "HISTFILE": "/commandhistory/.bash_history"
+  },
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "postCreateCommand": "git config --global safe.directory /workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "ms-python.python",
+        "ms-python.pylance",
+        "ms-python.black-formatter",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ecmel.vscode-html-css",
+        "ritwickdey.LiveServer",
+        "editorconfig.editorconfig"
+      ],
+      "settings": {
+        "php.validate.executablePath": "/usr/bin/php",
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "editor.formatOnSave": true,
+        "[php]": {
+          "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+        },
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[html]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
+      }
+    }
+  }
+}
