@@ -55,7 +55,7 @@
 		</td>
 		<td>
 			<div class="autocomplete">
-				<input style="width:70%" id="lemma" type="text"> 
+				<input style="width:70%" id="lemma" type="text" onkeydown="if(event.key === 'Enter'){updateTree();}"> 
 				<button onclick = "updateTree()"><script>document.write(lang_enter)</script></button> 
 			</div>
 			<script>
@@ -71,7 +71,7 @@
 			<script>document.write(lang_list)</script>
 		</td>
 		<td>
-			<input style="width:70%" id="lemmalist" type="text" onchange = "">
+			<input style="width:70%" id="lemmalist" type="text" onchange = "" onkeydown="if(event.key === 'Enter'){updateTreeFromList();}">
 			<button onclick = "updateTreeFromList()"><script>document.write(lang_enter)</script></button> 
 		</td>
 		<td>
@@ -81,7 +81,7 @@
 	<tr>
 		<td style="text-align:right;">Regex</td>
 		<td>
-			<input style="width:70%" id="lemmaregex" type="text" placeholder="" onchange = "">
+			<input style="width:70%" id="lemmaregex" type="text" placeholder="" onchange = "" onkeydown="if(event.key === 'Enter'){updateTreeFromRegex();}">
 			<button onclick = "updateTreeFromRegex()"><script>document.write(lang_enter)</script></button> 
 		</td>
 		<td>

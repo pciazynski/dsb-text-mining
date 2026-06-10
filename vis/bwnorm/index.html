@@ -42,7 +42,7 @@
 		<td style="text-align:center;"><script>document.write(lang_searchitem)</script></td>
 		<td>
 			<div class="autocomplete">
-				<input style="width:60%" id="norm" type="text"> 
+				<input style="width:60%" id="norm" type="text" onkeydown="if(event.key === 'Enter'){updateTimeline();}"> 
 				<button onclick = "updateTimeline()"><script>document.write(lang_ambigsearch)</script></button> 
 			</div>
 			<script>
@@ -56,7 +56,7 @@
 		<td style="text-align:center;">Regex</td>
 		<td>
 			<div>
-				<input style="width:70%" id="regexsearch" type="text" placeholder="^ und $ werden angefügt" onchange = "">
+				<input style="width:70%" id="regexsearch" type="text" placeholder="^ und $ werden angefügt" onchange = "" onkeydown="if(event.key === 'Enter'){updateTimelineRegex();}">
 				<button onclick = "updateTimelineRegex()"><script>document.write(lang_enter)</script></button> 
 			</div>
 		</td>
@@ -67,7 +67,7 @@
 		<td style="text-align:center;"><script>document.write(lang_list)</script></td>
 		<td>
 			<div>
-				<input style="width:70%" id="normlist" type="text" onchange = "">
+				<input style="width:70%" id="normlist" type="text" onchange = "" onkeydown="if(event.key === 'Enter'){updateTimelineList();}">
 				<button onclick = "updateTimelineList()"><script>document.write(lang_enter)</script></button> 
 			</div>
 		</td>

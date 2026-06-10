@@ -19,7 +19,7 @@
 	<tr>
 		<td style="text-align:center;"><script>document.write(lang_characters)</script></td>
 		<td>
-			<input style="width:70%" id="charinput" type="text" placeholder="Single Character">
+			<input style="width:70%" id="charinput" type="text" placeholder="Single Character" onkeydown="if(event.key === 'Enter'){updateTimeline();}">
 			<button onclick = "updateTimeline()"><script>document.write(lang_enter)</script></button>
 		</br>
 		<script>document.write(lang_redirect)</script> <button onclick = "addToList()">&#10149;<script>document.write(lang_list)</script></button></td>
@@ -34,7 +34,7 @@
 		<td style="text-align:center;"><script>document.write(lang_list)</script></td>
 		<td>
 			<div class="autocomplete">
-				<input style="width:70%" id="charlistinput" type="text" placeholder="Comma Separated" onchange = "">
+				<input style="width:70%" id="charlistinput" type="text" placeholder="Comma Separated" onchange = "" onkeydown="if(event.key === 'Enter'){updateTimelineList();}">
 				<button onclick = "updateTimelineList()"><script>document.write(lang_enter)</script></button> 
 			</div>
 		</td>
