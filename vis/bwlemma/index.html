@@ -312,9 +312,9 @@
 			loading("timeline")
 			loading("lemmagroup")
 			loading("tokengroup")
-			document.getElementById("timeline").src="timeline.html?data=lemmaregexsearch.php&lemma="+curitem+"&sort&focus="+focus
-			document.getElementById("lemmagroup").src="lemmalist.html?data=lemmaregexgroup.php&lemma="+curitem+"&sort"
-			document.getElementById("tokengroup").src="tokenlist.html?data=lemmaregex2token.php&lemma="+curitem+"&sort"
+			document.getElementById("timeline").src="timeline.html?data=lemmaregexsearch.php&lemma="+encodeURIComponent(curitem)+"&sort&focus="+focus
+			document.getElementById("lemmagroup").src="lemmalist.html?data=lemmaregexgroup.php&lemma="+encodeURIComponent(curitem)+"&sort"
+			document.getElementById("tokengroup").src="tokenlist.html?data=lemmaregex2token.php&lemma="+encodeURIComponent(curitem)+"&sort"
 			document.title=lang_lemmafy+" "+curitem
 			document.getElementById('docref').src = 'error_docref.html'
 			document.getElementById('traviz').src = 'error_docref.html'

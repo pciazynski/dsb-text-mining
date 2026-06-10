@@ -5,7 +5,7 @@ header('Content-Type: text/plain');
 
 if (strlen($token)>=1){
 	function _sqliteRegexp($pattern,$string) {
-		(preg_match("/^".$pattern."$/", $string)) ? $hit = true : $hit =  false;
+		(preg_match("/^" . $pattern . "$/u", $string) === 1) ? $hit = true : $hit = false;
 		return $hit;
 	}
 	

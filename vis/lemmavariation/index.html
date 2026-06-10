@@ -202,9 +202,9 @@
 		if(curlemma.length>0){
 			loading("tree")
 			if(document.getElementById('weight').checked){weight='&weight'}else{weight=""}
-			document.getElementById('tree').src='lemmatree_dagre.html?data=lemmatokenregex.php&sort&lemma='+curlemma+weight
-			document.getElementById('sunburst').src='sunburst.html?data=lemmatokenregex.php&sort&lemma='+curlemma+weight
-			document.getElementById('traviz').src='traviz.html?data=lemmatokenregex.php&sort&lemma='+curlemma+weight
+			document.getElementById('tree').src='lemmatree_dagre.html?data=lemmatokenregex.php&sort&lemma='+encodeURIComponent(curlemma)+weight
+			document.getElementById('sunburst').src='sunburst.html?data=lemmatokenregex.php&sort&lemma='+encodeURIComponent(curlemma)+weight
+			document.getElementById('traviz').src='traviz.html?data=lemmatokenregex.php&sort&lemma='+encodeURIComponent(curlemma)+weight
 			document.title=curlemma+" Lemmabaum"
 		}
 	}

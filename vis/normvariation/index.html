@@ -176,8 +176,8 @@
 		if(curnorm.length>0){
 			loading("tree")
 			if(document.getElementById('weight').checked){weight='&weight'}else{weight=""}
-			document.getElementById('tree').src='normtree_dagre.html?data=normtokenregex.php&sort&norm='+curnorm+weight
-			document.getElementById('traviz').src='traviz.html?data=normtokenregex.php&sort&norm='+curnorm+weight
+			document.getElementById('tree').src='normtree_dagre.html?data=normtokenregex.php&sort&norm='+encodeURIComponent(curnorm)+weight
+			document.getElementById('traviz').src='traviz.html?data=normtokenregex.php&sort&norm='+encodeURIComponent(curnorm)+weight
 			document.getElementById('tokeninfo').src = 'error_token.html'
 			document.getElementById('timeline').src = 'error_token.html'
 		}

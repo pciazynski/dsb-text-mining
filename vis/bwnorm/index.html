@@ -332,9 +332,9 @@
 			loading("timeline")
 			loading("normgroup")
 			loading("tokengroup")
-				document.getElementById("timeline").src="timeline.html?data=normregexsearch.php&norm="+curitem+"&sort&focus="+focus
-				document.getElementById("normgroup").src="normlist.html?data=normregexgroup.php&norm="+curitem+"&sort"
-				document.getElementById("tokengroup").src="tokenlist.html?data=normregex2token.php&norm="+curitem+"&sort"
+				document.getElementById("timeline").src="timeline.html?data=normregexsearch.php&norm="+encodeURIComponent(curitem)+"&sort&focus="+focus
+				document.getElementById("normgroup").src="normlist.html?data=normregexgroup.php&norm="+encodeURIComponent(curitem)+"&sort"
+				document.getElementById("tokengroup").src="tokenlist.html?data=normregex2token.php&norm="+encodeURIComponent(curitem)+"&sort"
 			document.getElementById('docref').src = 'error_docref.html'
 			document.getElementById('traviz').src = 'error_docref.html'
 			document.title=lang_normify+" "+curitem

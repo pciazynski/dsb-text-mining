@@ -184,7 +184,7 @@
 		loading("timeline")
 		tmp = document.getElementById("regexsearch").value.trim()
 		if(tmp.length>0){
-			document.getElementById("timeline").src="timeline.html?data=regexsearch.php&token="+tmp+"&sort"
+			document.getElementById("timeline").src="timeline.html?data=regexsearch.php&token="+encodeURIComponent(tmp)+"&sort"
 		}
 		document.getElementById('switchlinreg').disabled = true;
 	}

@@ -4,7 +4,7 @@ header('Content-Type: text/plain');
 if (isset($_GET['norm'])){
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
 	function _sqliteRegexp($pattern,$string) {
-		(preg_match("/^".$pattern."$/", $string)) ? $hit = true : $hit =  false;
+		(preg_match("/^" . $pattern . "$/u", $string) === 1) ? $hit = true : $hit = false;
 		return $hit;
 	}
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
