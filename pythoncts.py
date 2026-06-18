@@ -99,7 +99,7 @@ def cts_requestFromCts(requesturl):
     cts_lastURL = thisurl + requesturl
     print(cts_lastURL)
     try:
-        data = urlopen(cts_lastURL)
+        data = urlopenWithRetry(cts_lastURL)
         for line in data:
             res += line.decode("utf-8")
     except:
