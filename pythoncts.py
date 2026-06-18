@@ -5,9 +5,9 @@ ctsurl = ""
 oldns = ""
 manualurl = ""
 
-RETRIES = 5
-RETRY_WAIT_SECONDS = 3
-REQUEST_TIMEOUT_SECONDS = 30
+RETRIES = 10
+RETRY_WAIT_SECONDS = 5
+REQUEST_TIMEOUT_SECONDS = 60*5
 
 
 def urlopenWithRetry(
