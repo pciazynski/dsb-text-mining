@@ -11,7 +11,7 @@ if (isset($_GET['norm'])){
 	
 	$PDO = new PDO('sqlite:../data/normmapping.db');
 	(isset($_GET['exact'])) ? $regexp = '\|'.$_GET['norm'].'\|' : $regexp = '.*\|'.$_GET['norm'].'\|.*';
-	$query = 'SELECT * FROM tokennormtypesubtypedatefrequency WHERE norm REGEXP "'.$regexp.'" LIMIT 2100000';
+	$query = 'SELECT * FROM tokennormtypesubtypedatefrequency WHERE norm REGEXP ? LIMIT 2100000';
 
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
 
@@ -19,7 +19,9 @@ if (isset($_GET['norm'])){
 	$nl = "\n";
 	$res = '';
 
-	foreach($PDO->query($query.";") as $row){
+	$stmt = $PDO->prepare($query);
+	$stmt->execute([$regexp]);
+	foreach($stmt as $row){
 		$res.=$row['norm'].$tab.$row['date'].$tab.$row['frequency'].$tab.$row['token'].$nl;
 	}
 	print($res);

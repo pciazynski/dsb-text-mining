@@ -9,14 +9,16 @@ if (isset($_GET['lemma'])){
 	}
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
 	(isset($_GET['exact'])) ? $regexp = '\|'.$_GET['lemma'].'\|' : $regexp = '.*\|'.$_GET['lemma'].'\|.*';
-	$query = 'SELECT lemma, token, SUM(frequency) as sumfreq FROM tokenlemmatypesubtypedatefrequency WHERE lemma REGEXP "'.$regexp.'"';
+	$query = 'SELECT lemma, token, SUM(frequency) as sumfreq FROM tokenlemmatypesubtypedatefrequency WHERE lemma REGEXP ?';
 	(isset($_GET['year'])) ? $query .= ' AND date '.$_GET['year'] : NULL;
 	$query.=' GROUP BY token,lemma';
 	(isset($_GET['sort'])) ? $query .= ' ORDER BY sumfreq DESC' : NULL;
 	$tab = "\t";
 	$nl = "\n";
 	$res = '';
-	foreach($PDO->query($query."  LIMIT 2100000;") as $row){
+	$stmt = $PDO->prepare($query."  LIMIT 2100000;");
+	$stmt->execute([$regexp]);
+	foreach($stmt as $row){
 		$res.=$row['lemma'].$tab.$row['token'].$tab.$row['sumfreq'].$nl;
 	}
 	print($res);

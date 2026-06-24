@@ -10,7 +10,7 @@ if (isset($_GET['lemma'])){
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
 	(isset($_GET['exact'])) ? $regexp = '\|'.$_GET['lemma'].'\|' : $regexp = '.*\|'.$_GET['lemma'].'\|.*';
-	$query = 'SELECT lemma, sum(frequency) as sumfreq FROM tokenlemmatypesubtypedatefrequency WHERE lemma REGEXP "'.$regexp.'" GROUP BY lemma ';
+	$query = 'SELECT lemma, sum(frequency) as sumfreq FROM tokenlemmatypesubtypedatefrequency WHERE lemma REGEXP ? GROUP BY lemma ';
 
 	(isset($_GET['sort'])) ? $query .= ' ORDER BY sumfreq DESC' : NULL;
 
@@ -18,7 +18,9 @@ if (isset($_GET['lemma'])){
 	$nl = "\n";
 	$res = '';
 
-	foreach($PDO->query($query.';') as $row){
+	$stmt = $PDO->prepare($query);
+	$stmt->execute([$regexp]);
+	foreach($stmt as $row){
 		$res.=$row['lemma'].$tab.$row['sumfreq'].$nl;
 	}
 	print($res);

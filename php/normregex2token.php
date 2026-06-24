@@ -9,7 +9,7 @@ if (isset($_GET['norm'])){
 	}
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
 	(isset($_GET['exact'])) ? $regexp = '\|'.$_GET['norm'].'\|' : $regexp = '.*\|'.$_GET['norm'].'\|.*';
-	$query = 'SELECT norm, token, SUM(frequency) as sumfreq FROM tokennormtypesubtypedatefrequency WHERE norm REGEXP "'.$regexp.'"  LIMIT 2100000';
+	$query = 'SELECT norm, token, SUM(frequency) as sumfreq FROM tokennormtypesubtypedatefrequency WHERE norm REGEXP ?  LIMIT 2100000';
 	(isset($_GET['year'])) ? $query .= ' AND date '.$_GET['year'] : NULL;
 	$query.=' GROUP BY token,norm';
 	(isset($_GET['sort'])) ? $query .= ' ORDER BY sumfreq DESC' : NULL;
@@ -17,7 +17,9 @@ if (isset($_GET['norm'])){
 	$nl = "\n";
 	$res = '';
 
-	foreach($PDO->query($query.";") as $row){
+	$stmt = $PDO->prepare($query);
+	$stmt->execute([$regexp]);
+	foreach($stmt as $row){
 		$res.=$row['norm'].$tab.$row['token'].$tab.$row['sumfreq'].$nl;
 	}
 	print($res);
