@@ -10,7 +10,7 @@ if (isset($_GET['lemma'])){
 	}
 	
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
-	(isset($_GET['exact'])) ? $regexp = '\|'.$_GET['lemma'].'\|' : $regexp = '.*\|'.$_GET['lemma'].'\|.*';
+	(isset($_GET['exact']) and $_GET['exact'] !== '0') ? $regexp = '\|'.$_GET['lemma'].'\|' : $regexp = '.*\|'.$_GET['lemma'].'\|.*';
 	$query = 'SELECT * FROM tokenlemmatypesubtypedatefrequency WHERE lemma REGEXP ? LIMIT 2100000';
 
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
