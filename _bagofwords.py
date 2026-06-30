@@ -4,6 +4,7 @@ import shutil
 import sqlite3
 from config import *
 from pythoncts import *
+from dsb_collation import dsb_sortkey
 
 doc_year = {}
 tokensumperyear = {}
@@ -160,7 +161,7 @@ def initTables():
     con = sqlite3.connect("data/bagofwords.db")
     cursor = con.cursor()
     cursor.execute("CREATE TABLE tokendatecount(token VARCHAR (50),date DATE,frequency INTEGER);")
-    cursor.execute("CREATE TABLE tokencount(token VARCHAR (50),frequency INTEGER);")
+    cursor.execute("CREATE TABLE tokencount(token VARCHAR (50),frequency INTEGER,sortkey TEXT);")
     cursor.execute("CREATE TABLE urndatewordbag(urn VARCHAR (50),date DATE,wordbag text);")
     con.commit()
     con.close()
@@ -170,6 +171,7 @@ def index():
     cursor = con.cursor()
     print("Indexing...")
     cursor.execute("CREATE INDEX tokenindex ON tokencount(token);")
+    cursor.execute("CREATE INDEX tokensortkeyindex ON tokencount(sortkey);")
     cursor.execute("CREATE INDEX tokendateindex ON tokendatecount(token);")
     cursor.execute("CREATE INDEX dateindex ON tokendatecount(date);")
     cursor.execute("CREATE INDEX tokenurnindex ON urndatewordbag(urn);")
@@ -193,8 +195,8 @@ def db():
         for line in inf.readlines():
             if len(line.strip())>0:
                 linearr = line.split("\t")
-                vals = '"'+linearr[0]+'",'+linearr[1]
-                query="INSERT INTO tokencount(token,frequency) VALUES("+vals+")"
+                vals = '"'+linearr[0]+'",'+linearr[1].strip()+',"'+dsb_sortkey(linearr[0])+'"'
+                query="INSERT INTO tokencount(token,frequency,sortkey) VALUES("+vals+")"
                 cursor.execute(query)
     con.commit()
     

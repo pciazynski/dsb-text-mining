@@ -4,6 +4,7 @@ import shutil
 import sqlite3
 from config import *
 from pythoncts import *
+from dsb_collation import dsb_sortkey
 
 normbag = {}
 bagofwords = {}
@@ -156,12 +157,14 @@ def index():
     cursor.execute("CREATE INDEX subtypeindex ON tokennormtypesubtypedatefrequency(subtype);")
     cursor.execute("CREATE INDEX dateindex ON tokennormtypesubtypedatefrequency(date);")
     cursor.execute("CREATE INDEX normfrequencyindex ON normfrequency(norm);")
+    cursor.execute("CREATE INDEX normfrequencysortkeyindex ON normfrequency(sortkey);")
     cursor.execute("CREATE INDEX normtokenindex ON normtokenfrequency(norm);")
     cursor.execute("CREATE INDEX normtokentokenindex ON normtokenfrequency(token);")
     cursor.execute("CREATE INDEX normurnindex ON urndatenormbag(urn);")
     cursor.execute("CREATE INDEX urnindex ON urndatenormbag(normbag);")
     cursor.execute("CREATE INDEX urndateindex ON urndatenormbag(date);")
     cursor.execute("CREATE INDEX normnonambignorm ON normnonambig(norm);")
+    cursor.execute("CREATE INDEX normnonambigsortkey ON normnonambig(sortkey);")
     con.commit()
     con.close()
     
@@ -173,9 +176,9 @@ def initTables():
     cursor.execute("CREATE TABLE urndatenormbag(urn VARCHAR (50),date DATE,normbag text);")
     cursor.execute("CREATE TABLE tokennormtypesubtypedatefrequency(token VARCHAR ("+str(tokenlength)+"),norm VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),date DATE,frequency INTEGER);")
     cursor.execute("CREATE TABLE tokennormtypesubtypefrequency(token VARCHAR ("+str(tokenlength)+"),norm VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),frequency INTEGER);")
-    cursor.execute("CREATE TABLE normfrequency(norm VARCHAR (50),frequency INTEGER);")
+    cursor.execute("CREATE TABLE normfrequency(norm VARCHAR (50),frequency INTEGER,sortkey TEXT);")
     cursor.execute("CREATE TABLE normtokenfrequency(norm VARCHAR (50),token VARCHAR ("+str(tokenlength)+"),frequency INTEGER);")
-    cursor.execute("CREATE TABLE normnonambig(norm VARCHAR (50),frequency INTEGER);")
+    cursor.execute("CREATE TABLE normnonambig(norm VARCHAR (50),frequency INTEGER,sortkey TEXT);")
     con.commit()
     con.close()
     
@@ -221,8 +224,8 @@ def db():
         for line in inf.readlines():
             if len(line.strip())>0:
                 linearr = line.split("\t")
-                vals = '"'+linearr[0]+'",'+linearr[1].strip()
-                query="INSERT INTO normfrequency(norm,frequency) VALUES("+vals+")"
+                vals = '"'+linearr[0]+'",'+linearr[1].strip()+',"'+dsb_sortkey(linearr[0].strip("|"))+'"'
+                query="INSERT INTO normfrequency(norm,frequency,sortkey) VALUES("+vals+")"
                 cursor.execute(query)
         con.commit()
     files = sorted(os.listdir("data/normmapping"))
@@ -240,8 +243,8 @@ def db():
                         wb_nonambig[norm] = int(linearr[1])
                     
     for norm in wb_nonambig:
-        vals = '"|'+norm+'|",'+str(wb_nonambig[norm])
-        query="INSERT INTO normnonambig(norm,frequency) VALUES("+vals+")"
+        vals = '"|'+norm+'|",'+str(wb_nonambig[norm])+',"'+dsb_sortkey(norm)+'"'
+        query="INSERT INTO normnonambig(norm,frequency,sortkey) VALUES("+vals+")"
         cursor.execute(query)
     con.commit()
 

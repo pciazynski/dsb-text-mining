@@ -4,23 +4,33 @@ header('Content-Type: text/plain');
 (isset($_GET['word'])) ? $word = $_GET['word'] :  $word = '';
 
 if (strlen($word)>=1){
-	(isset($_GET['limit'])) ? $limit = $_GET['limit'] : $limit = 100;
+	(isset($_GET['limit'])) ? $limit = (int)$_GET['limit'] : $limit = 100;
 	(isset($_GET['cutoff'])) ? $cutoff = ' GROUP BY SUBSTRING(word,0,'.strlen($word)+$_GET['cutoff'].')' : $cutoff = "";
+
 	if(isset($_GET['sortby'])){
-		($_GET['sortby'] =='alphabet') ? $sortby = ' ORDER BY token ASC' :  $sortby = ' ORDER BY '.$_GET['sortby'] .' DESC';
+		if($_GET['sortby'] == 'alphabet'){
+			# Ordered by the precomputed Lower Sorbian collation key (built in Python),
+			# so SQL can apply the correct order via index and LIMIT directly.
+			$sortby = ' ORDER BY sortkey ASC';
+			$sqlLimit = ' LIMIT '.$limit;
+		}else{
+			$sortby = ' ORDER BY '.$_GET['sortby'] .' DESC';
+			$sqlLimit = ' LIMIT '.$limit;
+		}
 	}else{
 		$sortby = '';
+		$sqlLimit = ' LIMIT '.$limit;
 	}
 
 	$PDO = new PDO('sqlite:../data/bagofwords.db');
-	$query = 'SELECT DISTINCT token FROM tokencount WHERE token LIKE "'.$word.'%"'.$cutoff.$sortby.' LIMIT '.$limit;
+	$query = 'SELECT DISTINCT token FROM tokencount WHERE token LIKE "'.$word.'%"'.$cutoff.$sortby.$sqlLimit;
 
 	$nl = "\n";
-	$res = '';
-	
+	$tokens = array();
 	foreach($PDO->query($query.';') as $row){
-		$res.=$row['token'].$nl;
+		$tokens[] = $row['token'];
 	}
-	print($res);
+
+	print(implode($nl, $tokens).(count($tokens) ? $nl : ''));
 }
 ?>

@@ -3,7 +3,6 @@
 Short actionable list. See dev-notes-2026-06-24.md for context and rationale.
 
 ## Search behavior and consistency
-- Decide correct DB for norm regex group/token endpoints.
 - Standardize exact semantics (`exact=1` exact, `exact=0` ambiguous).
 - Roll standardized exact handling to sibling non-regex endpoints.
 - Decide whether ambiguous-regex matching should also apply to bwword regex endpoints.
