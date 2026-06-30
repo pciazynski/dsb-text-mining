@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-30
+
+### Wortformen sorting label clarified
+On the **Wortformen** page, the alphabetical suggestion mode is now explicitly
+labeled as **Unicode** sorting for user clarity.
+
+### Search suggestions are now better and faster
+Prefix suggestions now use proper Lower Sorbian ordering and are generated
+faster in the database. Pressing Enter on a highlighted suggestion now also
+selects that suggestion reliably.
+
+### Norm regex search now uses the correct data source
+Norm regex token/group endpoints now read from the norm database (not lemma
+database), so Norm results are consistent.
+
+### Unused suffix endpoints removed
+Unused suffix search PHP endpoints were removed as cleanup. No UI change is
+expected.
+
+**Manual browser test (quick)**
+- Open the search page with autocomplete (for example Wortformen/Lemma/Norm).
+- Type a prefix like `z`, press Arrow Down to highlight a suggestion, then
+  press Enter.
+- Expected: the highlighted suggestion is inserted and used, and suggestions
+  appear in Lower Sorbian alphabet order.
+
 ## 2026-06-24
 
 ### Regex search now also finds ambiguous spellings
