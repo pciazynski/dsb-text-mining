@@ -9,9 +9,8 @@ if (strlen($word)>=1){
 
 	if(isset($_GET['sortby'])){
 		if($_GET['sortby'] == 'alphabet'){
-			# Ordered by the precomputed Lower Sorbian collation key (built in Python),
-			# so SQL can apply the correct order via index and LIMIT directly.
-			$sortby = ' ORDER BY sortkey ASC';
+			# Wortformen: alphabet mode uses Unicode token order (not dsb sortkey).
+			$sortby = ' ORDER BY token ASC';
 			$sqlLimit = ' LIMIT '.$limit;
 		}else{
 			$sortby = ' ORDER BY '.$_GET['sortby'] .' DESC';

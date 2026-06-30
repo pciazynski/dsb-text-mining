@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/plain');
+require_once __DIR__.'/dsb_collation.php';
 
 (isset($_GET['lemma'])) ? $lemma = $_GET['lemma'] : NULL;
 
@@ -11,11 +12,13 @@ if (strlen($lemma)>=1){
 	(isset($_GET['limit'])) ? $limit = (int)$_GET['limit'] : $limit = 100;
 	(isset($_GET['cutoff'])) ? $cutoff = ' GROUP BY SUBSTRING(lemma,1,'.strlen($lemma)+$_GET['cutoff'].')' : $cutoff = '';
 	(isset($_GET['ambig'])) ? $dbname = 'lemmafrequency':$dbname = 'lemmanonambig';
+	$where = ' WHERE lemma LIKE "|'.$lemma.'%"';
 
 	if(isset($_GET['sortby'])){
 		if($_GET['sortby'] == 'alphabet'){
-			# Ordered by the precomputed Lower Sorbian collation key (built in Python),
-			# so SQL can apply the correct order via index and LIMIT directly.
+			$sortkeyPrefix = dsb_sortkey($lemma);
+			# Prefix filter on sortkey keeps modern dsb alphabet sorting fast on large ranges.
+			$where .= ' AND sortkey LIKE "'.$sortkeyPrefix.'%"';
 			$sortby = ' ORDER BY sortkey ASC';
 			$sqlLimit = ' LIMIT '.$limit;
 		}else{
@@ -27,7 +30,7 @@ if (strlen($lemma)>=1){
 		$sqlLimit = ' LIMIT '.$limit;
 	}
 
-	$query = 'SELECT DISTINCT lemma FROM '.$dbname.' WHERE lemma LIKE "|'.$lemma.'%"'.$cutoff.$sortby.$sqlLimit;
+	$query = 'SELECT DISTINCT lemma FROM '.$dbname.$where.$cutoff.$sortby.$sqlLimit;
 
 	$nl = "\n";
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
