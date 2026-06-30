@@ -40,10 +40,15 @@ function autocomplete(input, datasource, functioncall) {
 		currentFocus--;
 		addActive(x);
 	}else if (e.keyCode == 13) {
-		//ENTER, simulate a click on "active"
-		if (currentFocus > -1) {if (x) x[currentFocus].click();}
+		//ENTER, select the highlighted suggestion before the page search handler runs
+		if (currentFocus > -1 && x && x[currentFocus]) {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			x[currentFocus].click();
+			return;
+		}
 	}
-});
+}, true);
 
 /*a function to classify an item as "active":*/
 function addActive(x) {
