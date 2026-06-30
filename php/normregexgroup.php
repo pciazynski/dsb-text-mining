@@ -7,7 +7,7 @@ if (isset($_GET['norm'])){
 		return $hit;
 	}
 	
-	$PDO = new PDO('sqlite:../data/lemmamapping.db');
+	$PDO = new PDO('sqlite:../data/normmapping.db');
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
 	(isset($_GET['exact']) and $_GET['exact'] !== '0') ? $regexp = '\|'.$_GET['norm'].'\|' : $regexp = '.*\|'.$_GET['norm'].'\|.*';
 	$query = 'SELECT norm, sum(frequency) as sumfreq FROM tokennormtypesubtypedatefrequency WHERE norm REGEXP ? GROUP BY norm ';

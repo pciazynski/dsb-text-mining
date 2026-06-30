@@ -2,7 +2,7 @@
 header('Content-Type: text/plain');
 
 if (isset($_GET['norm'])){
-	$PDO = new PDO('sqlite:../data/lemmamapping.db');
+	$PDO = new PDO('sqlite:../data/normmapping.db');
 	function _sqliteRegexp($pattern,$string) {
 		(preg_match("/^" . $pattern . "$/u", $string) === 1) ? $hit = true : $hit = false;
 		return $hit;
