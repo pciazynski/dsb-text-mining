@@ -1,6 +1,6 @@
 # Project-generated datasets and reports
-data/
-doc/
+public/data/
+etl/doc/
 
 # Local runtime/configuration files
 config.py

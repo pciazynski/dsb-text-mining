@@ -1,0 +1,6 @@
+[project]
+name = "dsb-text-mining"
+version = "0.1.0"
+description = "Lower Sorbian text-mining ETL and browser digilab"
+readme = "README.md"
+requires-python = ">=3.10"

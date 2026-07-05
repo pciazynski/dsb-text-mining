@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<script src="../../lib/plotly-latest.min.js"></script>
+	<script src="../../js/datahandler.js"></script>
+	<script src="../../lib/config.js"></script>
+</head>
+
+<body>
+<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+
+	diagramtitle = ""
+	var dataset = getQueryVariable("data")
+	var norm = getQueryVariable("norm")
+	var exact = getQueryVariable("exact")
+	var focus = getQueryVariable("focus")
+	var jitter = getQueryVariable("jitter")
+	if(jitter.length==0){jitter=defjitter}else{jitter = parseFloat(jitter)}
+	if(focus.length==0){focus=0}else{focus = parseInt(focus)}
+	dataset = dataset +"?norm="+norm+"&sort"
+	if(focus==3){diagramtitle = "Token von Normierung "}else{diagramtitle="Normierung "}
+	diagramtitle += norm
+	
+	if(exact==1){dataset+="&exact"}else{diagramtitle += " inkl. ambig"}
+
+	data_arr = readPHP(dataset).split("\n");
+	maxval = 0
+	minval = 10000000
+	
+	date= []
+	count = []
+	hovers = []
+	colors = []
+
+	for (var i = 0; i < data_arr.length; i++) {
+		line = data_arr[i];
+		if(line.length>1){
+			tmp = line.split(sep)
+			if (tmp.length==4){token = ":"+tmp[3]}else{token=""}
+			value = parseInt(tmp[2])
+			jittervalue = value + (jitter*(Math.random()))
+			date.push(tmp[1])
+			count.push(jittervalue)
+			hovers.push(tmp[0]+"("+tmp[1]+")"+token+" "+value)
+			colors.push(getColor(tmp[focus]))
+			if (jittervalue<minval ){minval = jittervalue}
+			if (jittervalue>maxval ) {maxval = jittervalue}
+		}
+	}
+	
+	var data = [{
+		x: date,
+		y: count,
+		name: 'Token Count',
+		hovertemplate: '%{text}',
+		type: 'scatter',
+		mode: "markers",
+		text:hovers,
+		marker: {
+			size:markersize(data_arr.length),
+			color: colors,
+			opaciy:0.2
+		}
+	}];
+
+	var layout = {
+		hovermode:"closest",
+		title:{
+			text:diagramtitle,
+			font:diagramfont
+			},
+		xaxis:{
+			automargin: true,
+			range:[minDate-2,maxDate+2],
+			linewidth: 1,
+			title:{
+				font:diagramfont
+			},
+			tickangle:90,
+			tickfont:diagramfont
+		},
+		yaxis:{
+			automargin: true,
+			type:scale,
+			title:{
+				text: 'Häufigkeit (Abs)',
+				font:diagramfont
+				}
+			},
+		annotations: watermarke()
+	};
+
+	myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+	myPlot = document.getElementById('myDiv')
+	document.title = diagramtitle
+	if(parent.document.getElementById('year') != undefined){
+		myPlot.on('plotly_click', function(data) {
+			yearx=data.points[0].x;
+			parent.document.getElementById("year").disabled = false
+			parent.document.getElementById('year').value = yearx
+			parent.document.getElementById('peryearcheckbox').checked = true
+			parent.updateTravizYear()
+		});
+	}
+	
+
+</script>
+</body>

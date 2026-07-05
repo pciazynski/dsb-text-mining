@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<head>
+	<link rel="stylesheet" href="styles.css">
+	<script src="lib/config.js"></script>
+	<script src="lib/def_language.js"></script>
+	<script src="lib/my_language.js"></script>
+	<script src="js/gui.js"></script>
+</head>
+
+
+<div class="navbar">
+	<a href="#Beschreibung">Beschreibung</a>
+	<a href="#Digilab">Digilab</a>
+</div>
+
+<br><br><br>
+<script>
+function getTodayDate() {
+	var today = new Date();
+	var dd = String(today.getDate()).padStart(2, '0');
+	var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+	var yyyy = today.getFullYear();
+
+	today = dd + '.' + mm + '.' + yyyy;
+	document.write(today);
+}
+</script>
+<br><br><br><br>
+<div class="center">
+	<h1><script>document.write(document.title)</script></h1>
+</div>
+<br>
+<br>
+<p>
+</p>
+
+<a name="Beschreibung"></a><br><br><br>
+<h2>Beschreibung</h2>
+<p>
+Dies ist ein Text Mining System im Rahmen der <a href="https://urncts.eu">Text Service Infrastruktur</a> . 
+<br>
+Die bereitgestellten Analysen entsprechen dem aktuellen Bearbeitungsstand der Tools und des Textkorpus und unterliegen möglicherweise Änderungen.
+</p>
+<ul>
+Weiterführende Links:
+<li>
+<a href = "data/metadata/_all.txt">Included Documents</a>
+</li>
+<script>
+
+document.write('<li><a href = "'+ctsurl.replace("/cts/","/plain/")+'editions.php">Data Source (Text API)</a></li>')
+</script>
+</ul> 
+
+
+<h2>Zitation</h2>
+<p>
+	<script>
+		cit = document.title+". " +wm_title
+		document.write(cit)
+	</script>
+</p>
+
+
+
+<a name="Digilab"></a><br><br><br>
+
+<h2>Digilab</h2>
+<p>
+	<script>
+		document.write(header().replaceAll("../", "vis/"))
+	</script> 
+</p>
+
+<h2>Details</h2>
+
+
+<p style="text-align:center;">
+	<iframe style="width:90%;" src="README.md"></iframe>
+</p>
+
+<br><br><br>
+

@@ -12,28 +12,30 @@ datasets, PHP endpoints expose them over HTTP, and a static frontend renders
 visualizations in the browser.
 
 ```
-CTS Text API  →  Python ETL (_*.py)  →  data/ (TSV + SQLite)  →  PHP (php/*.php)  →  Frontend (index.html, vis/, _assets/, lib/)
+CTS Text API  →  Python ETL (etl/*.py)  →  public/data/ (TSV + SQLite)  →  PHP (public/php/*.php)  →  Frontend (public/index.html, public/vis/, public/js/, public/lib/)
    remote          build-time                generated                read-time              run-time
 ```
 
-1. **Extract.** `setup.py` writes `config.py` from `config_def.py` with the
-   chosen CTS namespace and document count, then runs selected `_*.py` scripts in
-   sequence. `pythoncts.py` resolves the namespace through
+1. **Extract.** `etl/setup.py` writes `etl/config.py` from `etl/config_def.py`
+   with the chosen CTS namespace and document count, then runs selected ETL
+   scripts in sequence. `etl/pythoncts.py` resolves the namespace through
    `https://urncts.eu` and fetches text and metadata from the CTS endpoint.
-2. **Transform.** Each `_*.py` script collects its slice of the corpus
+2. **Transform.** Each ETL script collects its slice of the corpus
    (authors, characters, lemmas, n-grams, collocations, etc.), parses it, and
-   writes intermediate tab-separated files into `data/<topic>/`.
+   writes intermediate tab-separated files into `public/data/<topic>/`.
 3. **Load.** The same scripts then create per-topic SQLite databases in
-   `data/` (for example `data/authors.db`, `data/lemmamapping.db`,
-   `data/ngram3.db`) and add indexes for fast lookups.
-4. **Serve.** The endpoints in `php/` open those SQLite files via PDO and
+   `public/data/` (for example `public/data/authors.db`,
+   `public/data/lemmamapping.db`, `public/data/ngram3.db`) and add indexes for
+   fast lookups.
+4. **Serve.** The endpoints in `public/php/` open those SQLite files via PDO and
    return plain-text TSV responses driven by query parameters.
-5. **Render.** `index.html` and the modules in `vis/` use shared helpers from
-   `_assets/` (notably `datahandler.js`) to fetch PHP responses or raw `.txt`
-   files and render Cytoscape, Plotly, and Traviz visualizations from `lib/`.
+5. **Render.** `public/index.html` and the modules in `public/vis/` use shared
+   helpers from `public/js/` (notably `datahandler.js`) to fetch PHP responses
+   or raw `.txt` files and render Cytoscape, Plotly, and Traviz visualizations
+   from `public/lib/`.
 
 The pipeline is build-once / serve-many: the Python stage is run on the server
-to (re)generate `data/`, and the PHP and frontend stages then operate purely
+to (re)generate `public/data/`, and the PHP and frontend stages then operate purely
 against those generated artifacts.
 
 ## Installation
@@ -57,16 +59,16 @@ processed, which is useful for a first test run.
 ```bash
 git clone https://github.com/pciazynski/dsb-text-mining.git
 cd dsb-text-mining
-python3 setup.py dsb
+python3 etl/setup.py dsb
 # or, for a smaller test build:
-python3 setup.py dsb 50
+python3 etl/setup.py dsb 50
 ```
 
 The default `dsb` namespace is resolved through `https://urncts.eu`. If
 `urnlist.txt` exists, the scripts use it as the document list instead of asking
 the endpoint for the full inventory.
 
-The generated `data/` directory must remain alongside the PHP and frontend
+The generated `public/data/` directory must remain alongside the PHP and frontend
 files for the interface to work.
 
 ### 2a. Run locally (development)
@@ -75,10 +77,10 @@ From the project root, start the PHP built-in server using the bundled router
 and open the digilab in the browser.
 
 ```bash
-php -S 127.0.0.1:8000 router.php
+php -S 127.0.0.1:8000 -t public public/router.php
 ```
 
-Then open `http://127.0.0.1:8000/`. `router.php` is only needed here — it
+Then open `http://127.0.0.1:8000/`. `public/router.php` is only needed here — it
 handles the directory-redirect behavior that the built-in server lacks.
 
 ### 2b. Deploy (production)
