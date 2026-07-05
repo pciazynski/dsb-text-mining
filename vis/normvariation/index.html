@@ -51,7 +51,7 @@
 		</td>
 		<td>
 			<div class="autocomplete">
-				<input style="width:70%" id="norm" type="text"> 
+				<input style="width:70%" id="norm" type="text" onkeydown="if(event.key === 'Enter'){updateTree();}"> 
 				<button onclick = "updateTree()"><script>document.write(lang_enter)</script></button> 
 			</div>
 			<script>
@@ -66,7 +66,7 @@
 	<tr>
 		<td style="text-align:right;"><script>document.write(lang_list)</script></td>
 		<td>
-			<input style="width:70%" id="normlist" type="text" onchange = "">
+			<input style="width:70%" id="normlist" type="text" onchange = "" onkeydown="if(event.key === 'Enter'){updateTreeFromList();}">
 			<button onclick = "updateTreeFromList()"><script>document.write(lang_enter)</script></button> 
 		</td>
 		<td>
@@ -176,8 +176,8 @@
 		if(curnorm.length>0){
 			loading("tree")
 			if(document.getElementById('weight').checked){weight='&weight'}else{weight=""}
-			document.getElementById('tree').src='normtree_dagre.html?data=normtokenregex.php&sort&norm='+curnorm+weight
-			document.getElementById('traviz').src='traviz.html?data=normtokenregex.php&sort&norm='+curnorm+weight
+			document.getElementById('tree').src='normtree_dagre.html?data=normtokenregex.php&sort&norm='+encodeURIComponent(curnorm)+weight
+			document.getElementById('traviz').src='traviz.html?data=normtokenregex.php&sort&norm='+encodeURIComponent(curnorm)+weight
 			document.getElementById('tokeninfo').src = 'error_token.html'
 			document.getElementById('timeline').src = 'error_token.html'
 		}

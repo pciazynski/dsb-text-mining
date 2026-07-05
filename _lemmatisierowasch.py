@@ -5,6 +5,7 @@ import shutil
 import sqlite3
 from config import *
 from pythoncts import *
+from dsb_collation import dsb_sortkey
 
 lemmabag = {}
 bagofwords = {}
@@ -170,12 +171,14 @@ def index():
     cursor.execute("CREATE INDEX subtypeindex ON tokenlemmatypesubtypedatefrequency(subtype);")
     cursor.execute("CREATE INDEX dateindex ON tokenlemmatypesubtypedatefrequency(date);")
     cursor.execute("CREATE INDEX lemmafrequencyindex ON lemmafrequency(lemma);")
+    cursor.execute("CREATE INDEX lemmafrequencysortkeyindex ON lemmafrequency(sortkey);")
     cursor.execute("CREATE INDEX lemmatokenlemmaindex ON lemmatokenfrequency(lemma);")
     cursor.execute("CREATE INDEX lemmatokentokenindex ON lemmatokenfrequency(token);")
     cursor.execute("CREATE INDEX lemmaurnindex ON urndatelemmabag(urn);")
     cursor.execute("CREATE INDEX urnindex ON urndatelemmabag(lemmabag);")
     cursor.execute("CREATE INDEX urndateindex ON urndatelemmabag(date);")
     cursor.execute("CREATE INDEX lemmanonambiglemma ON lemmanonambig(lemma);")
+    cursor.execute("CREATE INDEX lemmanonambigsortkey ON lemmanonambig(sortkey);")
     con.commit()
     con.close()
     
@@ -187,9 +190,9 @@ def initTables():
     cursor.execute("CREATE TABLE urndatelemmabag(urn VARCHAR (50),date DATE,lemmabag text);")
     cursor.execute("CREATE TABLE tokenlemmatypesubtypedatefrequency(token VARCHAR ("+str(tokenlength)+"),lemma VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),date DATE,frequency INTEGER);")
     cursor.execute("CREATE TABLE tokenlemmatypesubtypefrequency(token VARCHAR ("+str(tokenlength)+"),lemma VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),frequency INTEGER);")
-    cursor.execute("CREATE TABLE lemmafrequency(lemma VARCHAR (50),frequency INTEGER);")
+    cursor.execute("CREATE TABLE lemmafrequency(lemma VARCHAR (50),frequency INTEGER,sortkey TEXT);")
     cursor.execute("CREATE TABLE lemmatokenfrequency(lemma VARCHAR (50),token VARCHAR ("+str(tokenlength)+"),frequency INTEGER);")
-    cursor.execute("CREATE TABLE lemmanonambig(lemma VARCHAR (50),frequency INTEGER);")
+    cursor.execute("CREATE TABLE lemmanonambig(lemma VARCHAR (50),frequency INTEGER,sortkey TEXT);")
     con.commit()
     con.close()
     
@@ -235,8 +238,8 @@ def db():
         for line in inf.readlines():
             if len(line.strip())>0:
                 linearr = line.split("\t")
-                vals = '"'+linearr[0]+'",'+linearr[1].strip()
-                query="INSERT INTO lemmafrequency(lemma,frequency) VALUES("+vals+")"
+                vals = '"'+linearr[0]+'",'+linearr[1].strip()+',"'+dsb_sortkey(linearr[0].strip("|"))+'"'
+                query="INSERT INTO lemmafrequency(lemma,frequency,sortkey) VALUES("+vals+")"
                 cursor.execute(query)
         con.commit()
 
@@ -253,8 +256,8 @@ def db():
                         wb_nonambig[lemma] = int(linearr[1])
                     
     for lemma in wb_nonambig:
-        vals = '"|'+lemma+'|",'+str(wb_nonambig[lemma])
-        query="INSERT INTO lemmanonambig(lemma,frequency) VALUES("+vals+")"
+        vals = '"|'+lemma+'|",'+str(wb_nonambig[lemma])+',"'+dsb_sortkey(lemma)+'"'
+        query="INSERT INTO lemmanonambig(lemma,frequency,sortkey) VALUES("+vals+")"
         cursor.execute(query)
     con.commit()
 

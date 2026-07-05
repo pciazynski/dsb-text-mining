@@ -33,14 +33,14 @@
 	<tr>
 		<td></td>
 		<td>
-			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet)</script></input>
+			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet_unicode)</script></input>
 		</td>
 	</tr>
 	<tr>
 		<td style="text-align:center;"><script>document.write(lang_searchitem)</script></td>
 		<td>
 			<div class="autocomplete">
-				<input style="width:70%" id="wordinput" type="text">
+				<input style="width:70%" id="wordinput" type="text" onkeydown="if(event.key === 'Enter'){updateTimeline();}">
 				<button onclick = "updateTimeline()"><script>document.write(lang_enter)</script></button> 
 			</div>
 			<script>
@@ -53,7 +53,7 @@
 		<td style="text-align:center;">Regex ^...$</td>
 		<td>
 			<div>
-				<input style="width:70%" id="regexsearch" type="text" onchange = "">
+				<input style="width:70%" id="regexsearch" type="text" onchange = "" onkeydown="if(event.key === 'Enter'){updateTimelineRegex();}">
 				<button onclick = "updateTimelineRegex()"><script>document.write(lang_enter)</script></button> 
 			</div>
 		</td>
@@ -63,7 +63,7 @@
 		<td style="text-align:center;"><script>document.write(lang_list)</script></td>
 		<td>
 			<div>
-				<input style="width:70%" id="wordlist" type="text" onchange = "">
+				<input style="width:70%" id="wordlist" type="text" onchange = "" onkeydown="if(event.key === 'Enter'){updateTimelineWordList();}">
 				<button onclick = "updateTimelineWordList()"><script>document.write(lang_enter)</script></button> 
 			</div>
 		</td>
@@ -184,7 +184,7 @@
 		loading("timeline")
 		tmp = document.getElementById("regexsearch").value.trim()
 		if(tmp.length>0){
-			document.getElementById("timeline").src="timeline.html?data=regexsearch.php&token="+tmp+"&sort"
+			document.getElementById("timeline").src="timeline.html?data=regexsearch.php&token="+encodeURIComponent(tmp)+"&sort"
 		}
 		document.getElementById('switchlinreg').disabled = true;
 	}

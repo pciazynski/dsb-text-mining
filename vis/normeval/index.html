@@ -119,7 +119,7 @@
 		<td style="text-align:center;"><script>document.write(lang_searchitem)</script></td>
 		<td>
 			<div class="autocomplete">
-				<input style="width:50%" id="norm" type="text"> 
+				<input style="width:50%" id="norm" type="text" onkeydown="if(event.key === 'Enter'){updateTimeline();}"> 
 				<button onclick = "updateTimeline()"><script>document.write(lang_ambigsearch)</script></button> 
 			</div>
 			<script>

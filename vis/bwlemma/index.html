@@ -35,14 +35,14 @@
 	<tr>
 		<td></td>
 		<td>
-			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet)</script></input>
+			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet_dsb)</script></input>
 		</td>
 	</tr>
 	<tr>
 		<td style="text-align:center;"><script>document.write(lang_searchitem)</script></td>
 		<td>
 			<div class="autocomplete">
-				<input style="width:60%" id="lemma" type="text"> 
+				<input style="width:60%" id="lemma" type="text" onkeydown="if(event.key === 'Enter'){updateTimeline();}"> 
 				<button onclick = "updateTimeline()"><script>document.write(lang_ambigsearch)</script></button> 
 			</div>
 			<script>
@@ -56,7 +56,7 @@
 		<td style="text-align:center;">Regex</td>
 		<td>
 			<div>
-				<input style="width:70%" id="regexsearch" type="text" placeholder="^ und $ werden angefügt" onchange = "">
+				<input style="width:70%" id="regexsearch" type="text" placeholder="^ und $ werden angefügt" onchange = "" onkeydown="if(event.key === 'Enter'){updateTimelineRegex();}">
 				<button onclick = "updateTimelineRegex()"><script>document.write(lang_enter)</script></button> 
 			</div>
 		</td>
@@ -67,7 +67,7 @@
 		<td style="text-align:center;"><script>document.write(lang_list)</script></td>
 		<td>
 			<div>
-				<input style="width:70%" id="lemmalist" type="text" onchange = "">
+				<input style="width:70%" id="lemmalist" type="text" onchange = "" onkeydown="if(event.key === 'Enter'){updateTimelineList();}">
 				<button onclick = "updateTimelineList()"><script>document.write(lang_enter)</script></button> 
 			</div>
 		</td>
@@ -312,9 +312,9 @@
 			loading("timeline")
 			loading("lemmagroup")
 			loading("tokengroup")
-			document.getElementById("timeline").src="timeline.html?data=lemmaregexsearch.php&lemma="+curitem+"&sort&focus="+focus
-			document.getElementById("lemmagroup").src="lemmalist.html?data=lemmaregexgroup.php&lemma="+curitem+"&sort"
-			document.getElementById("tokengroup").src="tokenlist.html?data=lemmaregex2token.php&lemma="+curitem+"&sort"
+			document.getElementById("timeline").src="timeline.html?data=lemmaregexsearch.php&lemma="+encodeURIComponent(curitem)+"&sort&focus="+focus
+			document.getElementById("lemmagroup").src="lemmalist.html?data=lemmaregexgroup.php&lemma="+encodeURIComponent(curitem)+"&sort"
+			document.getElementById("tokengroup").src="tokenlist.html?data=lemmaregex2token.php&lemma="+encodeURIComponent(curitem)+"&sort"
 			document.title=lang_lemmafy+" "+curitem
 			document.getElementById('docref').src = 'error_docref.html'
 			document.getElementById('traviz').src = 'error_docref.html'

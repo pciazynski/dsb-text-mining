@@ -1,0 +1,5 @@
+{
+   "chat.disableAIFeatures": false,
+   "chat.tools.compressOutput.enabled": true,
+   "editor.formatOnSave": false
+}
