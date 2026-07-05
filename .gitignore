@@ -26,6 +26,9 @@ TEST*.xml
 
 # Dependency folders
 node_modules/
+/public/vendor/*
+!/public/vendor/traviz_slim/
+!/public/vendor/traviz_slim/**
 
 # Archives and large binary/media artifacts
 *.zip

@@ -12,7 +12,7 @@ datasets, PHP endpoints expose them over HTTP, and a static frontend renders
 visualizations in the browser.
 
 ```
-CTS Text API  →  Python ETL (etl/*.py)  →  public/data/ (TSV + SQLite)  →  PHP (public/php/*.php)  →  Frontend (public/index.html, public/vis/, public/js/, public/lib/)
+CTS Text API  →  Python ETL (etl/*.py)  →  public/data/ (TSV + SQLite)  →  PHP (public/php/*.php)  →  Frontend (public/index.html, public/vis/, public/js/, public/vendor/)
    remote          build-time                generated                read-time              run-time
 ```
 
@@ -32,7 +32,7 @@ CTS Text API  →  Python ETL (etl/*.py)  →  public/data/ (TSV + SQLite)  → 
 5. **Render.** `public/index.html` and the modules in `public/vis/` use shared
    helpers from `public/js/` (notably `datahandler.js`) to fetch PHP responses
    or raw `.txt` files and render Cytoscape, Plotly, and Traviz visualizations
-   from `public/lib/`.
+   from `public/vendor/`.
 
 The pipeline is build-once / serve-many: the Python stage is run on the server
 to (re)generate `public/data/`, and the PHP and frontend stages then operate purely
@@ -40,10 +40,11 @@ against those generated artifacts.
 
 ## Installation
 
-The project has two independent stages: a one-time **build** that generates
-`data/`, and a **serve** stage that exposes the digilab over HTTP. The serve
-stage can be run either with the PHP built-in server (for local development) or
-behind a real web server (for deployment).
+The project has three independent stages: a one-time **build** that generates
+`data/`, a one-time frontend dependency install that populates `public/vendor/`,
+and a **serve** stage that exposes the digilab over HTTP. The serve stage can
+be run either with the PHP built-in server (for local development) or behind a
+real web server (for deployment).
 
 ### Prerequisites
 
@@ -71,7 +72,19 @@ the endpoint for the full inventory.
 The generated `public/data/` directory must remain alongside the PHP and frontend
 files for the interface to work.
 
-### 2a. Run locally (development)
+### 2. Install frontend libraries
+
+Run the install script to download the pinned third-party browser libraries into
+`public/vendor/`.
+
+```bash
+./scripts/install-libs.sh
+```
+
+`public/vendor/` is ignored by git, except for the committed Traviz exception in
+`public/vendor/traviz_slim/`.
+
+### 3a. Run locally (development)
 
 From the project root, start the PHP built-in server using the bundled router
 and open the digilab in the browser.
@@ -83,7 +96,7 @@ php -S 127.0.0.1:8000 -t public public/router.php
 Then open `http://127.0.0.1:8000/`. `public/router.php` is only needed here — it
 handles the directory-redirect behavior that the built-in server lacks.
 
-### 2b. Deploy (production)
+### 3b. Deploy (production)
 
 Place the project directory inside the document root of a PHP-capable web
 server (Apache, nginx + PHP-FPM, etc.) and serve it as static content with PHP
