@@ -1,47 +1,52 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
-	<head>
-		<script src="../../vendor/traviz_slim/traviz-min.js"></script>
-		<link rel="stylesheet" type="text/css" href="../../vendor/traviz_slim/traviz.css"></link>
-		<script src="../../js/datahandler.js"></script>
-	<script src="../../js/config.js"></script>
-	</head>  
-	<body>
-		<div id="containerDiv"></div>
-		<script type="text/javascript">
-		
-	var dataset = getQueryVariable("data")
-	var lemma = getQueryVariable('lemma')
-	dataset = dataset +'?lemma='+lemma
-	if (getQueryVariable("sort").length>0){dataset+="&sort"}
-	if (getQueryVariable("exact")==="1"){dataset+="&exact=1"}
-	var year = getQueryVariable('year')
-	if (year.length>0){dataset+="&year="+year}
+  <head>
+    <script src="../../vendor/traviz_slim/traviz-min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../vendor/traviz_slim/traviz.css" />
+    >
+    <script src="../../js/datahandler.js"></script>
+    <script src="../../js/config.js"></script>
+  </head>
+  <body>
+    <div id="containerDiv"></div>
+    <script type="text/javascript">
+      var dataset = getQueryVariable('data');
+      var lemma = getQueryVariable('lemma');
+      dataset = dataset + '?lemma=' + lemma;
+      if (getQueryVariable('sort').length > 0) {
+        dataset += '&sort';
+      }
+      if (getQueryVariable('exact') === '1') {
+        dataset += '&exact=1';
+      }
+      var year = getQueryVariable('year');
+      if (year.length > 0) {
+        dataset += '&year=' + year;
+      }
 
-	data_arr = readPHP(dataset).trim().split("\n");
-	travdata = []
-	colors = []
-	if(data_arr.length>0){
-		
-		for (var i = 0;i<data_arr.length;i++){
-			linearr = data_arr[i].split(sep)
-			colors.push(getColor(linearr[1]))
-			travdata.push({edition:linearr[1],text:linearr[1].split("").join(' ')})
-		}
-		
-		var traviz = new TRAViz("containerDiv",{
-			colors: colors,
-			lineBreaks: false,
-			normalize: false,
-			fontSizeMin: 10, // minimum font size
-			fontSizeMax: 50, // maximum font size
-			fontSizeIncrease: 0.5,
-			connectionType:'all'
-		});
-		traviz.align(travdata);
-		traviz.visualize();
-	}
-	document.title = 'Text Variant Graph ' + lemma
-		</script>
-	</body>
+      data_arr = readPHP(dataset).trim().split('\n');
+      travdata = [];
+      colors = [];
+      if (data_arr.length > 0) {
+        for (var i = 0; i < data_arr.length; i++) {
+          linearr = data_arr[i].split(sep);
+          colors.push(getColor(linearr[1]));
+          travdata.push({ edition: linearr[1], text: linearr[1].split('').join(' ') });
+        }
+
+        var traviz = new TRAViz('containerDiv', {
+          colors: colors,
+          lineBreaks: false,
+          normalize: false,
+          fontSizeMin: 10, // minimum font size
+          fontSizeMax: 50, // maximum font size
+          fontSizeIncrease: 0.5,
+          connectionType: 'all',
+        });
+        traviz.align(travdata);
+        traviz.visualize();
+      }
+      document.title = 'Text Variant Graph ' + lemma;
+    </script>
+  </body>
 </html>

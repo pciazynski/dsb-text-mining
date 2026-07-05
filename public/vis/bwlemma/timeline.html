@@ -1,116 +1,148 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
+<!doctype html>
+<meta charset="utf-8" />
 <head>
-	<script src="../../vendor/plotly.min.js"></script>
-	<script src="../../js/def_language.js"></script>
-	<script src="../../js/my_language.js"></script>
-	<script src="../../js/datahandler.js"></script>
-	<script src="../../js/config.js"></script>
+  <script src="../../vendor/plotly.min.js"></script>
+  <script src="../../js/def_language.js"></script>
+  <script src="../../js/my_language.js"></script>
+  <script src="../../js/datahandler.js"></script>
+  <script src="../../js/config.js"></script>
 </head>
 
 <body>
-<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
-<script>
+  <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <script>
+    diagramtitle = '';
+    var dataset = getQueryVariable('data');
+    var lemma = getQueryVariable('lemma');
+    var exact = getQueryVariable('exact');
+    var focus = getQueryVariable('focus');
+    var jitter = getQueryVariable('jitter');
+    if (jitter.length == 0) {
+      jitter = defjitter;
+    } else {
+      jitter = parseFloat(jitter);
+    }
+    if (focus.length == 0) {
+      focus = 0;
+    } else {
+      focus = parseInt(focus);
+    }
+    dataset = dataset + '?lemma=' + lemma + '&sort';
+    if (focus == 3) {
+      diagramtitle = 'Token von Lemma ';
+    } else {
+      diagramtitle = 'Lemma ';
+    }
+    diagramtitle += lemma;
 
-	diagramtitle = ""
-	var dataset = getQueryVariable("data")
-	var lemma = getQueryVariable("lemma")
-	var exact = getQueryVariable("exact")
-	var focus = getQueryVariable("focus")
-	var jitter = getQueryVariable("jitter")
-	if(jitter.length==0){jitter=defjitter}else{jitter = parseFloat(jitter)}
-	if(focus.length==0){focus=0}else{focus = parseInt(focus)}
-	dataset = dataset +"?lemma="+lemma+"&sort"
-	if(focus==3){diagramtitle = "Token von Lemma "}else{diagramtitle="Lemma "}
-	diagramtitle += lemma
-	
-	if(exact==1){dataset+="&exact"}else{diagramtitle += " inkl. ambig"}
+    if (exact == 1) {
+      dataset += '&exact';
+    } else {
+      diagramtitle += ' inkl. ambig';
+    }
 
-	data_arr = readPHP(dataset).split("\n");
-	if(data_arr.length>resultsetmax){document.write(lang_error_resultset_too_large);}
-	else{
-		maxval = 0
-		minval = 10000000
-		
-		date= []
-		count = []
-		hovers = []
-		colors = []
+    data_arr = readPHP(dataset).split('\n');
+    if (data_arr.length > resultsetmax) {
+      document.write(lang_error_resultset_too_large);
+    } else {
+      maxval = 0;
+      minval = 10000000;
 
-		for (var i = 0; i < data_arr.length; i++) {
-			line = data_arr[i];
-			if(line.length>1){
-				tmp = line.split(sep)
-				if (tmp.length==4){token = ":"+tmp[3]}else{token=""}
-				value = parseInt(tmp[2])
-				jittervalue = value + (jitter*(Math.random()))
-				date.push(tmp[1])
-				count.push(jittervalue)
-				hovers.push(tmp[0]+"("+tmp[1]+")"+token+" "+value)
-				colors.push(getColor(tmp[focus]))
-				if (value<minval ){minval = value}
-				if (value>maxval ) {maxval = value}
-			}
-		}
-		
-		var data = [{
-			x: date,
-			y: count,
-			name: 'Token Count',
-			hovertemplate: '%{text}',
-			type: 'scatter',
-			mode: "markers",
-			text:hovers,
-			marker: {
-				size:markersize(data_arr.length),
-				color: colors,
-				opaciy:0.2
-			}
-		}];
+      date = [];
+      count = [];
+      hovers = [];
+      colors = [];
 
-		if (getQueryVariable("scale")==="log"){minval = Math.log(1);maxval=Math.log(maxval)}else{minval=0;maxval=maxval+(maxval/10)+1}
-		var layout = {
-			hovermode:"closest",
-			title:{
-				text:diagramtitle,
-				font:diagramfont
-				},
-			xaxis:{
-				automargin: true,
-				range:[minDate-2,maxDate+2],
-				linewidth: 1,
-				title:{
-					font:diagramfont
-				},
-				tickangle:90,
-				tickfont:diagramfont
-			},
-			yaxis:{
-				automargin: true,
-				type:scale,
-				range: [minval, maxval],
-				title:{
-					text: lang_frequency,
-					font:diagramfont
-					}
-				},
-			annotations: watermarke()
-		};
+      for (var i = 0; i < data_arr.length; i++) {
+        line = data_arr[i];
+        if (line.length > 1) {
+          tmp = line.split(sep);
+          if (tmp.length == 4) {
+            token = ':' + tmp[3];
+          } else {
+            token = '';
+          }
+          value = parseInt(tmp[2]);
+          jittervalue = value + jitter * Math.random();
+          date.push(tmp[1]);
+          count.push(jittervalue);
+          hovers.push(tmp[0] + '(' + tmp[1] + ')' + token + ' ' + value);
+          colors.push(getColor(tmp[focus]));
+          if (value < minval) {
+            minval = value;
+          }
+          if (value > maxval) {
+            maxval = value;
+          }
+        }
+      }
 
-		myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
-		myPlot = document.getElementById('myDiv')
-		document.title = diagramtitle
-		if(parent.document.getElementById('yearminslider') != undefined){
-			myPlot.on('plotly_click', function(data) {
-				yearx=data.points[0].x;
-				parent.exactlemma = data.points[0].text.split("(")[0].slice(1,-1)
-				parent.document.getElementById("yearminvalue").innerHTML = yearx
-				parent.document.getElementById("yearmaxvalue").innerHTML = yearx
-				parent.document.getElementById("yearminslider").value = yearx
-				parent.document.getElementById("yearmaxslider").value = yearx
-				parent.updateTravizYear()
-			});
-		}
-	}
-</script>
+      var data = [
+        {
+          x: date,
+          y: count,
+          name: 'Token Count',
+          hovertemplate: '%{text}',
+          type: 'scatter',
+          mode: 'markers',
+          text: hovers,
+          marker: {
+            size: markersize(data_arr.length),
+            color: colors,
+            opaciy: 0.2,
+          },
+        },
+      ];
+
+      if (getQueryVariable('scale') === 'log') {
+        minval = Math.log(1);
+        maxval = Math.log(maxval);
+      } else {
+        minval = 0;
+        maxval = maxval + maxval / 10 + 1;
+      }
+      var layout = {
+        hovermode: 'closest',
+        title: {
+          text: diagramtitle,
+          font: diagramfont,
+        },
+        xaxis: {
+          automargin: true,
+          range: [minDate - 2, maxDate + 2],
+          linewidth: 1,
+          title: {
+            font: diagramfont,
+          },
+          tickangle: 90,
+          tickfont: diagramfont,
+        },
+        yaxis: {
+          automargin: true,
+          type: scale,
+          range: [minval, maxval],
+          title: {
+            text: lang_frequency,
+            font: diagramfont,
+          },
+        },
+        annotations: watermarke(),
+      };
+
+      myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+      myPlot = document.getElementById('myDiv');
+      document.title = diagramtitle;
+      if (parent.document.getElementById('yearminslider') != undefined) {
+        myPlot.on('plotly_click', function (data) {
+          yearx = data.points[0].x;
+          parent.exactlemma = data.points[0].text.split('(')[0].slice(1, -1);
+          parent.document.getElementById('yearminvalue').innerHTML = yearx;
+          parent.document.getElementById('yearmaxvalue').innerHTML = yearx;
+          parent.document.getElementById('yearminslider').value = yearx;
+          parent.document.getElementById('yearmaxslider').value = yearx;
+          parent.updateTravizYear();
+        });
+      }
+    }
+  </script>
 </body>

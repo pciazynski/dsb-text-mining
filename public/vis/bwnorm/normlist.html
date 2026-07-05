@@ -1,37 +1,54 @@
 <!doctype html>
 <html>
-<head>
-	<meta charset="utf-8">
-	<script src="../../vendor/plotly.min.js"></script>
-	<script src="../../js/datahandler.js"></script>
-	<script src="../../js/config.js"></script>
-	<link rel="stylesheet" href="../../styles.css">
-</head>
+  <head>
+    <meta charset="utf-8" />
+    <script src="../../vendor/plotly.min.js"></script>
+    <script src="../../js/datahandler.js"></script>
+    <script src="../../js/config.js"></script>
+    <link rel="stylesheet" href="../../styles.css" />
+  </head>
 
-<body style="text-align:left;">
-<script>
-	var dataset = getQueryVariable("data")
-	var norm = getQueryVariable("norm")
-	dataset = dataset +"?norm="+norm+"&sort"
-	data_arr = readPHP(dataset).trim().split("\n");
+  <body style="text-align: left">
+    <script>
+      var dataset = getQueryVariable('data');
+      var norm = getQueryVariable('norm');
+      dataset = dataset + '?norm=' + norm + '&sort';
+      data_arr = readPHP(dataset).trim().split('\n');
 
-	str = "<table style='border-collapse: collapse;text-align:left;'>";
-	str = str + "<tr><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>Normierungsgruppe & Exakte Suche</th><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>Anzahl Textvorkommen</th>"
-	str = str +"</tr>"
+      str = "<table style='border-collapse: collapse;text-align:left;'>";
+      str =
+        str +
+        "<tr><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>Normierungsgruppe & Exakte Suche</th><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>Anzahl Textvorkommen</th>";
+      str = str + '</tr>';
 
-	for (var i = 0; i < data_arr.length; i++) {
-		arr = data_arr[i].split(sep)
-		onclickfunction="parent.itemClick('"+arr[0].slice(1,-1)+"')"
-		resstr='<span style="color:'+getColor(arr[0])+';">▮</span>'+'<span style="cursor:pointer;" onclick='+onclickfunction+'>'+arr[0]+'</span>'
-		str = str + "<tr><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>"+resstr+"</td><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>"+arr[1]+"</td>"
-		str = str +'</tr>'
-	}
+      for (var i = 0; i < data_arr.length; i++) {
+        arr = data_arr[i].split(sep);
+        onclickfunction = "parent.itemClick('" + arr[0].slice(1, -1) + "')";
+        resstr =
+          '<span style="color:' +
+          getColor(arr[0]) +
+          ';">▮</span>' +
+          '<span style="cursor:pointer;" onclick=' +
+          onclickfunction +
+          '>' +
+          arr[0] +
+          '</span>';
+        str =
+          str +
+          "<tr><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
+          resstr +
+          "</td><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
+          arr[1] +
+          '</td>';
+        str = str + '</tr>';
+      }
 
-	str = str + "</table>";
-	document.write(str)
-	data_arr = ""
-	str = ""
-	
-	document.title = "Normierungsliste "+ norm
-</script>
-</body>
+      str = str + '</table>';
+      document.write(str);
+      data_arr = '';
+      str = '';
+
+      document.title = 'Normierungsliste ' + norm;
+    </script>
+  </body>
+</html>

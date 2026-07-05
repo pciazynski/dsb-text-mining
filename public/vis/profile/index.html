@@ -1,179 +1,317 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
+<!doctype html>
+<meta charset="utf-8" />
 <head>
-	<script src="../../js/config.js"></script>
-	<script src="../../js/def_language.js"></script>
-	<script src="../../js/my_language.js"></script>
-	<script src="../../js/datahandler.js"></script>
-	<script src="../../js/gui.js"></script>
-	<script src="../../js/autocomplete.js"></script>
-	<link rel="stylesheet" href="../../digilabstyles.css">
+  <script src="../../js/config.js"></script>
+  <script src="../../js/def_language.js"></script>
+  <script src="../../js/my_language.js"></script>
+  <script src="../../js/datahandler.js"></script>
+  <script src="../../js/gui.js"></script>
+  <script src="../../js/autocomplete.js"></script>
+  <link rel="stylesheet" href="../../digilabstyles.css" />
 </head>
-<body style="background-color:lightgray">
-<script>document.write(header())</script>
+<body style="background-color: lightgray">
+  <script>
+    document.write(header());
+  </script>
 
-<br><br>
-<table class="optionmenu" align="center">
+  <br /><br />
+  <table class="optionmenu" align="center">
+    <tr>
+      <td></td>
+      <td>
+        <input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()" />
+        <script>
+          document.write(lang_prefixsearchalphabet);
+        </script>
+      </td>
+    </tr>
+    <!--
 	<tr>
 		<td></td>
 		<td>
-			<input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()"><script>document.write(lang_prefixsearchalphabet)</script></input>
-		</td>
-	</tr>
-<!--
-	<tr>
-		<td></td>
-		<td>
-			<input id="ambigprefixsearchCheckBox" type="checkbox" onchange="switchAmbigPrefixsearch()"><script>document.write(lang_ambigprefixsearch)</script></input>
+			<input id="ambigprefixsearchCheckBox" type="checkbox" onchange="switchAmbigPrefixsearch()"><script>document.write(lang_ambigprefixsearch)</script>
 		</td>
 	</tr>
 -->
-	<tr>
-		<td style="text-align:center;"><script>document.write(lang_lemmafy)</script></td>
-		<td>
-			<div class="autocomplete">
-				<input style="width:30%" id="wantedlemma" type="text" onkeydown="closeAllLists();if(event.key === 'Enter'){updateLemma();}">
-				<button onclick = "updateLemma()"><script>document.write(lang_enter)</script></button> 
-			</div>
-			<script>
-				autocomplete("wantedlemma", "prefixlemmasearch.php?limit=30&sortby=alphabet&lemma=", "updateLemma"); 
-			</script>
-		</td>
-	</tr>
-	<tr>
-		<td style="text-align:center;"><script>document.write(lang_normify)</script></td>
-		<td>
-			<div class="autocomplete">
-				<input style="width:30%" id="wantednorm" type="text" onkeydown="closeAllLists();if(event.key === 'Enter'){updateNorm();}">
-				<button onclick = "updateNorm()"><script>document.write(lang_enter)</script></button> 
-			</div>
-			<script>
-				autocomplete("wantednorm", "prefixnormsearch.php?limit=30&sortby=alphabet&norm=", "updateNorm"); 
-			</script>
-		</td>
-	</tr>
-	<tr>
-		<td style="text-align:center;"><script>document.write(lang_word)</script></td>
-		<td>
-			<div class="autocomplete">
-				<input style="width:30%" id="wantedword" type="text" onkeydown="closeAllLists();if(event.key === 'Enter'){updateWord();}">
-				<button onclick = "updateWord()"><script>document.write(lang_enter)</script></button> 
-			</div>
-			<script>
-				autocomplete("wantedword", "prefixsearch.php?limit=30&sortby=alphabet&word=", "updateWord"); 
-			</script>
-		</td>
-	</tr>
-	<tr>
-		<td style="text-align:center;"><script>document.write(lang_options)</script></td>
-		<td>
-			<input id="clickableCheckBox" type="checkbox" checked="false" onchange="switchClickable()"><script>document.write(lang_interactive)</script></input>
-		</td>
-	</tr>
-</table>
+    <tr>
+      <td style="text-align: center">
+        <script>
+          document.write(lang_lemmafy);
+        </script>
+      </td>
+      <td>
+        <div class="autocomplete">
+          <input
+            style="width: 30%"
+            id="wantedlemma"
+            type="text"
+            onkeydown="
+              closeAllLists();
+              if (event.key === 'Enter') {
+                updateLemma();
+              }
+            "
+          />
+          <button onclick="updateLemma()">
+            <script>
+              document.write(lang_enter);
+            </script>
+          </button>
+        </div>
+        <script>
+          autocomplete(
+            'wantedlemma',
+            'prefixlemmasearch.php?limit=30&sortby=alphabet&lemma=',
+            'updateLemma',
+          );
+        </script>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">
+        <script>
+          document.write(lang_normify);
+        </script>
+      </td>
+      <td>
+        <div class="autocomplete">
+          <input
+            style="width: 30%"
+            id="wantednorm"
+            type="text"
+            onkeydown="
+              closeAllLists();
+              if (event.key === 'Enter') {
+                updateNorm();
+              }
+            "
+          />
+          <button onclick="updateNorm()">
+            <script>
+              document.write(lang_enter);
+            </script>
+          </button>
+        </div>
+        <script>
+          autocomplete(
+            'wantednorm',
+            'prefixnormsearch.php?limit=30&sortby=alphabet&norm=',
+            'updateNorm',
+          );
+        </script>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">
+        <script>
+          document.write(lang_word);
+        </script>
+      </td>
+      <td>
+        <div class="autocomplete">
+          <input
+            style="width: 30%"
+            id="wantedword"
+            type="text"
+            onkeydown="
+              closeAllLists();
+              if (event.key === 'Enter') {
+                updateWord();
+              }
+            "
+          />
+          <button onclick="updateWord()">
+            <script>
+              document.write(lang_enter);
+            </script>
+          </button>
+        </div>
+        <script>
+          autocomplete(
+            'wantedword',
+            'prefixsearch.php?limit=30&sortby=alphabet&word=',
+            'updateWord',
+          );
+        </script>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">
+        <script>
+          document.write(lang_options);
+        </script>
+      </td>
+      <td>
+        <input
+          id="clickableCheckBox"
+          type="checkbox"
+          checked="false"
+          onchange="switchClickable()"
+        />
+        <script>
+          document.write(lang_interactive);
+        </script>
+      </td>
+    </tr>
+  </table>
 
-<div class = "iframediv">
-	<table  align="center" style = "padding:1px;border-spacing: 2px; text-align:center;background-color:lightgray;width:100%;">
-		<tr style = "text-align:right;">
-			<td style = "width: 100%;">
-				<button class = "iframebutton" onclick="embedding('profile');"><script>document.write(lang_htmlembedding)</script></button>
-				<button class = "iframebutton" onclick="diagrammlink('profile');"><script>document.write(lang_fullscreen)</script></button>
-			</td>
-		</tr>
-		<tr>
-			<td style = "width: 100%;">		
-				<iframe class="resized" width="100%" height="475px" id="profile" scrolling="yes"></iframe>
-			</td>
-		</tr>
-	</table>
-</div>
+  <div class="iframediv">
+    <table
+      align="center"
+      style="
+        padding: 1px;
+        border-spacing: 2px;
+        text-align: center;
+        background-color: lightgray;
+        width: 100%;
+      "
+    >
+      <tr style="text-align: right">
+        <td style="width: 100%">
+          <button class="iframebutton" onclick="embedding('profile')">
+            <script>
+              document.write(lang_htmlembedding);
+            </script>
+          </button>
+          <button class="iframebutton" onclick="diagrammlink('profile')">
+            <script>
+              document.write(lang_fullscreen);
+            </script>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <td style="width: 100%">
+          <iframe class="resized" width="100%" height="475px" id="profile" scrolling="yes"></iframe>
+        </td>
+      </tr>
+    </table>
+  </div>
 
-<br><br>
-<hr>
-<br><br>
+  <br /><br />
+  <hr />
+  <br /><br />
 
-<script>
+  <script>
+    function closeAllLists(elmnt) {
+      var x = document.getElementsByClassName('autocomplete-items');
+      for (var i = 0; i < x.length; i++) {
+        x[i].parentNode.removeChild(x[i]);
+      }
+    }
 
-	function closeAllLists(elmnt) {
-		var x = document.getElementsByClassName("autocomplete-items");
-		for (var i = 0; i < x.length; i++) {
-			x[i].parentNode.removeChild(x[i]);
-		}
-	}
+    var switchAmbigPrefixsearch = function () {
+      tmp = document.getElementById('ambigprefixsearchCheckBox').checked;
+      if (tmp) {
+        searchAmbig = '&ambig';
+      } else {
+        searchAmbig = '';
+      }
+      autocomplete(
+        'wantedword',
+        'prefixsearch.php?limit=30&sortby=' + searchAmbig + searchSort + '&word=',
+        'updateWord',
+      );
+      autocomplete(
+        'wantedlemma',
+        'prefixlemmasearch.php?limit=30' + searchAmbig + searchSort + '&lemma=',
+        'updateLemma',
+      );
+      autocomplete(
+        'wantednorm',
+        'prefixnormsearch.php?limit=30' + searchAmbig + searchSort + '&norm=',
+        'updateNorm',
+      );
+    };
 
-	var switchAmbigPrefixsearch = function(){
-		tmp = document.getElementById('ambigprefixsearchCheckBox').checked
-		if(tmp){searchAmbig = '&ambig'}else{searchAmbig = ''}
-		autocomplete("wantedword", "prefixsearch.php?limit=30&sortby="+searchAmbig+searchSort+"&word=", "updateWord"); 
-		autocomplete("wantedlemma", "prefixlemmasearch.php?limit=30"+searchAmbig+searchSort+"&lemma=", "updateLemma"); 
-		autocomplete("wantednorm", "prefixnormsearch.php?limit=30"+searchAmbig+searchSort+"&norm=", "updateNorm");
-	}
+    var switchPrefixsearch = function () {
+      tmp = document.getElementById('prefixsearchCheckBox').checked;
+      if (tmp) {
+        searchSort = '&sortby=alphabet';
+      } else {
+        searchSort = '&sortby=frequency';
+      }
+      autocomplete(
+        'wantedword',
+        'prefixsearch.php?limit=30' + searchAmbig + searchSort + '&word=',
+        'updateWord',
+      );
+      autocomplete(
+        'wantedlemma',
+        'prefixlemmasearch.php?limit=30' + searchAmbig + searchSort + '&lemma=',
+        'updateLemma',
+      );
+      autocomplete(
+        'wantednorm',
+        'prefixnormsearch.php?limit=30' + searchAmbig + searchSort + '&norm=',
+        'updateNorm',
+      );
+    };
 
-	var switchPrefixsearch = function(){
-		tmp = document.getElementById('prefixsearchCheckBox').checked
-		if(tmp){searchSort = '&sortby=alphabet'}else{searchSort = '&sortby=frequency'}
-		autocomplete("wantedword", "prefixsearch.php?limit=30"+searchAmbig+searchSort+"&word=", "updateWord"); 
-		autocomplete("wantedlemma", "prefixlemmasearch.php?limit=30"+searchAmbig+searchSort+"&lemma=", "updateLemma"); 
-		autocomplete("wantednorm", "prefixnormsearch.php?limit=30"+searchAmbig+searchSort+"&norm=", "updateNorm");
-	}
-	
-	var switchClickable = function(){
-		loading('profile')
-		tmp = document.getElementById('profile').src
-		if(tmp.includes("&clickable=1")){tmp=tmp.replace("&clickable=1","")}else{tmp=tmp+"&clickable=1"}
-		document.getElementById('profile').src=tmp
-	}
-	
-	var updateWord = function(){
-		loading('profile')
-		tmp = document.getElementById('wantedword').value
-		if(document.getElementById('clickableCheckBox').checked){tmp+="&clickable=1"}
-		document.getElementById('profile').src="wordprofile.html?word="+tmp
-	}
+    var switchClickable = function () {
+      loading('profile');
+      tmp = document.getElementById('profile').src;
+      if (tmp.includes('&clickable=1')) {
+        tmp = tmp.replace('&clickable=1', '');
+      } else {
+        tmp = tmp + '&clickable=1';
+      }
+      document.getElementById('profile').src = tmp;
+    };
 
-	var updateLemma = function(){
-		loading('profile')
-		tmp = document.getElementById('wantedlemma').value
-		if(document.getElementById('clickableCheckBox').checked){tmp+="&clickable=1"}
-		document.getElementById('profile').src="lemmaprofile.html?lemma="+tmp
-	}
-	
-	var updateNorm = function(){
-		loading('profile')
-		tmp = document.getElementById('wantednorm').value
-		if(document.getElementById('clickableCheckBox').checked){tmp+="&clickable=1"}
-		document.getElementById('profile').src="normprofile.html?norm="+tmp
-	}
-	tmp = getQueryVariable('word')
-	searchSort = '&sortby=alphabet'
-	searchAmbig = ''
-	
-	if(tmp.length>0){
-		document.getElementById('wantedword').value=tmp
-		updateWord()
-		document.title="Wortprofil "+tmp
-	}
-	else{
-		tmp = getQueryVariable('lemma')
-		if(tmp.length>0){
-			document.getElementById('wantedlemma').value=tmp
-			updateLemma()
-			document.title="Lemmaprofil "+tmp
-		}else{
-			tmp = getQueryVariable('norm')
-			if(tmp.length>0){
-				document.getElementById('wantednorm').value=tmp
-				updateNorm()
-				document.title="Normierungsprofil "+tmp
-			}
-		}
-	}
+    var updateWord = function () {
+      loading('profile');
+      tmp = document.getElementById('wantedword').value;
+      if (document.getElementById('clickableCheckBox').checked) {
+        tmp += '&clickable=1';
+      }
+      document.getElementById('profile').src = 'wordprofile.html?word=' + tmp;
+    };
 
-	
-</script>
+    var updateLemma = function () {
+      loading('profile');
+      tmp = document.getElementById('wantedlemma').value;
+      if (document.getElementById('clickableCheckBox').checked) {
+        tmp += '&clickable=1';
+      }
+      document.getElementById('profile').src = 'lemmaprofile.html?lemma=' + tmp;
+    };
 
-<br><br>
-<script>
-	document.write(footer())
-</script>
+    var updateNorm = function () {
+      loading('profile');
+      tmp = document.getElementById('wantednorm').value;
+      if (document.getElementById('clickableCheckBox').checked) {
+        tmp += '&clickable=1';
+      }
+      document.getElementById('profile').src = 'normprofile.html?norm=' + tmp;
+    };
+    tmp = getQueryVariable('word');
+    searchSort = '&sortby=alphabet';
+    searchAmbig = '';
+
+    if (tmp.length > 0) {
+      document.getElementById('wantedword').value = tmp;
+      updateWord();
+      document.title = 'Wortprofil ' + tmp;
+    } else {
+      tmp = getQueryVariable('lemma');
+      if (tmp.length > 0) {
+        document.getElementById('wantedlemma').value = tmp;
+        updateLemma();
+        document.title = 'Lemmaprofil ' + tmp;
+      } else {
+        tmp = getQueryVariable('norm');
+        if (tmp.length > 0) {
+          document.getElementById('wantednorm').value = tmp;
+          updateNorm();
+          document.title = 'Normierungsprofil ' + tmp;
+        }
+      }
+    }
+  </script>
+
+  <br /><br />
+  <script>
+    document.write(footer());
+  </script>
 </body>

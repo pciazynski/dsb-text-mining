@@ -1,150 +1,170 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
+<!doctype html>
+<meta charset="utf-8" />
 <head>
-	<script src="../../vendor/plotly.min.js"></script>
-	<script src="../../js/def_language.js"></script>
-	<script src="../../js/my_language.js"></script>
-	<script src="../../js/datahandler.js"></script>
-	<script src="../../js/config.js"></script>
+  <script src="../../vendor/plotly.min.js"></script>
+  <script src="../../js/def_language.js"></script>
+  <script src="../../js/my_language.js"></script>
+  <script src="../../js/datahandler.js"></script>
+  <script src="../../js/config.js"></script>
 </head>
 
 <body>
-<div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
-<script>
+  <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <script>
+    diagramtitle = '';
+    var dataset = getQueryVariable('data');
+    var norm = getQueryVariable('norm');
+    var exact = getQueryVariable('exact');
+    var focus = getQueryVariable('focus');
+    var jitter = getQueryVariable('jitter');
+    if (jitter.length == 0) {
+      jitter = defjitter;
+    } else {
+      jitter = parseFloat(jitter);
+    }
+    if (focus.length == 0) {
+      focus = 0;
+    } else {
+      focus = parseInt(focus);
+    }
+    dataset = dataset + '?norm=' + norm + '&sort';
+    if (focus == 3) {
+      diagramtitle = 'Relative Jahressumme Token von Normierung ';
+    } else {
+      diagramtitle = 'Relative Jahressumme Normierung ';
+    }
+    diagramtitle += norm;
 
-	diagramtitle = ""
-	var dataset = getQueryVariable("data")
-	var norm = getQueryVariable("norm")
-	var exact = getQueryVariable("exact")
-	var focus = getQueryVariable("focus")
-	var jitter = getQueryVariable("jitter")
-	if(jitter.length==0){jitter=defjitter}else{jitter = parseFloat(jitter)}
-	if(focus.length==0){focus=0}else{focus = parseInt(focus)}
-	dataset = dataset +"?norm="+norm+"&sort"
-	if(focus==3){diagramtitle = "Relative Jahressumme Token von Normierung "}else{diagramtitle="Relative Jahressumme Normierung "}
-	diagramtitle += norm
-	
-	if(exact==1){dataset+="&exact"}else{diagramtitle += " inkl. ambig"}
+    if (exact == 1) {
+      dataset += '&exact';
+    } else {
+      diagramtitle += ' inkl. ambig';
+    }
 
-	data_arr = readPHP(dataset).split("\n");
+    data_arr = readPHP(dataset).split('\n');
 
-	function formattext(labelvalue,val,sum){
-		prc = (val/sum*100).toFixed(1)
-		if (prc<10){prc ="0"+prc}
-		return labelvalue+": " + prc +"%"
-	}
-	distinctobjects = []
-	sumperyear = []
+    function formattext(labelvalue, val, sum) {
+      prc = ((val / sum) * 100).toFixed(1);
+      if (prc < 10) {
+        prc = '0' + prc;
+      }
+      return labelvalue + ': ' + prc + '%';
+    }
+    distinctobjects = [];
+    sumperyear = [];
 
-	valmatrix = []
-	resmatrix = []
-	hovertextarr = []
+    valmatrix = [];
+    resmatrix = [];
+    hovertextarr = [];
 
-	for (var i = 0; i < data_arr.length; i++) {
-		if(data_arr[i].trim().length>0){
-			tmp = data_arr[i].split(sep)
-			distinctobjects[tmp[focus]] = 0
-			if(sumperyear[tmp[1]] != undefined){
-				sumperyear[tmp[1]] = sumperyear[tmp[1]] + parseInt(tmp[2])
-			}
-			else{
-				sumperyear[tmp[1]] = parseInt(tmp[2])
-			}
-		}
-	}
+    for (var i = 0; i < data_arr.length; i++) {
+      if (data_arr[i].trim().length > 0) {
+        tmp = data_arr[i].split(sep);
+        distinctobjects[tmp[focus]] = 0;
+        if (sumperyear[tmp[1]] != undefined) {
+          sumperyear[tmp[1]] = sumperyear[tmp[1]] + parseInt(tmp[2]);
+        } else {
+          sumperyear[tmp[1]] = parseInt(tmp[2]);
+        }
+      }
+    }
 
-	for (key in distinctobjects){
-		tmp1 = []
-		tmp2 = []
-		for (year in sumperyear){
-			tmp1[year] = 0
-			tmp2[year] = 0
-		}
-		valmatrix[key] = tmp1
-		resmatrix[key] = tmp2
-	}
+    for (key in distinctobjects) {
+      tmp1 = [];
+      tmp2 = [];
+      for (year in sumperyear) {
+        tmp1[year] = 0;
+        tmp2[year] = 0;
+      }
+      valmatrix[key] = tmp1;
+      resmatrix[key] = tmp2;
+    }
 
-	sum = 0
+    sum = 0;
 
-	for (var i = 0; i < data_arr.length; i++) {
-		line = data_arr[i];
-		if(line.length>1){
-			tmp = line.split(sep)
-			key = tmp[focus]
-			year = tmp[1]
-			val = parseInt(tmp[2])
-			
-			if(valmatrix[key][year] == 0){valmatrix[key][year] = val}else{valmatrix[key][year] = valmatrix[key][year]+val}
-			res = (valmatrix[key][year] / sumperyear[year] ) * 100
-			resmatrix[key][year] = res
-		}
-	}
+    for (var i = 0; i < data_arr.length; i++) {
+      line = data_arr[i];
+      if (line.length > 1) {
+        tmp = line.split(sep);
+        key = tmp[focus];
+        year = tmp[1];
+        val = parseInt(tmp[2]);
 
-	var data = []
-	var years = []
+        if (valmatrix[key][year] == 0) {
+          valmatrix[key][year] = val;
+        } else {
+          valmatrix[key][year] = valmatrix[key][year] + val;
+        }
+        res = (valmatrix[key][year] / sumperyear[year]) * 100;
+        resmatrix[key][year] = res;
+      }
+    }
 
-	for (key in sumperyear){
-		years.push(key)
-	}
+    var data = [];
+    var years = [];
 
-	for (key in resmatrix){
-		ys = []
-		for (year in sumperyear){
-			ys.push(resmatrix[key][year])
-		}
-		
-		var trace = {
-			x:years,
-			y:ys,
-			name:key,
-			hovertemplate:"%{x} "+key+" %{y}%",
-			type: 'bar',
-			marker: {color: getColor(key)}
-		};
-		data.push(trace)
-	}
+    for (key in sumperyear) {
+      years.push(key);
+    }
 
-	var layout = {
-		barmode: 'stack',
-		showlegend:false,
-		title:{
-			text:diagramtitle,
-			font:diagramfont
-		},
-		hovermode:'closest',
-		xaxis:{
-			automargin: true,
-			range:[minDate-2,maxDate+2],
-			linewidth: 1,
-			title:{
-				font:diagramfont
-			},
-			tickangle:90,
-			tickfont:diagramfont
-		},
-		yaxis:{
-		range:[0,110],
-		title:{
-			text: 'Häufigkeit (%)',
-			font:diagramfont
-			}
-		},
-		annotations: watermarke(),
-		updatemenus: [{
-			type: 'buttons',
-			buttons: [{
-				label: 'Filter',
-				method: 'relayout',
-				args: ['showlegend', false],
-				args2: ['showlegend', true]
-			}]
-		}]
-	};
+    for (key in resmatrix) {
+      ys = [];
+      for (year in sumperyear) {
+        ys.push(resmatrix[key][year]);
+      }
 
-	Plotly.newPlot('myDiv', data, layout,plotlyconfiguration);
+      var trace = {
+        x: years,
+        y: ys,
+        name: key,
+        hovertemplate: '%{x} ' + key + ' %{y}%',
+        type: 'bar',
+        marker: { color: getColor(key) },
+      };
+      data.push(trace);
+    }
 
-</script>
+    var layout = {
+      barmode: 'stack',
+      showlegend: false,
+      title: {
+        text: diagramtitle,
+        font: diagramfont,
+      },
+      hovermode: 'closest',
+      xaxis: {
+        automargin: true,
+        range: [minDate - 2, maxDate + 2],
+        linewidth: 1,
+        title: {
+          font: diagramfont,
+        },
+        tickangle: 90,
+        tickfont: diagramfont,
+      },
+      yaxis: {
+        range: [0, 110],
+        title: {
+          text: 'Häufigkeit (%)',
+          font: diagramfont,
+        },
+      },
+      annotations: watermarke(),
+      updatemenus: [
+        {
+          type: 'buttons',
+          buttons: [
+            {
+              label: 'Filter',
+              method: 'relayout',
+              args: ['showlegend', false],
+              args2: ['showlegend', true],
+            },
+          ],
+        },
+      ],
+    };
 
-
-
-
+    Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
+  </script>
+</body>

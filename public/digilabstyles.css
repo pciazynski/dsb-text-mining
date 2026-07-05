@@ -28,7 +28,7 @@ div.explain{
 	font-size: 0.8em;
 	line-height: 1em;
 	background-color:#F4F4F4;
-	-webkit-user-select: none; /* Safari */        
+	-webkit-user-select: none; /* Safari */
 	-moz-user-select: none; /* Firefox */
 	-ms-user-select: none; /* IE10+/Edge */
 	user-select: none; /* Standard */
@@ -146,7 +146,7 @@ div.header> table > tbody > tr >td >a{
 }
 
 .slider::-webkit-slider-thumb {
-	-webkit-appearance: none; 
+	-webkit-appearance: none;
 	appearance: none;
 	width: 25px;
 	height: 25px;
@@ -162,16 +162,16 @@ div.header> table > tbody > tr >td >a{
 }
 
 #logdicemin::-moz-range-progress,#yearminslider::-moz-range-progress {
-  background-color: #007377; 
+  background-color: #007377;
 }
-#logdicemin::-moz-range-track,#yearminslider::-moz-range-track {  
+#logdicemin::-moz-range-track,#yearminslider::-moz-range-track {
   background-color: #d3d3d3;
 }
 
 #logdicemax::-moz-range-progress,#yearmaxslider::-moz-range-progress {
-  background-color: #d3d3d3; 
+  background-color: #d3d3d3;
 }
-#logdicemax::-moz-range-track,#yearmaxslider::-moz-range-track {  
+#logdicemax::-moz-range-track,#yearmaxslider::-moz-range-track {
   background-color: #007377;
 }
 
