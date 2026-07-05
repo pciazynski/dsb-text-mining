@@ -56,7 +56,7 @@
 	myPlot = document.getElementById('myDiv')
 	myPlot.on('plotly_click', function(data) {
 		if(dataset.includes('tokenlength')){
-			alert(readPHP('tokenbylength.php?length='+data.points[0].x))
+			alert(readPHP('tokenfrequencybylength.php?length='+data.points[0].x))
 		}
 	});
 	document.title = diagramtitle
