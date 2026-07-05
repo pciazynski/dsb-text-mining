@@ -1,32 +1,32 @@
 <?php
 header('Content-Type: text/plain');
 
-if (isset($_GET['norm'])){
+if (isset($_GET['norm'])) {
 	$PDO = new PDO('sqlite:../data/normmapping.db');
-	function _sqliteRegexp($pattern,$string) {
+	function _sqliteRegexp($pattern, $string)
+	{
 		(preg_match("/^" . $pattern . "$/u", $string) === 1) ? $hit = true : $hit = false;
 		return $hit;
 	}
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
-	(isset($_GET['exact']) and $_GET['exact'] !== '0') ? $regexp = '\|'.$_GET['norm'].'\|' : $regexp = '.*\|'.$_GET['norm'].'\|.*';
+	(isset($_GET['exact']) and $_GET['exact'] !== '0') ? $regexp = '\|' . $_GET['norm'] . '\|' : $regexp = '.*\|' . $_GET['norm'] . '\|.*';
 	$params = [$regexp];
 	$query = 'SELECT norm, token, SUM(frequency) as sumfreq FROM tokennormtypesubtypedatefrequency WHERE norm REGEXP ?';
-	if(isset($_GET['year']) and preg_match('/(\d+)\D+(\d+)/', $_GET['year'], $y)){
+	if (isset($_GET['year']) and preg_match('/(\d+)\D+(\d+)/', $_GET['year'], $y)) {
 		$query .= ' AND date BETWEEN ? AND ?';
 		$params[] = (int)$y[1];
 		$params[] = (int)$y[2];
 	}
-	$query.=' GROUP BY token,norm';
+	$query .= ' GROUP BY token,norm';
 	(isset($_GET['sort'])) ? $query .= ' ORDER BY sumfreq DESC' : NULL;
 	$tab = "\t";
 	$nl = "\n";
 	$res = '';
 
-	$stmt = $PDO->prepare($query."  LIMIT 2100000;");
+	$stmt = $PDO->prepare($query . "  LIMIT 2100000;");
 	$stmt->execute($params);
-	foreach($stmt as $row){
-		$res.=$row['norm'].$tab.$row['token'].$tab.$row['sumfreq'].$nl;
+	foreach ($stmt as $row) {
+		$res .= $row['norm'] . $tab . $row['token'] . $tab . $row['sumfreq'] . $nl;
 	}
 	print($res);
 }
-?>

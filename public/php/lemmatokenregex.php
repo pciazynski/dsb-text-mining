@@ -1,29 +1,29 @@
 <?php
 header('Content-Type: text/plain');
 
-if (isset($_GET['lemma'])){
+if (isset($_GET['lemma'])) {
 
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
-	function _sqliteRegexp($pattern,$string) {
+	function _sqliteRegexp($pattern, $string)
+	{
 		(preg_match("/^" . $pattern . "$/u", $string) === 1) ? $hit = true : $hit = false;
 		return $hit;
 	}
 	$PDO->sqliteCreateFunction('regexp', '_sqliteRegexp', 2);
 
-	$regexp = '\|'.$_GET['lemma'].'\|';
+	$regexp = '\|' . $_GET['lemma'] . '\|';
 	$query = 'SELECT token, lemma, frequency FROM lemmatokenfrequency';
 	$query .= ' WHERE lemma REGEXP ?';
 	(isset($_GET['sort'])) ? $query .= ' ORDER BY frequency DESC' : NULL;
-	
+
 	$tab = "\t";
 	$nl = "\n";
 	$res = '';
 
-	$stmt = $PDO->prepare($query.";");
+	$stmt = $PDO->prepare($query . ";");
 	$stmt->execute([$regexp]);
-	foreach($stmt as $row){
-		$res.=$row['lemma'].$tab.$row['token'].$tab.$row['frequency'].$nl;
+	foreach ($stmt as $row) {
+		$res .= $row['lemma'] . $tab . $row['token'] . $tab . $row['frequency'] . $nl;
 	}
 	print($res);
 }
-?>
