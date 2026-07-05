@@ -7,7 +7,7 @@ manualurl = ""
 
 RETRIES = 10
 RETRY_WAIT_SECONDS = 5
-REQUEST_TIMEOUT_SECONDS = 60*5
+REQUEST_TIMEOUT_SECONDS = 60 * 5
 
 
 def urlopenWithRetry(

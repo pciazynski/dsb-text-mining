@@ -1,2 +1,1 @@
-var lang_exampletranslationtextwithanamethathopefullywontcollide = "My translation text";
- 
+var lang_exampletranslationtextwithanamethathopefullywontcollide = 'My translation text';

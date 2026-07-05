@@ -3,14 +3,17 @@ from config import *
 
 bw = {}
 bl = {}
-incons = 0 
-with open (datadir+"lemmamapping/_all.txt", "r", encoding="utf8") as bwin, open (datadir+"lemmamapping/_inconsistencies.txt", "w", encoding="utf8") as incout:
+incons = 0
+with (
+    open(datadir + "lemmamapping/_all.txt", "r", encoding="utf8") as bwin,
+    open(datadir + "lemmamapping/_inconsistencies.txt", "w", encoding="utf8") as incout,
+):
     for line in bwin:
         linearr = line.split("\t")
         if linearr[0] in bl:
-            incout.write(linearr[0]+"\n")
-            incons+=1
-            bl[linearr[0]] = bl[linearr[0]] +1
+            incout.write(linearr[0] + "\n")
+            incons += 1
+            bl[linearr[0]] = bl[linearr[0]] + 1
             if bl[linearr[0]] > 2:
                 print(linearr[0])
 
@@ -20,7 +23,11 @@ unlem = 0
 lem = 0
 progress = {}
 
-with open (datadir+"bagofwords/_all.txt", "r", encoding="utf8") as bwin, open (datadir+"lemmamapping/_yay.txt", "w", encoding="utf8") as outlem,open (datadir+"lemmamapping/_nay.txt", "w", encoding="utf8") as outunlem:
+with (
+    open(datadir + "bagofwords/_all.txt", "r", encoding="utf8") as bwin,
+    open(datadir + "lemmamapping/_yay.txt", "w", encoding="utf8") as outlem,
+    open(datadir + "lemmamapping/_nay.txt", "w", encoding="utf8") as outunlem,
+):
     for line in bwin:
         linearr = line.split("\t")
         if linearr[0] in bl:
@@ -32,64 +39,74 @@ with open (datadir+"bagofwords/_all.txt", "r", encoding="utf8") as bwin, open (d
             outunlem.write(line)
             progress[line.strip()] = 0
 
-with open (datadir+"lemmamapping/_progress.txt", "w", encoding="utf8") as outlemprogress:
-    for line,value in sorted(progress.items(), key = lambda x:x[1], reverse=True):
-        outlemprogress.write(line+"\t"+str(progress[line]) + "\n")
-    
+with open(
+    datadir + "lemmamapping/_progress.txt", "w", encoding="utf8"
+) as outlemprogress:
+    for line, value in sorted(progress.items(), key=lambda x: x[1], reverse=True):
+        outlemprogress.write(line + "\t" + str(progress[line]) + "\n")
+
 unsortedlist = {}
-sortedlist =  {}
+sortedlist = {}
 
 sortedtypecount = 0
 unsortedtypecount = 0
 
-with open(datadir+"lemmamapping/_lemmabag.txt","r", encoding="utf8") as inf:
+with open(datadir + "lemmamapping/_lemmabag.txt", "r", encoding="utf8") as inf:
     for line in inf:
         count = int(line.split("\t")[1])
         line = line.split("\t")[0]
         linearr = line.split("|")
-        if(len(linearr)>3):
+        if len(linearr) > 3:
             unsortedtypecount += count
             unsortedlist["|".join(linearr)] = 1
             linearr = sorted(linearr)
             if not "|".join(linearr) in sortedlist:
                 sortedtypecount += count
-#            else:
-#                handle sorting-redundancies    
-#                print(line+"->"+"|".join(linearr))
+            #            else:
+            #                handle sorting-redundancies
+            #                print(line+"->"+"|".join(linearr))
             sortedlist["|".join(linearr)] = 1
 
 
-with open (datadir+"lemmamapping/_stats.txt", "w", encoding="utf8") as out:
-    out.write("Lemmatisiert / Alle: "+str(lem)+" / "+str(lem+unlem)+"\n")
-    out.write("Inkonsistent: "+str(incons)+"\n")
-    out.write("Sortierungsredundanz (ambige Einträge sortiert / ambige Einträge unsortiert / Betroffene Token ) : "+str(len(sortedlist))+" / "+str(len(unsortedlist))+" / "+str(unsortedtypecount-sortedtypecount)+"\n")
+with open(datadir + "lemmamapping/_stats.txt", "w", encoding="utf8") as out:
+    out.write("Lemmatisiert / Alle: " + str(lem) + " / " + str(lem + unlem) + "\n")
+    out.write("Inkonsistent: " + str(incons) + "\n")
+    out.write(
+        "Sortierungsredundanz (ambige Einträge sortiert / ambige Einträge unsortiert / Betroffene Token ) : "
+        + str(len(sortedlist))
+        + " / "
+        + str(len(unsortedlist))
+        + " / "
+        + str(unsortedtypecount - sortedtypecount)
+        + "\n"
+    )
 
 lemmabag = {}
 lemmaambiquebag = {}
 lemmagroupbag = {}
 lemmauniquebag = {}
 
-with open (datadir+"lemmamapping/_all.txt", "r", encoding="utf8") as inf:
+with open(datadir + "lemmamapping/_all.txt", "r", encoding="utf8") as inf:
     for line in inf:
         linearr = line.split("\t")
         lemma = linearr[1]
         lemma = lemma[1:-1]
         if len(lemma) > 0:
             lemmaarr = lemma.split("|")
-            if(len(lemmaarr)>1):
+            if len(lemmaarr) > 1:
                 if lemma in lemmagroupbag:
-                    lemmagroupbag[lemma] = lemmagroupbag[lemma]+1
+                    lemmagroupbag[lemma] = lemmagroupbag[lemma] + 1
                 else:
                     lemmagroupbag[lemma] = 1
                 for key in lemmaarr:
                     if key in lemmaambiquebag:
-                        lemmaambiquebag[key] = lemmaambiquebag[key]+1
+                        lemmaambiquebag[key] = lemmaambiquebag[key] + 1
                     else:
                         lemmaambiquebag[key] = 1
-                    
+
             for key in lemmaarr:
                 if key in lemmabag:
-                    lemmabag[key] = lemmabag[key]+1
+                    lemmabag[key] = lemmabag[key] + 1
                 else:
                     lemmabag[key] = 1
 
@@ -106,11 +123,17 @@ for lemma in lemmabag:
     unique = insg - ambique
     lemmaunique[lemma] = unique
     lemmauniquenessbag[lemma] = unique / insg
-with open(datadir+"lemmamapping/_lemmauniqueness.txt", "w", encoding="utf8") as outf:
-    for lemma,value in sorted(lemmauniquenessbag.items(), key = lambda x:x[1], reverse=True):
-        outf.write(lemma+"\t"+str(lemmauniquenessbag[lemma]) + "\t" + str(lemmaunique[lemma]) +"\t" + str(lemmaambiquebag[lemma]) + "\n")
-        
-
-
-        
-
+with open(datadir + "lemmamapping/_lemmauniqueness.txt", "w", encoding="utf8") as outf:
+    for lemma, value in sorted(
+        lemmauniquenessbag.items(), key=lambda x: x[1], reverse=True
+    ):
+        outf.write(
+            lemma
+            + "\t"
+            + str(lemmauniquenessbag[lemma])
+            + "\t"
+            + str(lemmaunique[lemma])
+            + "\t"
+            + str(lemmaambiquebag[lemma])
+            + "\n"
+        )

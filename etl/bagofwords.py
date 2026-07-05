@@ -10,33 +10,33 @@ doc_year = {}
 tokensumperyear = {}
 typesumperyear = {}
 
+
 def process(foldername):
-    for yearfile in sorted(os.listdir(foldername+"peryear")):
-        print("process "+foldername+":"+yearfile)
+    for yearfile in sorted(os.listdir(foldername + "peryear")):
+        print("process " + foldername + ":" + yearfile)
         wb = dict()
-        with open (foldername+"peryear/"+yearfile, "r", encoding="utf8") as inf:
+        with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
             for line in inf:
-                linearr=line.split("\t")
+                linearr = line.split("\t")
                 token = linearr[0]
                 if token in wb:
                     wb[token] = wb[token] + int(linearr[1])
                 else:
                     wb[token] = int(linearr[1])
-        with open (foldername+"peryear/"+yearfile, "w", encoding="utf8") as outf:
-            for token,value in sorted(wb.items(), key = lambda x:x[1], reverse=True):
-                outf.write(token+"\t"+str(value)+"\n")
-            
-            
+        with open(foldername + "peryear/" + yearfile, "w", encoding="utf8") as outf:
+            for token, value in sorted(wb.items(), key=lambda x: x[1], reverse=True):
+                outf.write(token + "\t" + str(value) + "\n")
+
     wb = dict()
-    for yearfile in sorted(os.listdir(foldername+"peryear")):
-        with open (foldername+"peryear/"+yearfile, "r", encoding="utf8") as inf:
-            year = int(yearfile.replace(".txt",""))
+    for yearfile in sorted(os.listdir(foldername + "peryear")):
+        with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
+            year = int(yearfile.replace(".txt", ""))
             for line in inf:
-                linearr=line.split("\t")
+                linearr = line.split("\t")
                 token = linearr[0]
                 if year in tokensumperyear:
-                    tokensumperyear[year] = tokensumperyear[year]+int(linearr[1])
-                    typesumperyear[year] = typesumperyear[year]+1
+                    tokensumperyear[year] = tokensumperyear[year] + int(linearr[1])
+                    typesumperyear[year] = typesumperyear[year] + 1
                 else:
                     tokensumperyear[year] = int(linearr[1])
                     typesumperyear[year] = 1
@@ -45,90 +45,108 @@ def process(foldername):
                     wb[token] = wb[token] + int(linearr[1])
                 else:
                     wb[token] = int(linearr[1])
-    with open (foldername+"/_all.txt", "w", encoding="utf8") as outf:
-        for token,value in sorted(wb.items(), key = lambda x:x[1], reverse=True):
-            outf.write(token+"\t"+str(value)+"\n")
-    with open (foldername+"/_tokensumperyear.txt", "w", encoding="utf8") as outf:
-        for year,value in sorted(tokensumperyear.items()):
-            outf.write(str(year)+"\t"+str(value)+"\n")
-    with open (foldername+"/_typesumperyear.txt", "w", encoding="utf8") as outf:
-        for year,value in sorted(typesumperyear.items()):
-            outf.write(str(year)+"\t"+str(value)+"\n")
-    with open (foldername+"/_typetokenratioperyear.txt", "w", encoding="utf8") as outf:
-        for year,value in sorted(typesumperyear.items()):
-            outf.write(str(year)+"\t"+str(typesumperyear[year] / tokensumperyear[year])+"\n")
+    with open(foldername + "/_all.txt", "w", encoding="utf8") as outf:
+        for token, value in sorted(wb.items(), key=lambda x: x[1], reverse=True):
+            outf.write(token + "\t" + str(value) + "\n")
+    with open(foldername + "/_tokensumperyear.txt", "w", encoding="utf8") as outf:
+        for year, value in sorted(tokensumperyear.items()):
+            outf.write(str(year) + "\t" + str(value) + "\n")
+    with open(foldername + "/_typesumperyear.txt", "w", encoding="utf8") as outf:
+        for year, value in sorted(typesumperyear.items()):
+            outf.write(str(year) + "\t" + str(value) + "\n")
+    with open(foldername + "/_typetokenratioperyear.txt", "w", encoding="utf8") as outf:
+        for year, value in sorted(typesumperyear.items()):
+            outf.write(
+                str(year)
+                + "\t"
+                + str(typesumperyear[year] / tokensumperyear[year])
+                + "\n"
+            )
 
     wb_max = dict()
     wb_min = dict()
-    for yearfile in sorted(os.listdir(foldername+"peryear")):
-        with open (foldername+"peryear/"+yearfile, "r", encoding="utf8") as inf:
+    for yearfile in sorted(os.listdir(foldername + "peryear")):
+        with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
             for line in inf:
-                year = int(yearfile.replace(".txt",""))
+                year = int(yearfile.replace(".txt", ""))
                 token = line.split("\t")[0]
                 if token in wb_max:
                     if year > wb_max[token]:
                         wb_max[token] = year
                 else:
                     wb_max[token] = year
-                if token in wb_min: 
+                if token in wb_min:
                     if year < wb_min[token]:
                         wb_min[token] = year
                 else:
-                    wb_min[token] = year                    
-    with open (foldername+"/_minmaxyearzipf.txt", "w", encoding="utf8") as outf:
-        for token,value in sorted(wb.items(),key = lambda x:x[1], reverse=True):
-            outf.write(token+"\t"+str(wb_min[token])+"\t"+str(wb_max[token])+"\t"+str(value)+"\n")
+                    wb_min[token] = year
+    with open(foldername + "/_minmaxyearzipf.txt", "w", encoding="utf8") as outf:
+        for token, value in sorted(wb.items(), key=lambda x: x[1], reverse=True):
+            outf.write(
+                token
+                + "\t"
+                + str(wb_min[token])
+                + "\t"
+                + str(wb_max[token])
+                + "\t"
+                + str(value)
+                + "\n"
+            )
     daterange = {}
-    for token,value in sorted(wb_min.items(),key = lambda x:x[1], reverse=False):
-        drange = str(wb_min[token])+"\t"+str(wb_max[token])
+    for token, value in sorted(wb_min.items(), key=lambda x: x[1], reverse=False):
+        drange = str(wb_min[token]) + "\t" + str(wb_max[token])
         if not drange in daterange:
             daterange[drange] = token
         else:
-            daterange[drange] = daterange[drange]+","+token
-    with open (foldername+"/_minmaxyearmin.txt", "w", encoding="utf8") as outf:
+            daterange[drange] = daterange[drange] + "," + token
+    with open(foldername + "/_minmaxyearmin.txt", "w", encoding="utf8") as outf:
         for key in daterange:
-            outf.write(key+"\t"+daterange[key]+"\n")
-            
+            outf.write(key + "\t" + daterange[key] + "\n")
+
     daterange = {}
-    for token,value in sorted(wb_max.items(),key = lambda x:x[1], reverse=False):
-        drange = str(wb_min[token])+"\t"+str(wb_max[token])
+    for token, value in sorted(wb_max.items(), key=lambda x: x[1], reverse=False):
+        drange = str(wb_min[token]) + "\t" + str(wb_max[token])
         if not drange in daterange:
             daterange[drange] = token
         else:
-            daterange[drange] = daterange[drange]+","+token
-    with open (foldername+"/_minmaxyearmax.txt", "w", encoding="utf8") as outf:
+            daterange[drange] = daterange[drange] + "," + token
+    with open(foldername + "/_minmaxyearmax.txt", "w", encoding="utf8") as outf:
         for key in daterange:
-            outf.write(key+"\t"+daterange[key]+"\n")
+            outf.write(key + "\t" + daterange[key] + "\n")
+
 
 def sanitycheck(rs):
     for line in rs.split("\n"):
         linearr = line.split("\t")
-        if len(linearr)!= 2:
-            print("+"+line)
+        if len(linearr) != 2:
+            print("+" + line)
             return False
     return True
+
 
 def reset():
     print("Reset")
     if not os.path.exists(datadir):
         os.makedirs(datadir, exist_ok=True)
-    if os.path.exists(datadir+"bagofwords"):
-        shutil.rmtree(datadir+"bagofwords")
-    os.mkdir(datadir+"bagofwords")
-    if os.path.exists(datadir+"bagofwordsperyear"):
-        shutil.rmtree(datadir+"bagofwordsperyear")
-    os.mkdir(datadir+"bagofwordsperyear")
+    if os.path.exists(datadir + "bagofwords"):
+        shutil.rmtree(datadir + "bagofwords")
+    os.mkdir(datadir + "bagofwords")
+    if os.path.exists(datadir + "bagofwordsperyear"):
+        shutil.rmtree(datadir + "bagofwordsperyear")
+    os.mkdir(datadir + "bagofwordsperyear")
+
 
 def getdoclist(ctsns):
     tmplist = ""
     if os.path.exists("urnlist.txt"):
-        with open("urnlist.txt","r",encoding="utf8") as inf:
+        with open("urnlist.txt", "r", encoding="utf8") as inf:
             for line in inf:
-                tmplist+=line
+                tmplist += line
     else:
         tmplist = cts_inventory(ctsns)
     return tmplist.strip()
-    
+
+
 def collect():
     global count
     reset()
@@ -141,33 +159,50 @@ def collect():
         urnarr = urn.split(".")
         year = line.split("\t")[2]
 
-        if (len(year)>1 and count!=0):
+        if len(year) > 1 and count != 0:
             doc_year[urn] = year
-            print(str(count)+" "+urn)
-            count-=1
-            with open (datadir+"bagofwords/"+urn.replace(":","_#_")+".txt", "w",encoding="utf8") as outf,open (datadir+"bagofwordsperyear/"+year+".txt", "a",encoding="utf8") as outyf:
+            print(str(count) + " " + urn)
+            count -= 1
+            with (
+                open(
+                    datadir + "bagofwords/" + urn.replace(":", "_#_") + ".txt",
+                    "w",
+                    encoding="utf8",
+                ) as outf,
+                open(
+                    datadir + "bagofwordsperyear/" + year + ".txt", "a", encoding="utf8"
+                ) as outyf,
+            ):
                 rs = cts_bagofwords(urn)
                 if sanitycheck(rs):
                     outf.write(rs)
-                    outyf.write(rs+"\n")
+                    outyf.write(rs + "\n")
                 else:
-                    with open("_ERROR.txt","a",encoding="utf8") as errf:
-                        errf.write("Error Bagofwords:-->"+urn+"\n")
-    process(datadir+"bagofwords")
+                    with open("_ERROR.txt", "a", encoding="utf8") as errf:
+                        errf.write("Error Bagofwords:-->" + urn + "\n")
+    process(datadir + "bagofwords")
+
 
 def initTables():
-    if os.path.exists(datadir+"bagofwords.db"):
-        os.remove(datadir+"bagofwords.db")
-    con = sqlite3.connect(datadir+"bagofwords.db")
+    if os.path.exists(datadir + "bagofwords.db"):
+        os.remove(datadir + "bagofwords.db")
+    con = sqlite3.connect(datadir + "bagofwords.db")
     cursor = con.cursor()
-    cursor.execute("CREATE TABLE tokendatecount(token VARCHAR (50),date DATE,frequency INTEGER);")
-    cursor.execute("CREATE TABLE tokencount(token VARCHAR (50),frequency INTEGER,sortkey TEXT);")
-    cursor.execute("CREATE TABLE urndatewordbag(urn VARCHAR (50),date DATE,wordbag text);")
+    cursor.execute(
+        "CREATE TABLE tokendatecount(token VARCHAR (50),date DATE,frequency INTEGER);"
+    )
+    cursor.execute(
+        "CREATE TABLE tokencount(token VARCHAR (50),frequency INTEGER,sortkey TEXT);"
+    )
+    cursor.execute(
+        "CREATE TABLE urndatewordbag(urn VARCHAR (50),date DATE,wordbag text);"
+    )
     con.commit()
     con.close()
 
+
 def index():
-    con = sqlite3.connect(datadir+"bagofwords.db")
+    con = sqlite3.connect(datadir + "bagofwords.db")
     cursor = con.cursor()
     print("Indexing...")
     cursor.execute("CREATE INDEX tokenindex ON tokencount(token);")
@@ -180,10 +215,11 @@ def index():
     con.commit()
     con.close()
 
+
 def db():
     print("DB...")
     initTables()
-    con = sqlite3.connect(datadir+"bagofwords.db")
+    con = sqlite3.connect(datadir + "bagofwords.db")
     cursor = con.cursor()
 
     doclist = getdoclist(ctsns).split("\n")
@@ -191,47 +227,73 @@ def db():
         urn_date = line.split("\t")
         doc_year[urn_date[0]] = urn_date[2]
 
-    with open (datadir+"bagofwords/_all.txt", "r", encoding="utf8") as inf:
+    with open(datadir + "bagofwords/_all.txt", "r", encoding="utf8") as inf:
         for line in inf.readlines():
-            if len(line.strip())>0:
+            if len(line.strip()) > 0:
                 linearr = line.split("\t")
-                vals = '"'+linearr[0]+'",'+linearr[1].strip()+',"'+dsb_sortkey(linearr[0])+'"'
-                query="INSERT INTO tokencount(token,frequency,sortkey) VALUES("+vals+")"
+                vals = (
+                    '"'
+                    + linearr[0]
+                    + '",'
+                    + linearr[1].strip()
+                    + ',"'
+                    + dsb_sortkey(linearr[0])
+                    + '"'
+                )
+                query = (
+                    "INSERT INTO tokencount(token,frequency,sortkey) VALUES("
+                    + vals
+                    + ")"
+                )
                 cursor.execute(query)
     con.commit()
-    
-    yearfiles = sorted(os.listdir(datadir+"bagofwordsperyear"))
+
+    yearfiles = sorted(os.listdir(datadir + "bagofwordsperyear"))
     for year in yearfiles:
-        #print("sql bagofwordsperyear:"+year)
-        
-        with open (datadir+"bagofwordsperyear/"+year, "r", encoding="utf8") as inf:
+        # print("sql bagofwordsperyear:"+year)
+
+        with open(datadir + "bagofwordsperyear/" + year, "r", encoding="utf8") as inf:
             for line in inf.readlines():
-                if len(line.strip())>0:
+                if len(line.strip()) > 0:
                     linearr = line.split("\t")
-                    vals = '"'+linearr[0]+'",'+year.replace(".txt","")+','+linearr[1]
-                    query="INSERT INTO tokendatecount(token,date,frequency) VALUES("+vals+")"
+                    vals = (
+                        '"'
+                        + linearr[0]
+                        + '",'
+                        + year.replace(".txt", "")
+                        + ","
+                        + linearr[1]
+                    )
+                    query = (
+                        "INSERT INTO tokendatecount(token,date,frequency) VALUES("
+                        + vals
+                        + ")"
+                    )
                     cursor.execute(query)
         con.commit()
-        
-    files = sorted(os.listdir(datadir+"bagofwords"))
+
+    files = sorted(os.listdir(datadir + "bagofwords"))
     for file in files:
         if file.startswith("urn_#_"):
-            #print("sql bagofwordsperurn:"+file)
-            with open (datadir+"bagofwords/"+file, "r", encoding="utf8") as inf:
+            # print("sql bagofwordsperurn:"+file)
+            with open(datadir + "bagofwords/" + file, "r", encoding="utf8") as inf:
                 wordbag = "|"
                 for line in inf.readlines():
-                    if len(line.strip())>0:
-                        wordbag += line.split("\t")[0]+"|"
-                urn = file.replace(".txt","").replace("_#_",":")
+                    if len(line.strip()) > 0:
+                        wordbag += line.split("\t")[0] + "|"
+                urn = file.replace(".txt", "").replace("_#_", ":")
                 year = doc_year[urn]
-                vals = '"'+urn+'","'+year+'","'+wordbag+'"'
-                query="INSERT INTO urndatewordbag(urn,date,wordbag) VALUES("+vals+")"
+                vals = '"' + urn + '","' + year + '","' + wordbag + '"'
+                query = (
+                    "INSERT INTO urndatewordbag(urn,date,wordbag) VALUES(" + vals + ")"
+                )
                 cursor.execute(query)
         con.commit()
     index()
 
+
 print("Bagofwords")
-if len(sys.argv)==2:
+if len(sys.argv) == 2:
     if sys.argv[1] == "db":
         print("DB")
         db()
@@ -243,4 +305,3 @@ else:
     print("Collect & DB")
     collect()
     db()
-    
