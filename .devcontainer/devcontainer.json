@@ -19,14 +19,12 @@
     "vscode": {
       "extensions": [
         "bmewburn.vscode-intelephense-client",
-        "xdebug.php-debug",
         "ms-python.python",
         "ms-python.pylance",
         "ms-python.black-formatter",
         "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint",
         "ecmel.vscode-html-css",
-        "ritwickdey.LiveServer",
         "editorconfig.editorconfig"
       ],
       "settings": {
