@@ -156,7 +156,6 @@ def collect():
         count = len(doclist)
     for line in doclist:
         urn = line.split("\t")[0]
-        urnarr = urn.split(".")
         year = line.split("\t")[2]
 
         if len(year) > 1 and count != 0:
