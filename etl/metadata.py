@@ -2,7 +2,7 @@ import sys
 import os
 import shutil
 import sqlite3
-from config import *
+from settings import count, ctsns, datadir
 from pythoncts import *
 
 
@@ -90,16 +90,22 @@ def db():
     index()
 
 
-print("Metadata")
-if len(sys.argv) == 2:
-    if sys.argv[1] == "db":
-        print("DB")
-        db()
-    else:
-        if sys.argv[1] == "collect":
+def main(argv=None):
+    print("Metadata")
+    if argv is None:
+        argv = sys.argv[1:]
+    if len(argv) == 1:
+        if argv[0] == "db":
+            print("DB")
+            db()
+        elif argv[0] == "collect":
             print("Collect")
             collect()
-else:
-    print("Collect & DB")
-    collect()
-    db()
+    else:
+        print("Collect & DB")
+        collect()
+        db()
+
+
+if __name__ == "__main__":
+    main()

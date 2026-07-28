@@ -19,6 +19,9 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+.pytest_cache/
+.coverage
+.venv
 
 # Logs and test reports
 *.log

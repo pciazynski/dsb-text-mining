@@ -3,17 +3,19 @@ import sys
 import os
 import shutil
 import sqlite3
-from config import *
+from settings import count, ctsns, datadir, copyrighttoken, tokenlength
 from pythoncts import *
 from dsb_collation import dsb_sortkey
 
 lemmabag = {}
 bagofwords = {}
 
-with open(datadir + "bagofwords/_all.txt", "r", encoding="utf8") as bwin:
-    for line in bwin:
-        linearr = line.split("\t")
-        bagofwords[linearr[0]] = int(linearr[1])
+
+def load_bagofwords():
+    with open(datadir + "bagofwords/_all.txt", "r", encoding="utf8") as bwin:
+        for line in bwin:
+            linearr = line.split("\t")
+            bagofwords[linearr[0]] = int(linearr[1])
 
 
 def requestctsurl(ns):
@@ -86,7 +88,7 @@ def lemmamapping(urn):
                 if len(lemma.strip()) > 0:
                     res += token + "\t" + lemma + "\t" + wetype + "\t" + subtype + "\n"
             else:
-                with open("_ERROR.txt", "a", encoding="utf8") as errout:
+                with open(datadir + "_ERROR.txt", "a", encoding="utf8") as errout:
                     errout.write(
                         urn + " lemmatisierowasch unknown token " + token + "\n"
                     )
@@ -443,12 +445,19 @@ def db():
     index()
 
 
-if len(sys.argv) == 2:
-    if sys.argv[1] == "db":
-        db()
-    else:
-        if sys.argv[1] == "collect":
+def main(argv=None):
+    load_bagofwords()
+    if argv is None:
+        argv = sys.argv[1:]
+    if len(argv) == 1:
+        if argv[0] == "db":
+            db()
+        elif argv[0] == "collect":
             collect()
-else:
-    collect()
-    db()
+    else:
+        collect()
+        db()
+
+
+if __name__ == "__main__":
+    main()

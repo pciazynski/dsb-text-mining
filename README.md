@@ -103,6 +103,37 @@ server (Apache, nginx + PHP-FPM, etc.) and serve it as static content with PHP
 handling for `.php` files. `router.php` is not used in this mode; a real web
 server handles directory indexes and routing on its own.
 
+## Running Tests Locally
+
+The test suite requires Python 3.10 or newer. It uses temporary directories and
+mocked HTTP responses, so it does not modify `public/data/` or contact the CTS
+service.
+
+From the repository root, create a virtual environment and install the test
+dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[test]"
+```
+
+Run the full suite:
+
+```bash
+python -m pytest
+```
+
+For a coverage report matching CI:
+
+```bash
+python -m pytest --cov=etl --cov-report=term-missing
+```
+
+After the initial installation, activate the existing virtual environment and
+rerun either command. A generated `etl/config.py` is optional: the tests and ETL
+imports fall back to `etl/config_def.py` when it is absent.
+
 ## License And Attribution
 
 This project is licensed under the Creative Commons Attribution-ShareAlike 4.0

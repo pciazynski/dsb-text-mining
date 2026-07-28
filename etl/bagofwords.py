@@ -2,16 +2,16 @@ import sys
 import os
 import shutil
 import sqlite3
-from config import *
+from settings import count, ctsns, datadir
 from pythoncts import *
 from dsb_collation import dsb_sortkey
 
 doc_year = {}
-tokensumperyear = {}
-typesumperyear = {}
 
 
 def process(foldername):
+    tokensumperyear = {}
+    typesumperyear = {}
     for yearfile in sorted(os.listdir(foldername + "peryear")):
         print("process " + foldername + ":" + yearfile)
         wb = dict()
@@ -177,7 +177,7 @@ def collect():
                     outf.write(rs)
                     outyf.write(rs + "\n")
                 else:
-                    with open("_ERROR.txt", "a", encoding="utf8") as errf:
+                    with open(datadir + "_ERROR.txt", "a", encoding="utf8") as errf:
                         errf.write("Error Bagofwords:-->" + urn + "\n")
     process(datadir + "bagofwords")
 
@@ -291,16 +291,22 @@ def db():
     index()
 
 
-print("Bagofwords")
-if len(sys.argv) == 2:
-    if sys.argv[1] == "db":
-        print("DB")
-        db()
-    else:
-        if sys.argv[1] == "collect":
+def main(argv=None):
+    print("Bagofwords")
+    if argv is None:
+        argv = sys.argv[1:]
+    if len(argv) == 1:
+        if argv[0] == "db":
+            print("DB")
+            db()
+        elif argv[0] == "collect":
             print("Collect")
             collect()
-else:
-    print("Collect & DB")
-    collect()
-    db()
+    else:
+        print("Collect & DB")
+        collect()
+        db()
+
+
+if __name__ == "__main__":
+    main()

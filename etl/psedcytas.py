@@ -2,10 +2,7 @@ import sys
 import os
 import shutil
 import sqlite3
-from config import *
-
-if not os.path.exists(datadir):
-    os.makedirs(datadir, exist_ok=True)
+from settings import datadir
 
 
 def initTables():
@@ -19,13 +16,20 @@ def initTables():
     con.close()
 
 
-initTables()
-con = sqlite3.connect(datadir + "psedcytas.db")
-cursor = con.cursor()
+def main(argv=None):
+    os.makedirs(datadir, exist_ok=True)
+    initTables()
+    con = sqlite3.connect(datadir + "psedcytas.db")
+    cursor = con.cursor()
 
-with open("learn/dnw-audio-urls.txt", "r", encoding="utf8") as inf:
-    for line in inf.readlines():
-        vals = '"' + line + '"'
-        query = "INSERT INTO urls(url) VALUES(" + vals + ")"
-        cursor.execute(query)
-con.commit()
+    with open("learn/dnw-audio-urls.txt", "r", encoding="utf8") as inf:
+        for line in inf.readlines():
+            vals = '"' + line + '"'
+            query = "INSERT INTO urls(url) VALUES(" + vals + ")"
+            cursor.execute(query)
+    con.commit()
+    con.close()
+
+
+if __name__ == "__main__":
+    main()
