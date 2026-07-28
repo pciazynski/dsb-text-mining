@@ -1,3 +1,8 @@
+# Dev Notes (2026-07-14)
+
+- TSI `bagofwords.php` is configured with `$multibyte = false` (see `config.php`) but why? it contributes to inconsistencies with lowercasing special characters
+- in `bagofwords-endpoint-review.md` there's a review with potential problems - some of them are probably easily solvable with puting `$multibyte = true`, some of them are probably not problematic if we look at norm and lemma forms, but still would be good to talk about that with Fabian
+
 # Dev Notes (2026-07-05)
 
 - Project cleaned up
