@@ -1,14 +1,11 @@
 """Regression tests for the defects listed in docs/bagofwords-py-review.md.
 
-Every test in this module describes the *intended* behaviour and is marked
-xfail(strict=True): it will start failing loudly as soon as the underlying bug
-is fixed, which is the signal to drop the marker.
+Each test in this module documents intended behaviour and guards against
+reintroducing previously identified bugs.
 """
 
 import os
 import sqlite3
-
-import pytest
 
 import bagofwords
 
@@ -26,11 +23,6 @@ def read_lines(path):
 # ------------------------------------------------- 1a/1b: Unicode lowercasing
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="review 1a: tokens are stored verbatim, so server-side ASCII-only "
-    "lowercasing leaves non-ASCII capitals as separate types",
-)
 def test_process_merges_non_ascii_case_variants(tmp_path, write_peryear):
     """ "Żož" and "żož" are one type; Python's .lower() must fold them."""
     base = write_peryear(
@@ -48,11 +40,6 @@ def test_process_merges_non_ascii_case_variants(tmp_path, write_peryear):
     ]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="review 1a: case collisions inflate the type count and corrupt the "
-    "type/token ratio",
-)
 def test_process_case_variants_do_not_inflate_type_counts(tmp_path, write_peryear):
     base = write_peryear(
         str(tmp_path / "bagofwords"),
@@ -64,11 +51,6 @@ def test_process_case_variants_do_not_inflate_type_counts(tmp_path, write_peryea
     assert read_tsv(base + "/_typetokenratioperyear.txt") == [["1800", str(1 / 205)]]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="review 1a: a sentence-initial capitalised form gets its own, wrong, "
-    "first/last attestation range in _minmaxyearzipf.txt",
-)
 def test_process_case_variants_share_one_attestation_range(tmp_path, write_peryear):
     base = write_peryear(
         str(tmp_path / "bagofwords"),
@@ -82,11 +64,6 @@ def test_process_case_variants_share_one_attestation_range(tmp_path, write_perye
     assert read_tsv(base + "/_minmaxyearzipf.txt") == [["żož", "1800", "1850", "3"]]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="review 1b: _all.txt is the whitelist for normierowasch/"
-    "lemmatisierowasch, which tokenise with Python .lower()",
-)
 def test_all_txt_contains_only_lowercase_tokens(tmp_path, write_peryear):
     # TODO: define lowercasing, write all cases here in test
     base = write_peryear(
@@ -124,11 +101,6 @@ def make_corpus(datadir, monkeypatch, tokens, urn_tokens=None):
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="review 2a: db() interpolates tokens into double-quoted SQL literals "
-    "instead of binding parameters",
-)
 def test_db_stores_token_containing_double_quote(datadir, monkeypatch):
     make_corpus(datadir, monkeypatch, {'ſ"tym': 4})
     bagofwords.db()
@@ -143,11 +115,6 @@ def test_db_stores_token_containing_double_quote(datadir, monkeypatch):
     con.close()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="review 2a: a token closing the SQL literal is executed as SQL "
-    "rather than stored as data",
-)
 def test_db_does_not_execute_sql_injected_via_token(datadir, monkeypatch):
     payload = 'evil",0,"");DROP TABLE tokencount;--'
     make_corpus(datadir, monkeypatch, {payload: 1})
@@ -163,10 +130,6 @@ def test_db_does_not_execute_sql_injected_via_token(datadir, monkeypatch):
     con.close()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="review 2a: the wordbag column is built by the same concatenation",
-)
 def test_db_stores_wordbag_containing_double_quote(datadir, monkeypatch):
     make_corpus(datadir, monkeypatch, {"woda": 1}, urn_tokens={'k’"nam': 1})
     bagofwords.db()

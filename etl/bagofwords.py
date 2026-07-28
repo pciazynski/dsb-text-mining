@@ -17,8 +17,8 @@ def process(foldername):
         wb = dict()
         with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
             for line in inf:
-                linearr = line.split("\t")
-                token = linearr[0]
+                linearr = line.rstrip("\n").split("\t")
+                token = linearr[0].lower()
                 if token in wb:
                     wb[token] = wb[token] + int(linearr[1])
                 else:
@@ -32,8 +32,8 @@ def process(foldername):
         with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
             year = int(yearfile.replace(".txt", ""))
             for line in inf:
-                linearr = line.split("\t")
-                token = linearr[0]
+                linearr = line.rstrip("\n").split("\t")
+                token = linearr[0].lower()
                 if year in tokensumperyear:
                     tokensumperyear[year] = tokensumperyear[year] + int(linearr[1])
                     typesumperyear[year] = typesumperyear[year] + 1
@@ -69,7 +69,7 @@ def process(foldername):
         with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
             for line in inf:
                 year = int(yearfile.replace(".txt", ""))
-                token = line.split("\t")[0]
+                token = line.split("\t")[0].lower()
                 if token in wb_max:
                     if year > wb_max[token]:
                         wb_max[token] = year
@@ -229,22 +229,13 @@ def db():
     with open(datadir + "bagofwords/_all.txt", "r", encoding="utf8") as inf:
         for line in inf.readlines():
             if len(line.strip()) > 0:
-                linearr = line.split("\t")
-                vals = (
-                    '"'
-                    + linearr[0]
-                    + '",'
-                    + linearr[1].strip()
-                    + ',"'
-                    + dsb_sortkey(linearr[0])
-                    + '"'
+                linearr = line.rstrip("\n").split("\t")
+                token = linearr[0]
+                frequency = int(linearr[1])
+                cursor.execute(
+                    "INSERT INTO tokencount(token,frequency,sortkey) VALUES(?,?,?)",
+                    (token, frequency, dsb_sortkey(token)),
                 )
-                query = (
-                    "INSERT INTO tokencount(token,frequency,sortkey) VALUES("
-                    + vals
-                    + ")"
-                )
-                cursor.execute(query)
     con.commit()
 
     yearfiles = sorted(os.listdir(datadir + "bagofwordsperyear"))
@@ -254,21 +245,14 @@ def db():
         with open(datadir + "bagofwordsperyear/" + year, "r", encoding="utf8") as inf:
             for line in inf.readlines():
                 if len(line.strip()) > 0:
-                    linearr = line.split("\t")
-                    vals = (
-                        '"'
-                        + linearr[0]
-                        + '",'
-                        + year.replace(".txt", "")
-                        + ","
-                        + linearr[1]
+                    linearr = line.rstrip("\n").split("\t")
+                    token = linearr[0]
+                    date = int(year.replace(".txt", ""))
+                    frequency = int(linearr[1])
+                    cursor.execute(
+                        "INSERT INTO tokendatecount(token,date,frequency) VALUES(?,?,?)",
+                        (token, date, frequency),
                     )
-                    query = (
-                        "INSERT INTO tokendatecount(token,date,frequency) VALUES("
-                        + vals
-                        + ")"
-                    )
-                    cursor.execute(query)
         con.commit()
 
     files = sorted(os.listdir(datadir + "bagofwords"))
@@ -282,11 +266,10 @@ def db():
                         wordbag += line.split("\t")[0] + "|"
                 urn = file.replace(".txt", "").replace("_#_", ":")
                 year = doc_year[urn]
-                vals = '"' + urn + '","' + year + '","' + wordbag + '"'
-                query = (
-                    "INSERT INTO urndatewordbag(urn,date,wordbag) VALUES(" + vals + ")"
+                cursor.execute(
+                    "INSERT INTO urndatewordbag(urn,date,wordbag) VALUES(?,?,?)",
+                    (urn, year, wordbag),
                 )
-                cursor.execute(query)
         con.commit()
     index()
 
