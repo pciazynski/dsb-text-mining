@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-28
+
+- Added tests for Python scripts
+- bagofwords functionality covered
+- Added regression tests for bagofwords and related Python scripts (lowercasing unicode charachters)
+- Fixed failing regression tests and cleaned up a small review-related code change.
+
 ## 2026-07-05
 
 - project structure was cleaned up

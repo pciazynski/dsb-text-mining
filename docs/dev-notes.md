@@ -1,3 +1,8 @@
+# Dev Notes (2026-07-28)
+
+- Added regression tests for bagofwords behavior and Python script coverage.
+- Fixed existing regression tests and removed a small unused variable.
+
 # Dev Notes (2026-07-14)
 
 - TSI `bagofwords.php` is configured with `$multibyte = false` (see `config.php`) but why? it contributes to inconsistencies with lowercasing special characters
