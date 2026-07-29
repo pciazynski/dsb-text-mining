@@ -16,6 +16,6 @@ test = ["pytest>=8", "pytest-cov"]
 py-modules = []
 
 [tool.pytest.ini_options]
-pythonpath = ["etl"]
+pythonpath = ["etl", "scripts"]
 testpaths = ["tests/python"]
 addopts = "-ra"
