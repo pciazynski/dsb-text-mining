@@ -17,5 +17,5 @@ py-modules = []
 
 [tool.pytest.ini_options]
 pythonpath = ["etl"]
-testpaths = ["tests"]
+testpaths = ["tests/python"]
 addopts = "-ra"

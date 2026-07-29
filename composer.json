@@ -1,0 +1,25 @@
+{
+  "name": "dsb/text-mining",
+  "description": "Test harness for the Lower Sorbian text-mining PHP API",
+  "type": "project",
+  "license": "LICENSE.txt",
+  "require": {
+    "php": ">=8.1",
+    "ext-pdo": "*",
+    "ext-mbstring": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "DsbTests\\": "tests/php/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}

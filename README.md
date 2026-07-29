@@ -103,36 +103,61 @@ server (Apache, nginx + PHP-FPM, etc.) and serve it as static content with PHP
 handling for `.php` files. `router.php` is not used in this mode; a real web
 server handles directory indexes and routing on its own.
 
-## Running Tests Locally
+## Running Tests
 
-The test suite requires Python 3.10 or newer. It uses temporary directories and
-mocked HTTP responses, so it does not modify `public/data/` or contact the CTS
-service.
+There are three independent test suites, one per language, all run from the
+repository root. None of them touch `public/data/` or the network — they use
+temporary directories and fixture data throughout.
 
-From the repository root, create a virtual environment and install the test
-dependencies:
+| Suite  | Tests           | Requirements       | One-time setup                                                | Run                          |
+| ------ | --------------- | ------------------ | ------------------------------------------------------------- | ---------------------------- |
+| Python | `tests/python/` | Python ≥ 3.10      | `python3 -m venv .venv && .venv/bin/pip install -e ".[test]"` | `.venv/bin/python -m pytest` |
+| JS     | `tests/js/`     | Node.js ≥ 20       | `npm install`                                                 | `npm test`                   |
+| PHP    | `tests/php/`    | PHP 8.x + Composer | `composer install`                                            | `composer test`              |
+
+### Python
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e ".[test]"
-```
-
-Run the full suite:
-
-```bash
-python -m pytest
+.venv/bin/pip install -e ".[test]"
+.venv/bin/python -m pytest
 ```
 
 For a coverage report matching CI:
 
 ```bash
-python -m pytest --cov=etl --cov-report=term-missing
+.venv/bin/python -m pytest --cov=etl --cov-report=term-missing
 ```
 
-After the initial installation, activate the existing virtual environment and
-rerun either command. A generated `etl/config.py` is optional: the tests and ETL
-imports fall back to `etl/config_def.py` when it is absent.
+A generated `etl/config.py` is optional: the tests fall back to
+`etl/config_def.py` when it is absent.
+
+### JavaScript
+
+```bash
+npm install   # installs jsdom, the only dev dependency
+npm test
+```
+
+Run a single file with `node --test tests/js/config.test.js`.
+
+### PHP
+
+```bash
+composer install
+composer test
+```
+
+Run a single test with `vendor/bin/phpunit --filter <testName>`. The suite
+starts a temporary PHP built-in server against an isolated copy of
+`public/php/`, so no manual server setup is needed.
+
+### Reading the results
+
+A handful of tests document **known, unfixed bugs**: they pass while the bug
+is still present and fail loudly (as `XPASS`/unexpected pass) once the bug is
+fixed — that failure means the fix landed and the test's known-bug marker
+should be removed, not that something broke.
 
 ## License And Attribution
 

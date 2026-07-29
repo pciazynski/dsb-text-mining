@@ -106,3 +106,8 @@ if (typeof Plotly !== 'undefined') {
     ],
   };
 }
+
+// Test hook only. Browsers load this file via <script src>, where `module` is undefined.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { getColor, stringToColour, ctsurl, dataurl, phpurl, sep, wm_title };
+}

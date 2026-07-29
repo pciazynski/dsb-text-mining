@@ -26,9 +26,11 @@ dist/
 # Logs and test reports
 *.log
 TEST*.xml
+.phpunit.cache/
 
 # Dependency folders
 node_modules/
+/vendor/
 /public/vendor/*
 !/public/vendor/traviz_slim/
 !/public/vendor/traviz_slim/**

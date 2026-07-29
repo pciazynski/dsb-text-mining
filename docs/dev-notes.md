@@ -1,3 +1,20 @@
+# Dev Notes (2026-07-29)
+
+## Multi-language test infrastructure (uncommitted, on dev-only-wortform)
+
+- Python tests moved `tests/` → `tests/python/` (pytest `testpaths` updated); JS and PHP suites added alongside.
+- **JS**: `node:test` + jsdom (only devDep), new `package.json`; `tests/js/` with `helpers.js` (`withDom`, `loadScript`, `loadPage`, `knownBug`) + first tests for config.js and index.html. Test-hook `module.exports` footer added to `public/js/config.js`.
+- **PHP**: PHPUnit 11 via root `composer.json` (test harness only), `phpunit.xml`; `tests/php/` with `Support/DevServer.php` (isolated built-in server + throwaway data dir) and `Support/KnownBug.php` (`assertStillBroken`, strict-xfail equivalent) + first tests for dsb_collation and lemmatoken endpoint.
+- CI: `tests.yml` split into three jobs (python / js on Node 18 / php 8.3 with pdo_sqlite); earlier commits: single Python version in CI, vscode settings.
+- Agent setup: `.github/copilot-instructions.md` ("lazy senior dev" rules), per-language test instruction files, six agents (bug-hunter, characterization/regression testers, TDD red/green/refactor).
+- `.gitignore`: `.phpunit.cache/`, `/vendor/`.
+- All three suites green.
+
+## Docs
+
+- Condensed the three test instruction files in `.github/instructions/` (~35-40% fewer tokens): cut generic testing advice and repeated rationale, kept repo-specific facts (commands, helpers/fixtures, no-mock policy, strict-xfail patterns, code examples).
+- Rewrote README "Running Tests": was Python-only, now covers all three suites (pytest / npm test / composer test) with a quick-reference table and a note on the known-bug XPASS convention.
+
 # Dev Notes (2026-07-28)
 
 - Added regression tests for bagofwords behavior and Python script coverage.

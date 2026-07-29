@@ -1,0 +1,13 @@
+{
+  "name": "dsb-text-mining",
+  "version": "0.1.0",
+  "description": "Test harness for the browser frontend (public/js, public/*.html).",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "scripts": {
+    "test": "node --test tests/js/"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
