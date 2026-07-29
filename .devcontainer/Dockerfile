@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     composer \
     nodejs npm \
     git \
+    ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer (official installer, in case apt version is outdated)
