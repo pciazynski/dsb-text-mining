@@ -2,6 +2,12 @@
 
 ## 2026-07-28
 
+- added tests for PHP and JS
+- added more agents
+- added a helper script extract_alphabet.py
+
+## 2026-07-28
+
 - Added tests for Python scripts
 - bagofwords functionality covered
 - Added regression tests for bagofwords and related Python scripts (lowercasing unicode charachters)
