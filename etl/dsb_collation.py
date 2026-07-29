@@ -4,44 +4,9 @@
 # CH, DŹ and DŽ are NOT treated as separate letters anymore):
 #   a b c č ć d e ě f g h i j k ł l m n ń o ó p r ŕ s š ś t u v w x y z ž ź
 
-_ORDER = {
-    "A": 1,
-    "B": 2,
-    "C": 3,
-    "Č": 4,
-    "Ć": 5,
-    "D": 6,
-    "E": 7,
-    "Ě": 8,
-    "F": 9,
-    "G": 10,
-    "H": 11,
-    "I": 12,
-    "J": 13,
-    "K": 14,
-    "Ł": 15,
-    "L": 16,
-    "M": 17,
-    "N": 18,
-    "Ń": 19,
-    "O": 20,
-    "Ó": 21,
-    "P": 22,
-    "R": 23,
-    "Ŕ": 24,
-    "S": 25,
-    "Š": 26,
-    "Ś": 27,
-    "T": 28,
-    "U": 29,
-    "V": 30,
-    "W": 31,
-    "X": 32,
-    "Y": 33,
-    "Z": 34,
-    "Ž": 35,
-    "Ź": 36,
-}
+DSB_ALPHABET = "ABCČĆDEĚFGHIJKŁLMNŃOÓPRŔSŠŚTUVWXYZŽŹ"
+
+_ORDER = {letter: weight for weight, letter in enumerate(DSB_ALPHABET, 1)}
 
 
 def dsb_sortkey(s):
