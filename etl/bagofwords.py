@@ -9,6 +9,45 @@ from dsb_collation import dsb_sortkey
 doc_year = {}
 
 
+def normalize_token(token):
+    return token.lower()
+
+
+def normalize_response(response):
+    if response is None:
+        return None
+
+    if response.endswith(("\n", "\r")):
+        return None
+
+    normalized_lines = []
+    for line in response.splitlines():
+        if not line.strip():
+            return None
+        fields = line.split("\t")
+        if len(fields) != 2:
+            return None
+
+        token = normalize_token(fields[0])
+        frequency_text = fields[1].strip()
+        if not token or not frequency_text:
+            return None
+
+        try:
+            frequency = int(frequency_text)
+        except ValueError:
+            return None
+
+        if frequency < 1:
+            return None
+
+        normalized_lines.append(f"{token}\t{frequency}")
+
+    if not normalized_lines:
+        return None
+    return "\n".join(normalized_lines)
+
+
 def process(foldername):
     tokensumperyear = {}
     typesumperyear = {}
@@ -18,7 +57,7 @@ def process(foldername):
         with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
             for line in inf:
                 linearr = line.rstrip("\n").split("\t")
-                token = linearr[0].lower()
+                token = normalize_token(linearr[0])
                 if token in wb:
                     wb[token] = wb[token] + int(linearr[1])
                 else:
@@ -33,7 +72,7 @@ def process(foldername):
             year = int(yearfile.replace(".txt", ""))
             for line in inf:
                 linearr = line.rstrip("\n").split("\t")
-                token = linearr[0].lower()
+                token = normalize_token(linearr[0])
                 if year in tokensumperyear:
                     tokensumperyear[year] = tokensumperyear[year] + int(linearr[1])
                     typesumperyear[year] = typesumperyear[year] + 1
@@ -69,7 +108,7 @@ def process(foldername):
         with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
             for line in inf:
                 year = int(yearfile.replace(".txt", ""))
-                token = line.split("\t")[0].lower()
+                token = normalize_token(line.split("\t")[0])
                 if token in wb_max:
                     if year > wb_max[token]:
                         wb_max[token] = year
@@ -115,13 +154,8 @@ def process(foldername):
             outf.write(key + "\t" + daterange[key] + "\n")
 
 
-def sanitycheck(rs):
-    for line in rs.split("\n"):
-        linearr = line.split("\t")
-        if len(linearr) != 2:
-            print("+" + line)
-            return False
-    return True
+def sanitycheck(response):
+    return normalize_response(response) is not None
 
 
 def reset():
@@ -155,11 +189,29 @@ def collect():
     if count == -1:
         count = len(doclist)
     for line in doclist:
-        urn = line.split("\t")[0]
-        year = line.split("\t")[2]
+        if not line.strip():
+            continue
 
-        if len(year) > 1 and count != 0:
-            doc_year[urn] = year
+        inventory_fields = line.split("\t")
+        if len(inventory_fields) < 3:
+            continue
+
+        urn = inventory_fields[0].strip()
+        year = inventory_fields[2].strip()
+        try:
+            year_value = int(year)
+        except ValueError:
+            continue
+
+        response = cts_bagofwords(urn)
+        normalized_response = normalize_response(response)
+        if normalized_response is None:
+            with open(datadir + "_ERROR.txt", "a", encoding="utf8") as errf:
+                errf.write("Error Bagofwords:-->" + urn + "\n")
+            continue
+
+        if count != 0:
+            doc_year[urn] = year_value
             print(str(count) + " " + urn)
             count -= 1
             with (
@@ -169,16 +221,15 @@ def collect():
                     encoding="utf8",
                 ) as outf,
                 open(
-                    datadir + "bagofwordsperyear/" + year + ".txt", "a", encoding="utf8"
+                    os.path.join(
+                        datadir + "bagofwordsperyear", str(year_value) + ".txt"
+                    ),
+                    "a",
+                    encoding="utf8",
                 ) as outyf,
             ):
-                rs = cts_bagofwords(urn)
-                if sanitycheck(rs):
-                    outf.write(rs)
-                    outyf.write(rs + "\n")
-                else:
-                    with open(datadir + "_ERROR.txt", "a", encoding="utf8") as errf:
-                        errf.write("Error Bagofwords:-->" + urn + "\n")
+                outf.write(normalized_response)
+                outyf.write(normalized_response + "\n")
     process(datadir + "bagofwords")
 
 

@@ -8,6 +8,7 @@ import os
 import sqlite3
 
 import bagofwords
+import pytest
 
 
 def read_tsv(path):
@@ -18,6 +19,15 @@ def read_tsv(path):
 def read_lines(path):
     with open(path, encoding="utf8") as inf:
         return [line.rstrip("\n") for line in inf if line.strip()]
+
+
+def set_remote_document(monkeypatch, year, response):
+    monkeypatch.setattr(
+        bagofwords,
+        "getdoclist",
+        lambda ns: "urn:cts:dsb:doc1\tDoc One\t" + year,
+    )
+    monkeypatch.setattr(bagofwords, "cts_bagofwords", lambda urn: response)
 
 
 # ------------------------------------------------- 1a/1b: Unicode lowercasing
@@ -74,6 +84,73 @@ def test_all_txt_contains_only_lowercase_tokens(tmp_path, write_peryear):
 
     tokens = [row[0] for row in read_tsv(base + "/_all.txt")]
     assert tokens == [token.lower() for token in tokens]
+
+
+# ------------------------------------------ Remote collection validation
+
+
+def test_collect_traversal_year_rejected_without_external_file(datadir, monkeypatch):
+    year = "../../escaped"
+    collection_dir = datadir + "corpus/"
+    os.mkdir(collection_dir)
+    monkeypatch.setattr(bagofwords, "datadir", collection_dir)
+    escaped_path = os.path.abspath(
+        collection_dir + "bagofwordsperyear/" + year + ".txt"
+    )
+    set_remote_document(monkeypatch, year, "word\t1")
+
+    bagofwords.collect()
+
+    assert os.path.commonpath([collection_dir, escaped_path]) != os.path.commonpath(
+        [collection_dir]
+    )
+    assert not os.path.exists(escaped_path)
+    assert not os.path.exists(collection_dir + "bagofwords/urn_#_cts_#_dsb_#_doc1.txt")
+
+
+def test_collect_non_numeric_year_rejected_without_document_data(datadir, monkeypatch):
+    set_remote_document(monkeypatch, "unknown", "word\t1")
+
+    bagofwords.collect()
+
+    assert os.listdir(datadir + "bagofwordsperyear") == []
+    assert not os.path.exists(datadir + "bagofwords/urn_#_cts_#_dsb_#_doc1.txt")
+
+
+@pytest.mark.parametrize("frequency", ["not-a-number", "-1"])
+def test_collect_invalid_frequency_rejected_without_document_data(
+    datadir, monkeypatch, frequency
+):
+    set_remote_document(monkeypatch, "1800", "word\t" + frequency)
+
+    bagofwords.collect()
+
+    assert os.listdir(datadir + "bagofwordsperyear") == []
+    assert not os.path.exists(datadir + "bagofwords/urn_#_cts_#_dsb_#_doc1.txt")
+
+
+def test_main_empty_response_does_not_insert_document(datadir, monkeypatch):
+    set_remote_document(monkeypatch, "1800", "")
+
+    bagofwords.main([])
+
+    con = sqlite3.connect(datadir + "bagofwords.db")
+    rows = con.execute("SELECT urn, wordbag FROM urndatewordbag").fetchall()
+    con.close()
+    assert rows == []
+
+
+def test_main_unicode_token_uses_canonical_case_in_all_tables(datadir, monkeypatch):
+    set_remote_document(monkeypatch, "1800", "Żož\t1")
+
+    bagofwords.main([])
+
+    con = sqlite3.connect(datadir + "bagofwords.db")
+    token_rows = con.execute("SELECT token FROM tokencount").fetchall()
+    wordbag_rows = con.execute("SELECT wordbag FROM urndatewordbag").fetchall()
+    con.close()
+    assert token_rows == [("żož",)]
+    assert wordbag_rows == [("|żož|",)]
 
 
 # ---------------------------------------------------- 2a: SQL string building

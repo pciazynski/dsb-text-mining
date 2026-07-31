@@ -3,6 +3,8 @@
 can be called (depending of the which instance is being used) like this:
 https://tsi.daty.info/tm/bagofwords.php?urn=urn:cts:dsb:bramborske_nowiny_1882_32.20220129&sort=true&lowercase=true
 
+That endpoint is used by the script etl/bagofwords.py from this repo.
+
 **Verdict**
 
 For the specific passage you supplied, the reported frequencies are correct **assuming punctuation, including the final `-`, is intentionally excluded**.
