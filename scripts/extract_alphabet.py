@@ -124,24 +124,47 @@ def _both_cases_lines(letters):
     return [f"{letter.upper()} {letter.lower()}" for letter in ordered]
 
 
+def _format_output(letters, both_cases=False, full_unicode_name=False):
+    if both_cases:
+        lines = _both_cases_lines(letters)
+    elif full_unicode_name:
+        lines = [
+            f"{letter} {' '.join(unicodedata.name(character) for character in letter)}"
+            for letter in letters
+        ]
+    else:
+        return " ".join(letters) + "\n"
+
+    return "\n".join(lines) + "\n"
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
     both_cases = False
+    full_unicode_name = False
     only_latin = False
+    lowercase = False
+    uppercase = False
     paths = []
     for arg in argv:
         if arg == "--both-cases":
             both_cases = True
+        elif arg == "--full-unicode-name":
+            full_unicode_name = True
         elif arg == "--only-latin":
             only_latin = True
+        elif arg == "--lowercase":
+            lowercase = True
+        elif arg == "--uppercase":
+            uppercase = True
         else:
             paths.append(arg)
 
     if len(paths) > 2:
         raise SystemExit(
-            "usage: extract_alphabet.py [--both-cases] [--only-latin] [input [output]]"
+            "usage: extract_alphabet.py [--both-cases] [--full-unicode-name] [--only-latin] [--lowercase] [--uppercase] [input [output]]"
         )
 
     input_path = paths[0] if paths else os.path.join(datadir, "bagofwords", "_all.txt")
@@ -150,10 +173,14 @@ def main(argv=None):
     with open(input_path, "r", encoding="utf8") as inf:
         letters = extract_alphabet(inf.read(), only_latin=only_latin)
 
-    if both_cases:
-        output = "\n".join(_both_cases_lines(letters)) + "\n"
-    else:
-        output = " ".join(letters) + "\n"
+    if lowercase:
+        letters = sorted({letter.lower() for letter in letters}, key=_sort_key)
+    elif uppercase:
+        letters = sorted({letter.upper() for letter in letters}, key=_sort_key)
+
+    output = _format_output(
+        letters, both_cases=both_cases, full_unicode_name=full_unicode_name
+    )
 
     if output_path is None:
         sys.stdout.write(output)

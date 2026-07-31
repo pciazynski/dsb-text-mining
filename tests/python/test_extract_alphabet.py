@@ -138,6 +138,37 @@ def test_main_both_cases_keeps_combining_mark_in_both_cases(tmp_path, capsys):
     assert capsys.readouterr().out == "A a\nU\u0364 u\u0364\nW w\n"
 
 
+def test_main_lowercase_outputs_unique_lowercase_alphabet(tmp_path, capsys):
+    infile = tmp_path / "in.txt"
+    infile.write_text("AaaaaćdEęfgHklŁłńŻ", encoding="utf8")
+
+    extract_alphabet.main(["--lowercase", str(infile)])
+
+    assert capsys.readouterr().out == "a ć d e ę f g h k ł l ń ż\n"
+
+
+def test_main_uppercase_outputs_unique_uppercase_alphabet(tmp_path, capsys):
+    infile = tmp_path / "in.txt"
+    infile.write_text("AaaaaćdEęfgHklŁłńŻ", encoding="utf8")
+
+    extract_alphabet.main(["--uppercase", str(infile)])
+
+    assert capsys.readouterr().out == "A Ć D E Ę F G H K Ł L Ń Ż\n"
+
+
+def test_main_full_unicode_name_outputs_one_named_letter_per_line(tmp_path, capsys):
+    infile = tmp_path / "in.txt"
+    infile.write_text("ßba", encoding="utf8")
+
+    extract_alphabet.main(["--full-unicode-name", str(infile)])
+
+    assert capsys.readouterr().out == (
+        "a LATIN SMALL LETTER A\n"
+        "b LATIN SMALL LETTER B\n"
+        "ß LATIN SMALL LETTER SHARP S\n"
+    )
+
+
 def test_main_only_latin_excludes_cyrillic_greek_and_bare_modifier_letters(
     tmp_path, capsys
 ):
