@@ -1,5 +1,5 @@
 ---
-name: Regression Tester
+name: C. Regression Tester
 description: 'Write failing tests documenting known bugs, marked xfail(strict=True) until the bug is fixed. Use when a bug is known but the fix is deferred.'
 tools: ['read', 'search', 'edit', 'execute']
 user-invocable: true

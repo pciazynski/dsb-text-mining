@@ -1,5 +1,5 @@
 ---
-name: Bug Hunter
+name: B. Bug Hunter
 description: 'Review code against its expected functionality to find bugs, problems, and improvement candidates. Use before writing regression tests; outputs bug descriptions consumable by the Regression Tester.'
 tools: ['read', 'search', 'execute']
 user-invocable: true

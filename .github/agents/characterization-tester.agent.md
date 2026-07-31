@@ -1,5 +1,5 @@
 ---
-name: Characterization Tester
+name: A. Characterization Tester
 description: 'Write characterization tests that pin down the CURRENT behavior of existing, untested code. Use when adding test coverage to legacy code without TDD and without changing the source.'
 tools: ['read', 'search', 'edit', 'execute']
 user-invocable: true
