@@ -30,6 +30,32 @@ def set_remote_document(monkeypatch, year, response):
     monkeypatch.setattr(bagofwords, "cts_bagofwords", lambda urn: response)
 
 
+def test_collect_document_limit_stops_remote_requests(datadir, monkeypatch):
+    doclist = "\n".join(
+        [
+            "urn:cts:dsb:doc1\tDoc One\t1800",
+            "urn:cts:dsb:doc2\tDoc Two\t1801",
+            "urn:cts:dsb:doc3\tDoc Three\t1802",
+        ]
+    )
+    requested_urns = []
+    monkeypatch.setattr(bagofwords, "count", 2)
+    monkeypatch.setattr(bagofwords, "getdoclist", lambda ns: doclist)
+    monkeypatch.setattr(
+        bagofwords,
+        "cts_bagofwords",
+        lambda urn: requested_urns.append(urn) or "word\t1",
+    )
+
+    bagofwords.collect()
+
+    assert requested_urns == ["urn:cts:dsb:doc1", "urn:cts:dsb:doc2"]
+    assert sorted(os.listdir(datadir + "bagofwordsperyear")) == [
+        "1800.txt",
+        "1801.txt",
+    ]
+
+
 # ------------------------------------------------- 1a/1b: Unicode lowercasing
 
 

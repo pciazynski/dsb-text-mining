@@ -189,6 +189,9 @@ def collect():
     if count == -1:
         count = len(doclist)
     for line in doclist:
+        if count == 0:
+            break
+
         if not line.strip():
             continue
 
