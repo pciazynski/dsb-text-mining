@@ -1,5 +1,9 @@
 {
    "chat.disableAIFeatures": false,
    "chat.tools.compressOutput.enabled": true,
-   "python.analysis.extraPaths": ["./etl"]
+   "python.analysis.extraPaths": ["./etl"],
+   "[markdown]": {
+      "editor.formatOnSave": false,
+      "editor.wordWrap": "wordWrapColumn"
+   }
 }

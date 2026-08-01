@@ -36,18 +36,16 @@ def setup_remote_passage(tmp_path, monkeypatch, reset_cts_globals, payload):
 # --------------------------------------------------------- BUG-3: document sets
 
 
-# JUDGMENT CALL: asserts the two stages cover an identical document set. This is
-# only clearly wrong on a partial harvest (count>0), where "No Items" restoration
-# makes the lemma stage reach deeper into the doclist than the bag stage. On a full
-# run (count=-1) unannotated docs are legitimately bagged but not lemmatized, so
-# some divergence is by design. Whether partial harvests must stay aligned is a
-# stakeholder decision; strict set-equality may be stronger than intent supports.
+# A partial harvest selects a fixed inventory cohort. Missing lemma annotations
+# must not silently substitute a later document from a different year or corpus
+# segment. TODO: decide whether to record explicit per-document outcomes (empty,
+# unauthorized, invalid response, etc.) in a harvest manifest.
 @pytest.mark.xfail(
     strict=True,
-    reason="BUG: 'No Items' restores count so lemmatisierowasch lemmatizes a "
-    "different document set than bagofwords bags",
+    reason="BUG: 'No Items' restores count so a partial lemma harvest silently "
+    "substitutes a later document",
 )
-def test_both_stages_select_the_same_documents(datadir, monkeypatch):
+def test_partial_harvest_does_not_replace_unannotated_document(datadir, monkeypatch):
     doclist = "\n".join(
         [
             "urn:cts:dsb:doc1\tUnannotated\t1880",
@@ -76,23 +74,18 @@ def test_both_stages_select_the_same_documents(datadir, monkeypatch):
             name for name in os.listdir(datadir + folder) if name.startswith("urn_#_")
         )
 
-    assert urn_files("bagofwords") == urn_files("lemmamapping")
+    assert urn_files("bagofwords") == ["urn_#_cts_#_dsb_#_doc1.txt"]
+    assert urn_files("lemmamapping") == []
 
 
 # ------------------------------------------------------ BUG-4: tokenization
 
 
-# JUDGMENT CALL: only the principle is safe -- the passage and bag-of-words
-# tokenizers must agree or valid annotations are silently dropped. HOW they should
-# agree (strip ','? 1,00 -> 100 vs 1 00 vs 1,00) is a linguist/normalization
-# decision and depends on the server's unversioned $replacearr. This test picks
-# one plausible resolution.
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: passage token normalization (keeps ',') differs from the "
-    "bag-of-words contract, so annotations for numbers like 1,00 are discarded",
-)
-def test_lemmamapping_keeps_annotation_for_comma_number(
+# TODO: Decide whether to reproduce and version the production tokenizer or
+# derive frequencies and annotations from one parsed passage stream. Until then,
+# do not invent a one-token mapping for a <w> that the bag-of-words endpoint
+# tokenizes differently; exclude it and retain an auditable error record.
+def test_lemmamapping_excludes_comma_number_with_mismatched_tokenization(
     tmp_path, monkeypatch, reset_cts_globals
 ):
     setup_remote_passage(
@@ -102,8 +95,10 @@ def test_lemmamapping_keeps_annotation_for_comma_number(
 
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
-    assert result != ""
-    assert not (tmp_path / "_ERROR.txt").exists()
+    assert result == ""
+    assert (tmp_path / "_ERROR.txt").read_text(encoding="utf8") == (
+        "urn:cts:dsb:work lemmatisierowasch unknown token 1,00\n"
+    )
 
 
 # ---------------------------------------------------- BUG-5: attribute leakage
