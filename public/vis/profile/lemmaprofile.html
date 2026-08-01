@@ -18,7 +18,9 @@
       today = dd + '.' + mm + '.' + yyyy;
       data = readPHP('lemmaprofile.php?lemma=' + lemma).split('\n');
       if (data.length > 1) {
+		resolvedLemma = data[5] || lemma;
         data[5] = '';
+		lemma = resolvedLemma;
         if (data[4] != null) {
           tmparr = data[4].split('\t');
           tmparrseen = data[3].split('\t');

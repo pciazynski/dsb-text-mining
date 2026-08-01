@@ -11,10 +11,38 @@ if (isset($_GET['lemma'])) {
 
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
 
-	$query = 'SELECT frequency FROM lemmafrequency WHERE lemma="|' . $lemma . '|"';
-	foreach ($PDO->query($query . ';') as $row) {
-		$frequency = $row['frequency'];
+	$frequencyQuery = $PDO->prepare('SELECT frequency FROM lemmafrequency WHERE lemma = :lemma');
+	$frequencyQuery->execute(['lemma' => '|' . $lemma . '|']);
+	$frequency = $frequencyQuery->fetchColumn();
+
+	if ($frequency === false) {
+		$relatedQuery = $PDO->prepare(
+			'SELECT lemma FROM lemmafrequency WHERE lemma LIKE :lemma ORDER BY frequency DESC, lemma'
+		);
+		$relatedQuery->execute(['lemma' => '%|' . $lemma . '|%']);
+
+		while (($relatedLemma = $relatedQuery->fetchColumn()) !== false) {
+			foreach (explode('|', trim($relatedLemma, '|')) as $candidate) {
+				if ($candidate === $lemma) {
+					continue;
+				}
+
+				$frequencyQuery->execute(['lemma' => '|' . $candidate . '|']);
+				$candidateFrequency = $frequencyQuery->fetchColumn();
+				if ($candidateFrequency !== false) {
+					$lemma = $candidate;
+					$frequency = $candidateFrequency;
+					break 2;
+				}
+			}
+		}
 	}
+
+	if ($frequency === false) {
+		http_response_code(404);
+		exit;
+	}
+
 	$query = 'SELECT COUNT(*) as rank FROM lemmafrequency WHERE frequency>' . $frequency . '';
 	foreach ($PDO->query($query . ';') as $row) {
 		$rank = $row['rank'];
@@ -44,6 +72,7 @@ if (isset($_GET['lemma'])) {
 		$res .= trim($row['token'], "|") . $colon . $row['c'] . $tab;
 	}
 	$res = trim($res, $tab) . $nl;
+	$res .= $lemma . $nl;
 
 	print($res);
 }
