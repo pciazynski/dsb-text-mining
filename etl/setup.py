@@ -4,6 +4,8 @@ import os
 import sys
 import subprocess
 
+import settings
+
 
 def run(cmdarr):
     print("\n#########" + str(cmdarr) + "###########")
@@ -17,8 +19,9 @@ def main(argv=None):
     ns = argv[0]
     count = argv[1] if len(argv) == 2 else -1
     print(str(count) + " documents from " + ns)
-    if os.path.exists("_error.txt"):
-        os.remove("_error.txt")
+    error_log = settings.datadir + "_ERROR.txt"
+    if os.path.exists(error_log):
+        os.remove(error_log)
 
     with open("config_def.py", "r", encoding="utf8") as confdef:
         with open("config.py", "w", encoding="utf8") as conf:
@@ -32,11 +35,11 @@ def main(argv=None):
     print(ns)
     run(["python3", "bagofwords.py"])
     run(["python3", "lemmatisierowasch.py"])
-    run(["python3", "lemmaeval.py"])
-    run(["python3", "normierowasch.py"])
-    run(["python3", "normeval.py"])
-    run(["python3", "psedcytas.py", "3"])
-    run(["python3", "docu.py"])
+    # run(["python3", "lemmaeval.py"])
+    # run(["python3", "normierowasch.py"])
+    # run(["python3", "normeval.py"])
+    # run(["python3", "psedcytas.py", "3"])
+    # run(["python3", "docu.py"])
 
 
 if __name__ == "__main__":
