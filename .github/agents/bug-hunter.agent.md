@@ -7,7 +7,7 @@ disable-model-invocation: false
 argument-hint: 'Which code to review and what it is expected to do, e.g. "etl/metadata.py — should parse all TEI headers"'
 handoffs:
   - label: Regression Tester
-    agent: Regression Tester
+    agent: C. Regression Tester
     prompt: Write known-bug regression tests (expected-failure marked, per the language's test instructions) for the confirmed bugs listed above.
 ---
 

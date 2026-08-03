@@ -1,6 +1,6 @@
 # TODOs
 
-Short actionable list. See dev-notes-2026-06-24.md for context and rationale.
+That's a TODO list for humans not agents. It might be stale or incomplete.
 
 ## Search behavior and consistency
 

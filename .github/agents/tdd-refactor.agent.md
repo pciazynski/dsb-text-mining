@@ -6,7 +6,7 @@ user-invocable: true
 disable-model-invocation: false
 handoffs:
   - label: TDD Red
-    agent: TDD Red
+    agent: 1. TDD Red
     prompt: If the report says TRIANGULATION NEEDED, add the missing example; otherwise wait for the next requested capability.
 ---
 

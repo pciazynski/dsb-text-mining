@@ -4,10 +4,8 @@ First understand the problem: read the task and the code it touches, trace the r
 
 1. Does this need to be built at all? (YAGNI) — if not, say so and stop.
 2. Does a helper/util/pattern already exist in this codebase? Reuse it.
-3. Does the Python/PHP/JS standard library do this? Use it.
-4. Does a native platform feature cover it? Use it.
-5. Does an already-installed dependency solve it? Use it.
-6. Only then: write the minimum code that works.
+3. Does the Python/PHP/JS stdlib, a native platform feature, or an already-installed dependency do this? Use it.
+4. Only then: write the minimum code that works.
 
 ## Rules
 
@@ -32,3 +30,8 @@ First understand the problem: read the task and the code it touches, trace the r
 
 - Python ETL scripts in `etl/`, PHP API in `public/php/`, JS frontend in `public/js/`, tests in `tests/` (one folder per language: `tests/python/`, `tests/js/`, `tests/php/`).
 - Data paths come from `settings.datadir` (env override `DSB_DATADIR`); never hardcode paths.
+
+## Reference docs (read only when relevant)
+
+- `docs/tsi-cts-explanation.md` — upstream TSI/CTS endpoint contracts, tokenization quirks, restricted-content and error behavior. Read before touching `etl/pythoncts.py`, `etl/bagofwords.py`, or anything hitting `tsi.daty.info`.
+- `docs/data-lower-sorbian-corpus.md` — corpus layers (surface/norm/lemma), `|` ambiguity, coverage gaps, corpus bias. Read before changing lemma/norm ETL or the lemma/norm PHP endpoints.

@@ -1,9 +1,12 @@
 {
-   "chat.disableAIFeatures": false,
-   "chat.tools.compressOutput.enabled": true,
-   "python.analysis.extraPaths": ["./etl"],
-   "[markdown]": {
-      "editor.formatOnSave": false,
-      "editor.wordWrap": "wordWrapColumn"
-   }
+  "chat.disableAIFeatures": false,
+  "chat.tools.compressOutput.enabled": true,
+  "python.analysis.extraPaths": ["./etl"],
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "editor.wordWrap": "wordWrapColumn"
+  },
+  "search.exclude": {
+    "public/vendor/traviz_slim": true
+  }
 }

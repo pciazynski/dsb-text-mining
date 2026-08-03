@@ -6,7 +6,7 @@ user-invocable: true
 disable-model-invocation: false
 handoffs:
   - label: TDD Green
-    agent: TDD Green
+    agent: 2. TDD Green
     prompt: Implement the minimal code to make the failing test pass.
 ---
 

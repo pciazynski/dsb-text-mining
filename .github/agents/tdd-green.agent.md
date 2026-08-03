@@ -6,10 +6,10 @@ user-invocable: true
 disable-model-invocation: false
 handoffs:
   - label: TDD Refactor
-    agent: TDD Refactor
+    agent: 3. TDD Refactor
     prompt: Refactor the implementation while keeping all tests green.
   - label: TDD Red
-    agent: TDD Red
+    agent: 1. TDD Red
     prompt: Add the smallest triangulating test needed to clarify the missing rule reported above.
 ---
 
