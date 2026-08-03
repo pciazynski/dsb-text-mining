@@ -60,5 +60,5 @@ DTM is one of three pillars of a planned "historical vocabulary information syst
 
 ## Open Product Questions
 
-- What components/statistics/visualisations of this system are genuinely useful? Which can be removed entirely?
-- How this project will evolve, will the frontend part stay or will it be soon extracted and moved to other web apps? Maybe here we should focus rather on just processing the data? That's still not decided.
+- What components/statistics/visualisations of this system are genuinely useful? Which can be removed entirely? Which can be improved?
+- How this project will evolve? Will the frontend part stay or will it be soon extracted and moved to other web apps? Maybe here we should focus rather on just processing the data? That's still not decided.
