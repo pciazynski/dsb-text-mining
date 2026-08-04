@@ -34,7 +34,7 @@ DTM is one of three pillars of a planned "historical vocabulary information syst
 
 - Providing the specific corpus data it should analyse everything correctly. The user needs to be sure what is the outcome and why.
 - It can never happen that user takes some visualisation from this system (e.g.in which years the word "wordowaś" was used and how many times) into a scientific paper, and later he discovers that this is completely wrong because of a stupid processing error.
-- It must handle UTF-8 characters correctly, works with all possible spellings of Lower Sorbian. It should correctly consume TSI remote endpoints (but do not overly trusting it - it needs to be prepared for possible problems of remote TSI/CTS endpoint). 
+- It must handle UTF-8 characters correctly, works with all possible spellings of Lower Sorbian. It should correctly consume TSI/CTS remote endpoints (but do not overly trusting it - it needs to be prepared for possible problems of remote TSI/CTS endpoint). 
 
 ## Non-Goals
 

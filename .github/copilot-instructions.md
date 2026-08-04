@@ -34,5 +34,5 @@ First understand the problem: read the task and the code it touches, trace the r
 ## Reference docs (read only when relevant)
 
 - `PRODUCT.md` — purpose, users, product principles, Non-Goals, domain glossary (lemma / norm form / word form, CTS, TSI). Read before adding or removing any user-facing feature, endpoint, or visualisation, and whenever judging "does this need to be built at all?".
-- `docs/tsi-cts-explanation.md` — upstream TSI/CTS endpoint contracts, tokenization quirks, restricted-content and error behavior. Read before touching `etl/pythoncts.py`, `etl/bagofwords.py`, or anything hitting `tsi.daty.info`.
+- `docs/upstream-tsi-cts-service.md` — upstream TSI/CTS endpoint contracts, tokenization quirks, restricted-content and error behavior. Read before touching `etl/pythoncts.py`, `etl/bagofwords.py`, or anything hitting `tsi.daty.info`.
 - `docs/data-lower-sorbian-corpus.md` — corpus layers (surface/norm/lemma), `|` ambiguity, coverage gaps, corpus bias. Read before changing lemma/norm ETL or the lemma/norm PHP endpoints.

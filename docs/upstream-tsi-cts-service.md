@@ -12,15 +12,16 @@ this project and current production behavior as observed on
 - If configured diffferently this project here (DTS) can access different remote instance of TSI.
 - TSI provides all the data, but it cannot be 100% trusted, at least for now.
 - If really needed for resolving some deep issue or to understand TSI better, the code of TSI can be accessed here: https://github.com/pciazynski/text-service-infrastructure
+- If you need info about the corpus itself look at `docs/data-lower-sorbian-corpus.md`
 
 ## How corpus data gets into TSI/CTS
 
 Data flow chain: 
-1. TEI dump from the language department (manual, periodic dump).
+1. TEI dump of the corpus from the language department (manual, periodic dump).
 2. external filter/partition script (`tsi_dsb_import.jar`)
 3. external script `CTSImport.jar` which loads data into MariaDB tables from CTS service
-4. `buildcache.py` script from CTS service. At this stage CTS is ready to serve data under tsi.daty.info (or other URL). 
-5. It can be now consumed by this repo here DTM by starting `setup.py` which is caching everything into SQLite.
+4. `buildcache.py` script from CTS service. After this stage CTS is ready to serve data under tsi.daty.info (or other URL). 
+5. It can be now consumed by this repo here (DTM) by starting `setup.py` which run the whole processing pipeline and is caching everything into text files and SQLite.
 
 ## Production tokenization
 

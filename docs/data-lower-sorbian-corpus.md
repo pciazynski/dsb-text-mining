@@ -4,8 +4,8 @@ This document describes the Lower Sorbian corpus exposed by remote TSI services 
 
 ## Lower Sorbian corpus / corpora background information
  - Lower Sorbian corpus is maintained by Sorbian Institute and availlable for users on https://dolnoserbski.de/korpus/
- - This corpus has 4 main subcorpuses as described here: https://dolnoserbski.de/korpus/zredla/
- - This project here (DTS - dsb-text-mining) does not use dolnoserbski.de. It can access raw corpus data and some statistics via TSI/CTS remote service, which is explained in tsi-cts-explanation.md
+ - That corpus has 4 main subcorpuses as described here: https://dolnoserbski.de/korpus/zredla/
+ - This project here (DTS - dsb-text-mining) does not use dolnoserbski.de. It can access raw corpus data and some statistics via TSI/CTS remote service, which is explained in `docs/upstream-tsi-cts-service.md`
  - Explanation and specification of the raw corpus data can be found here: https://dolnoserbski.de/korpus/format/
  - This file provide some hints and info about the data in this corpus, it should help, but it is not extensive.
 
@@ -56,7 +56,7 @@ Important corpus properties:
 4. **Historical spelling is real data, not modern Lower Sorbian.** Forms such as
    `Pſchiżo`, `ße`, `ſtwortk`, and combining-mark spellings such as `ßeb́e`
    occur. Surface and normalized frequencies therefore describe different
-   linguistic layers.
+   layers. E.g. wortforms "Pſchiżo" and "pśiźo" can both have norm annotation as "pśiźo", and lemma as "PŚIŚ". Many other wortfroms like e.g. "Pſchidu" or "pśiźoš" will be annonated with lemma "PŚIŚ". But for some words this annotations might be missing.
 5. **The inventory year is the analytical date.** The numeric suffix after the
    dot in an edition URN, for example `.20260310110000`, is a version/import
    timestamp, not the publication year. Dates can still be missing or disagree
