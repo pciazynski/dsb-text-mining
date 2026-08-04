@@ -1,15 +1,11 @@
 # dsb-text-mining
 
 **dsb-text-mining** (**Niedersorbisches Text Mining**) is a browser-based
-digilab for exploring Lower Sorbian corpus text data from a Text Service Infrastructure
-CTS/Text API endpoint. This repo contains the data-processing scripts written in Python,
-PHP query endpoints, and static visualization pages.
+digilab for exploring Lower Sorbian corpus text data from a Text Service Infrastructure CTS/Text API endpoint. This repo contains the data-processing scripts written in Python, PHP query endpoints, and static visualization pages.
 
 ## Pipeline Overview
 
-The project is a three-tier system: a Python ETL pipeline produces local
-datasets, PHP endpoints expose them over HTTP, and a static frontend renders
-visualizations in the browser.
+The project is a three-tier system: a Python ETL (Extract -> Transform -> Load) pipeline produces local datasets, PHP endpoints expose them over HTTP, and a static frontend renders visualizations in the browser.
 
 ```
 CTS Text API  →  Python ETL (etl/*.py)  →  public/data/ (TSV + SQLite)  →  PHP (public/php/*.php)  →  Frontend (public/index.html, public/vis/, public/js/, public/vendor/)
@@ -35,8 +31,7 @@ CTS Text API  →  Python ETL (etl/*.py)  →  public/data/ (TSV + SQLite)  → 
    from `public/vendor/`.
 
 The pipeline is build-once / serve-many: the Python stage is run on the server
-to (re)generate `public/data/`, and the PHP and frontend stages then operate purely
-against those generated artifacts.
+to (re)generate `public/data/`, and the PHP and frontend stages then operate purely against those generated artifacts.
 
 ## Installation
 
@@ -69,8 +64,7 @@ The default `dsb` namespace is resolved through `https://urncts.eu`. If
 `urnlist.txt` exists, the scripts use it as the document list instead of asking
 the endpoint for the full inventory.
 
-The generated `public/data/` directory must remain alongside the PHP and frontend
-files for the interface to work.
+The generated `public/data/` directory must remain alongside the PHP and frontend files for the interface to work.
 
 ### 2. Install frontend libraries
 
@@ -120,13 +114,14 @@ temporary directories and fixture data throughout.
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -e ".[test]"
-.venv/bin/python -m pytest
+source .venv/bin/activate
+pytest
 ```
 
 For a coverage report matching CI:
 
 ```bash
-.venv/bin/python -m pytest --cov=etl --cov-report=term-missing
+pytest --cov=etl --cov-report=term-missing
 ```
 
 A generated `etl/config.py` is optional: the tests fall back to
@@ -189,10 +184,7 @@ This repository is a modified fork of the following original work.
 
 ### Modification Log
 
-Keep this section updated for public releases or major changes.
-
-- 2026-04-28: Pětš Śěžyński added explicit CC BY-SA attribution and
-  ShareAlike compliance documentation for fork publication.
+Look at docs/CHANGELOG.md or docs/CHANGELOG-dev-notes.md for more details.
 
 ### Redistribution Reminder
 
