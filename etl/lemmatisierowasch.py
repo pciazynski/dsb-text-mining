@@ -47,9 +47,14 @@ def tokencheck(token):
 
 def _attr_value(attrs, name):
     marker = name + '="'
-    if marker not in attrs:
-        return ""
-    return attrs.split(marker)[1].split('"')[0]
+    start = 0
+    while True:
+        idx = attrs.find(marker, start)
+        if idx == -1:
+            return ""
+        if idx == 0 or attrs[idx - 1] in " \t\n\r":
+            return attrs[idx + len(marker) :].split('"', 1)[0]
+        start = idx + 1
 
 
 def lemmamapping(urn):
@@ -86,7 +91,6 @@ def lemmamapping(urn):
             lemma = "|" + lemmavalue + "|"
             lemmabag[lemma] = lemmabag.get(lemma, 0) + 1
         subtype = _attr_value(wattr, "subtype")
-        # "type=" also matches inside "subtype=", so a lone subtype fills both.
         wetype = _attr_value(wattr, "type")
         if lemma.strip():
             res += "\t".join([token, lemma, wetype, subtype]) + "\n"

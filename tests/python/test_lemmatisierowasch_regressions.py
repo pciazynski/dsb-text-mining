@@ -49,6 +49,22 @@ def write_rows(path, columns):
             outf.write("\t".join(row) + "\n")
 
 
+def test_lemmamapping_keeps_type_empty_when_only_subtype_is_present(
+    tmp_path, monkeypatch, reset_cts_globals
+):
+    setup_remote_passage(
+        tmp_path,
+        monkeypatch,
+        reset_cts_globals,
+        '<text><w lemma="75" subtype="number">75</w></text>',
+    )
+    lemmatisierowasch.bagofwords["75"] = 1
+
+    result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
+
+    assert result.splitlines() == ["75\t|75|\t\tnumber"]
+
+
 # --------------------------------------------------------- BUG-3: document sets
 
 

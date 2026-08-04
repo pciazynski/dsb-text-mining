@@ -126,26 +126,6 @@ def test_lemmamapping_logs_unknown_token(tmp_path, monkeypatch, reset_cts_global
     )
 
 
-def test_lemmamapping_subtype_without_type_also_becomes_type(
-    tmp_path, monkeypatch, reset_cts_globals
-):
-    monkeypatch.setattr(lemmatisierowasch, "datadir", str(tmp_path) + os.sep)
-    monkeypatch.setattr(lemmatisierowasch, "ctsurl", "https://cts.example/")
-    reset_cts_globals.manualurl = "https://cts.example/"
-    lemmatisierowasch.bagofwords["75"] = 1
-    payload = '<text><w lemma="75" subtype="number">75</w></text>'
-    monkeypatch.setattr(
-        reset_cts_globals,
-        "urlopen",
-        lambda url, timeout: [payload.encode("utf8")],
-    )
-
-    result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
-
-    # QUESTIONABLE: the substring check treats subtype= as a type= attribute.
-    assert rows(result) == [["75", "|75|", "number", "number"]]
-
-
 def test_process_counts_rows_and_aggregates_years(tmp_path):
     folder = str(tmp_path / "lemmamapping")
     peryear = tmp_path / "lemmamappingperyear"

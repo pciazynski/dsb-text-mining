@@ -21,7 +21,7 @@ applyTo: 'tests/python/**'
 - One behavior per test; names `test_<unit>_<scenario>_<expected>`; Arrange-Act-Assert with blank lines; happy path first, then edge cases.
 - Tests are order-independent (own tmp dir/DB/state) and must fail via assertion, never import/collection error. Run new tests before finishing.
 - Assert exact results where cheap (row counts, full lists), not just membership.
-- Tests should be readable and easy to understand for a human. So do not use multiple `\t` or `\n` becuase they are not easy to read for humans.
+- Tests should be readable and easy to understand for a human. So do not use `\t` or `\n` because they are not easy to read for humans.
 
 ## Test doubles
 
