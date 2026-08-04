@@ -268,3 +268,27 @@ def test_main_without_args_runs_collect_then_db(monkeypatch):
     normierowasch.main([])
 
     assert calls == ["load", "collect", "db"]
+
+
+def test_collect_writes_ok_and_restricted_status_per_document(tmp_path, monkeypatch):
+    monkeypatch.setattr(normierowasch, "datadir", str(tmp_path) + os.sep)
+    monkeypatch.setattr(normierowasch, "count", -1)
+    monkeypatch.setattr(normierowasch, "getdoclist", lambda ns: "\n".join([
+        "urn:cts:dsb:doc1\tRestricted\t1880",
+        "urn:cts:dsb:doc2\tOpen\t1881",
+    ]))
+    normierowasch.bagofwords["jo"] = 1
+
+    def fake_cts_passage(urn, params):
+        if urn.endswith("doc1"):
+            return "Error code 7: Unauthorized Access"
+        return '<text><w norm="JO">jo</w></text>'
+
+    monkeypatch.setattr(normierowasch, "cts_passage", fake_cts_passage)
+
+    normierowasch.collect()
+
+    assert read_rows(tmp_path / "normmapping" / "_status.txt") == [
+        ["urn:cts:dsb:doc1", "restricted"],
+        ["urn:cts:dsb:doc2", "ok"],
+    ]

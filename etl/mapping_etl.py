@@ -52,6 +52,12 @@ def mapping(mod, urn):
         before(urn)
     bag = getattr(mod, mod.BAG_ATTR)
     res = mod.cts_passage(urn, "&copyrighttoken=" + mod.copyrighttoken)
+    if "Error code 7:" in res:
+        mod.mapping_status = "restricted"
+    elif "<w" not in res:
+        mod.mapping_status = "invalid"
+    else:
+        mod.mapping_status = "empty"
     wordelements = res.split("<w")
     total = str(len(wordelements))
     out = ""
@@ -83,6 +89,8 @@ def mapping(mod, urn):
         wetype = _attr_value(word_attributes, "type")
         subtype = _attr_value(word_attributes, "subtype")
         out += "\t".join([token, annotated, wetype, subtype]) + "\n"
+    if out.strip():
+        mod.mapping_status = "ok"
     print("\rOK                                       ")
     return out
 
@@ -131,19 +139,26 @@ def collect(mod):
     mod.reset()
     print("Collect...")
     doclist = mod.getdoclist(mod.ctsns).split("\n")
-    requested_count = mod.count
     if mod.count == -1:
         mod.count = len(doclist)
     map_urn = getattr(mod, mod.MAPPING_ATTR)
-    for line in doclist:
-        parts = line.split("\t")
-        urn = parts[0]
-        year = parts[2]
-
-        if len(year) > 1 and mod.count > 0:
+    status_path = _path(mod, mod.MAPPING_DIR, "_status.txt")
+    with open(status_path, "w", encoding="utf8") as statusout:
+        for line in doclist:
+            parts = line.split("\t")
+            urn = parts[0]
+            year = parts[2]
+            if len(year) <= 1 or mod.count <= 0:
+                continue
             print(str(mod.count) + " " + urn)
             mod.count -= 1
-            rs = map_urn(urn)
+            try:
+                rs = map_urn(urn)
+            except Exception:
+                status = "unavailable"
+                rs = ""
+            else:
+                status = getattr(mod, "mapping_status", "empty")
             if rs.strip():
                 urn_path = _path(mod, mod.MAPPING_DIR, urn.replace(":", "_#_") + ".txt")
                 year_path = _path(mod, mod.PERYEAR_DIR, year + ".txt")
@@ -155,6 +170,7 @@ def collect(mod):
                     outyf.write(rs)
             else:
                 print("No Items")
+            statusout.write(urn + "\t" + status + "\n")
 
     mod.process(_path(mod, mod.MAPPING_DIR))
     bag = getattr(mod, mod.BAG_ATTR)

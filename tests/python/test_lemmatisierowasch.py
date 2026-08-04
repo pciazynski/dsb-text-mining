@@ -326,3 +326,139 @@ def test_db_populates_all_tables_and_indexes(tmp_path, monkeypatch):
         "lemmanonambigsortkey",
     }
     con.close()
+
+
+# --------------------------------------------------- per document status file
+
+PASSAGE = '<text><w lemma="JO">jo</w></text>'
+UNAUTHORIZED = "Error code 7: Unauthorized Access"
+
+
+def setup_collect(tmp_path, monkeypatch, pythoncts, doclist, respond):
+    """Run collect() against a fake CTS endpoint; respond(url, timeout) fakes it."""
+    monkeypatch.setattr(lemmatisierowasch, "datadir", str(tmp_path) + os.sep)
+    monkeypatch.setattr(lemmatisierowasch, "count", -1)
+    monkeypatch.setattr(lemmatisierowasch, "ctsurl", "https://cts.example/")
+    monkeypatch.setattr(lemmatisierowasch, "getdoclist", lambda ns: doclist)
+    pythoncts.manualurl = "https://cts.example/"
+    monkeypatch.setattr(pythoncts, "urlopen", respond)
+
+
+def test_collect_writes_ok_and_restricted_status_per_document(
+    tmp_path, monkeypatch, reset_cts_globals
+):
+    doclist = "\n".join(
+        [
+            "urn:cts:dsb:doc1	Restricted	1880",
+            "urn:cts:dsb:doc2	Open	1881",
+        ]
+    )
+    lemmatisierowasch.bagofwords["jo"] = 1
+
+    def respond(url, timeout):
+        if "doc1" in url:
+            return [UNAUTHORIZED.encode("utf8")]
+        return [PASSAGE.encode("utf8")]
+
+    setup_collect(tmp_path, monkeypatch, reset_cts_globals, doclist, respond)
+
+    lemmatisierowasch.collect()
+
+    # urn, status
+    assert read_rows(tmp_path / "lemmamapping" / "_status.txt") == [
+        ["urn:cts:dsb:doc1", "restricted"],
+        ["urn:cts:dsb:doc2", "ok"],
+    ]
+
+
+def test_collect_writes_invalid_status_for_response_without_word_elements(
+    tmp_path, monkeypatch, reset_cts_globals
+):
+    doclist = "urn:cts:dsb:doc1	Open	1880"
+    lemmatisierowasch.bagofwords["jo"] = 1
+    payload = "<br /><b>Warning</b>: Undefined variable $urn in passage.php"
+
+    setup_collect(
+        tmp_path,
+        monkeypatch,
+        reset_cts_globals,
+        doclist,
+        lambda url, timeout: [payload.encode("utf8")],
+    )
+
+    lemmatisierowasch.collect()
+
+    assert read_rows(tmp_path / "lemmamapping" / "_status.txt") == [
+        ["urn:cts:dsb:doc1", "invalid"]
+    ]
+
+
+def test_collect_writes_empty_status_when_no_word_is_mapped(
+    tmp_path, monkeypatch, reset_cts_globals
+):
+    doclist = "urn:cts:dsb:doc1	Open	1880"
+    payload = '<text><w lemma="DOM">domu</w></text>'
+
+    setup_collect(
+        tmp_path,
+        monkeypatch,
+        reset_cts_globals,
+        doclist,
+        lambda url, timeout: [payload.encode("utf8")],
+    )
+
+    lemmatisierowasch.collect()
+
+    assert read_rows(tmp_path / "lemmamapping" / "_status.txt") == [
+        ["urn:cts:dsb:doc1", "empty"]
+    ]
+
+
+def test_collect_writes_ok_status_when_a_retried_request_finally_succeeds(
+    tmp_path, monkeypatch, reset_cts_globals, no_sleep
+):
+    doclist = "urn:cts:dsb:doc1	Open	1880"
+    lemmatisierowasch.bagofwords["jo"] = 1
+    attempts = []
+
+    def respond(url, timeout):
+        attempts.append(url)
+        if len(attempts) < 3:
+            raise TimeoutError("timed out")
+        return [PASSAGE.encode("utf8")]
+
+    setup_collect(tmp_path, monkeypatch, reset_cts_globals, doclist, respond)
+
+    lemmatisierowasch.collect()
+
+    assert len(attempts) == 3
+    assert read_rows(tmp_path / "lemmamapping" / "_status.txt") == [
+        ["urn:cts:dsb:doc1", "ok"]
+    ]
+
+
+def test_collect_writes_unavailable_status_when_all_retries_fail(
+    tmp_path, monkeypatch, reset_cts_globals, no_sleep
+):
+    doclist = "\n".join(
+        [
+            "urn:cts:dsb:doc1	Unreachable	1880",
+            "urn:cts:dsb:doc2	Open	1881",
+        ]
+    )
+    lemmatisierowasch.bagofwords["jo"] = 1
+
+    def respond(url, timeout):
+        if "doc1" in url:
+            raise TimeoutError("timed out")
+        return [PASSAGE.encode("utf8")]
+
+    setup_collect(tmp_path, monkeypatch, reset_cts_globals, doclist, respond)
+
+    lemmatisierowasch.collect()
+
+    assert read_rows(tmp_path / "lemmamapping" / "_status.txt") == [
+        ["urn:cts:dsb:doc1", "unavailable"],
+        ["urn:cts:dsb:doc2", "ok"],
+    ]
+    assert (tmp_path / "lemmamapping" / "urn_#_cts_#_dsb_#_doc2.txt").exists()

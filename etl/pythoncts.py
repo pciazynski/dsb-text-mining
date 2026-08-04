@@ -108,7 +108,7 @@ def cts_requestFromCts(requesturl):
             + thisurl
             + " is unavailable. \nIf you want to use an alternative endpoint, you can set the URL manually in the file pythoncts.py. Else you can contact the administrator to communicate this issue. You can find administrative contacts for individual data instances at https://urncts.eu."
         )
-        exit()
+        raise
     return res.strip("\n")
 
 
