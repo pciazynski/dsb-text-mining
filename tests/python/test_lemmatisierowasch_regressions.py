@@ -43,6 +43,12 @@ def setup_db_env(tmp_path, monkeypatch, doclist="urn:cts:dsb:doc1\tTitle\t1880")
     return datadir
 
 
+def write_rows(path, columns):
+    with open(path, "w", encoding="utf8") as outf:
+        for row in columns:
+            outf.write("\t".join(row) + "\n")
+
+
 # --------------------------------------------------------- BUG-3: document sets
 
 
@@ -128,8 +134,10 @@ def test_lemmamapping_ignores_attributes_of_following_element(
 
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
-    assert result == """jo	|JO|
-"""
+    expected = tmp_path / "expected.tsv"
+    write_rows(expected, [["jo", "|JO|", "", ""]])
+
+    assert result == expected.read_text(encoding="utf8")
 
 
 def test_lemmamapping_empty_lemma_creates_no_mapping(

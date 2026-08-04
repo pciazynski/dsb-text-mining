@@ -81,23 +81,15 @@ def lemmamapping(urn):
             with open(_path("_ERROR.txt"), "a", encoding="utf8") as errout:
                 errout.write(urn + " lemmatisierowasch unknown token " + token + "\n")
             continue
-        if 'lemma="' in wattr:
-            lemmavalue = (
-                _attr_value(wattr, "lemma").replace('"', " ").replace("'", " ").strip()
-            )
-            if lemmavalue:
-                lemma = "|" + lemmavalue + "|"
-                lemmabag[lemma] = lemmabag.get(lemma, 0) + 1
-        # Keep substring checks: "type=" also matches inside "subtype=".
-        if "subtype=" in wattr:
-            subtype = wattr.split('subtype="')[1].split('"')[0]
-        if "type=" in wattr:
-            wetype = wattr.split('type="')[1].split('"')[0]
+        lemmavalue = _attr_value(wattr, "lemma").replace("'", " ").strip()
+        if lemmavalue:
+            lemma = "|" + lemmavalue + "|"
+            lemmabag[lemma] = lemmabag.get(lemma, 0) + 1
+        subtype = _attr_value(wattr, "subtype")
+        # "type=" also matches inside "subtype=", so a lone subtype fills both.
+        wetype = _attr_value(wattr, "type")
         if lemma.strip():
-            res += token + "\t" + lemma
-            if wetype or subtype:
-                res += "\t" + wetype + "\t" + subtype
-            res += "\n"
+            res += "\t".join([token, lemma, wetype, subtype]) + "\n"
     print("\rOK                                       ")
     return res
 

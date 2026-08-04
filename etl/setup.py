@@ -35,11 +35,11 @@ def main(argv=None):
     print(ns)
     run(["python3", "bagofwords.py"])
     run(["python3", "lemmatisierowasch.py"])
-    # run(["python3", "lemmaeval.py"])
-    # run(["python3", "normierowasch.py"])
-    # run(["python3", "normeval.py"])
-    # run(["python3", "psedcytas.py", "3"])
-    # run(["python3", "docu.py"])
+    run(["python3", "lemmaeval.py"])
+    run(["python3", "normierowasch.py"])
+    run(["python3", "normeval.py"])
+    run(["python3", "psedcytas.py", "3"])
+    run(["python3", "docu.py"])
 
 
 if __name__ == "__main__":

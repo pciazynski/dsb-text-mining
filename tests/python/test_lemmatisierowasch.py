@@ -16,9 +16,20 @@ def reset_module_globals(monkeypatch):
     lemmatisierowasch.lemmabag.clear()
 
 
-def read_lines(path):
+def rows(text):
+    """Split tab-separated text into column lists so empty columns stay visible."""
+    return [line.split("\t") for line in text.splitlines()]
+
+
+def read_rows(path):
     with open(path, encoding="utf8") as inf:
-        return [line.rstrip("\n") for line in inf]
+        return rows(inf.read())
+
+
+def write_rows(path, columns):
+    with open(path, "w", encoding="utf8") as outf:
+        for row in columns:
+            outf.write("\t".join(row) + "\n")
 
 
 def test_load_bagofwords_reads_token_frequencies(tmp_path, monkeypatch):
@@ -87,9 +98,11 @@ def test_lemmamapping_returns_known_annotated_words(
 
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
-    assert result == """dṙewo	|DRJEWO|
-tog	|TEN|TO|
-"""
+    # token, lemma, type, subtype
+    assert rows(result) == [
+        ["dṙewo", "|DRJEWO|", "", ""],
+        ["tog", "|TEN|TO|", "", ""],
+    ]
     assert lemmatisierowasch.lemmabag == {"|DRJEWO|": 1, "|TEN|TO|": 1}
     assert not (tmp_path / "_ERROR.txt").exists()
 
@@ -130,8 +143,7 @@ def test_lemmamapping_subtype_without_type_also_becomes_type(
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
     # QUESTIONABLE: the substring check treats subtype= as a type= attribute.
-    assert result == """75	|75|	number	number
-"""
+    assert rows(result) == [["75", "|75|", "number", "number"]]
 
 
 def test_process_counts_rows_and_aggregates_years(tmp_path):
@@ -139,32 +151,61 @@ def test_process_counts_rows_and_aggregates_years(tmp_path):
     peryear = tmp_path / "lemmamappingperyear"
     os.makedirs(folder)
     os.makedirs(peryear)
-    (peryear / "1880.txt").write_text(
-        "\n".join(
-            [
-                "dṙewo	|DRJEWO|		",
-                "dṙewo	|DRJEWO|		",
-                "tog	|TEN|TO|		",
-            ]
-        )
-        + "\n",
-        encoding="utf8",
+    write_rows(
+        peryear / "1880.txt",
+        [
+            ["dṙewo", "|DRJEWO|", "", ""],
+            ["dṙewo", "|DRJEWO|", "", ""],
+            ["tog", "|TEN|TO|", "", ""],
+        ],
     )
-    (peryear / "1881.txt").write_text(
-        "\n".join(["dṙewo	|DRJEWO|		"]) + "\n",
-        encoding="utf8",
+    write_rows(peryear / "1881.txt", [["dṙewo", "|DRJEWO|", "", ""]])
+
+    lemmatisierowasch.process(folder)
+
+    # token, lemma, type, subtype, frequency
+    assert read_rows(peryear / "1880.txt") == [
+        ["dṙewo", "|DRJEWO|", "", "", "2"],
+        ["tog", "|TEN|TO|", "", "", "1"],
+    ]
+    assert read_rows(peryear / "1881.txt") == [["dṙewo", "|DRJEWO|", "", "", "1"]]
+    assert read_rows(tmp_path / "lemmamapping" / "_all.txt") == [
+        ["dṙewo", "|DRJEWO|", "", "", "3"],
+        ["tog", "|TEN|TO|", "", "", "1"],
+    ]
+
+
+def test_process_aggregates_lemmamapping_output_without_type_attributes(
+    tmp_path, monkeypatch, reset_cts_globals
+):
+    monkeypatch.setattr(lemmatisierowasch, "datadir", str(tmp_path) + os.sep)
+    monkeypatch.setattr(lemmatisierowasch, "ctsurl", "https://cts.example/")
+    reset_cts_globals.manualurl = "https://cts.example/"
+    lemmatisierowasch.bagofwords.update({"dṙewo": 14, "tog": 837})
+    payload = '<text><w lemma="DRJEWO">dṙewo</w>' '<w lemma="TEN|TO">tog</w></text>'
+    monkeypatch.setattr(
+        reset_cts_globals,
+        "urlopen",
+        lambda url, timeout: [payload.encode("utf8")],
+    )
+    folder = str(tmp_path / "lemmamapping")
+    peryear = tmp_path / "lemmamappingperyear"
+    os.makedirs(folder)
+    os.makedirs(peryear)
+    (peryear / "1880.txt").write_text(
+        lemmatisierowasch.lemmamapping("urn:cts:dsb:work"), encoding="utf8"
     )
 
     lemmatisierowasch.process(folder)
 
-    assert read_lines(peryear / "1880.txt") == [
-        "dṙewo	|DRJEWO|			2",
-        "tog	|TEN|TO|			1",
+    # token, lemma, type, subtype, frequency
+    assert read_rows(peryear / "1880.txt") == [
+        ["dṙewo", "|DRJEWO|", "", "", "1"],
+        ["tog", "|TEN|TO|", "", "", "1"],
     ]
-    assert read_lines(peryear / "1881.txt") == ["dṙewo	|DRJEWO|			1"]
-    assert read_lines(tmp_path / "lemmamapping" / "_all.txt") == [
-        "dṙewo	|DRJEWO|			3",
-        "tog	|TEN|TO|			1",
+    assert read_rows(tmp_path / "lemmamapping" / "_all.txt") == [
+        ["dṙewo", "|DRJEWO|", "", "", "1"],
+        ["tog", "|TEN|TO|", "", "", "1"],
     ]
 
 
