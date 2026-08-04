@@ -46,18 +46,47 @@ def _attr_value(attrs, name):
         start = idx + 1
 
 
-def mapping(mod, urn):
+def _load_passage(mod, urn):
+    passage_path = _path(mod, "passagecache", urn.replace(":", "_#_") + ".txt")
+    if os.path.exists(passage_path):
+        with open(passage_path, "r", encoding="utf8") as passagein:
+            return passagein.read()
+
     before = getattr(mod, "before_mapping", None)
     if before is not None:
         before(urn)
-    bag = getattr(mod, mod.BAG_ATTR)
     res = mod.cts_passage(urn, "&copyrighttoken=" + mod.copyrighttoken)
+    if "Error code 7:" not in res:
+        os.makedirs(os.path.dirname(passage_path), exist_ok=True)
+        with open(passage_path, "w", encoding="utf8") as passageout:
+            passageout.write(res)
+    return res
+
+
+def _set_mapping_status(mod, res):
     if "Error code 7:" in res:
         mod.mapping_status = "restricted"
     elif "<w" not in res:
         mod.mapping_status = "invalid"
     else:
         mod.mapping_status = "empty"
+
+
+def _normalize_token(word_content):
+    return (
+        word_content.split("</", 1)[0]
+        .replace('"', " ")
+        .replace("'", " ")
+        .replace(".", "")
+        .strip()
+        .lower()
+    )
+
+
+def mapping(mod, urn):
+    bag = getattr(mod, mod.BAG_ATTR)
+    res = _load_passage(mod, urn)
+    _set_mapping_status(mod, res)
     wordelements = res.split("<w")
     total = str(len(wordelements))
     out = ""
@@ -67,14 +96,7 @@ def mapping(mod, urn):
         if "</w" not in we:
             continue
         word_attributes, word_content = we.split(">", 1)
-        token = (
-            word_content.split("</", 1)[0]
-            .replace('"', " ")
-            .replace("'", " ")
-            .replace(".", "")
-            .strip()
-            .lower()
-        )
+        token = _normalize_token(word_content)
         if not tokencheck(mod, token):
             with open(_path(mod, "_ERROR.txt"), "a", encoding="utf8") as errout:
                 errout.write(

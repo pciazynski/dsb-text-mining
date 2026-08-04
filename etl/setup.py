@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 import os
 import sys
 import subprocess
+import shutil
 
 import settings
 
@@ -22,6 +23,9 @@ def main(argv=None):
     error_log = settings.datadir + "_ERROR.txt"
     if os.path.exists(error_log):
         os.remove(error_log)
+    passage_cache = os.path.join(settings.datadir, "passagecache")
+    if os.path.exists(passage_cache):
+        shutil.rmtree(passage_cache)
 
     with open("config_def.py", "r", encoding="utf8") as confdef:
         with open("config.py", "w", encoding="utf8") as conf:
