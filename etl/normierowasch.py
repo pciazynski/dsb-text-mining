@@ -2,6 +2,8 @@ import sys
 import os
 import shutil
 import sqlite3
+from collections import Counter
+from contextlib import closing
 from settings import count, ctsns, datadir, copyrighttoken, tokenlength
 from pythoncts import *
 from dsb_collation import dsb_sortkey
@@ -9,128 +11,107 @@ from dsb_collation import dsb_sortkey
 normbag = {}
 bagofwords = {}
 
+MAPPING_DIR = "normmapping"
+PERYEAR_DIR = "normmappingperyear"
+DB_NAME = "normmapping.db"
+NORMBAG_FILE = "_normbag.txt"
+
+
+def _path(*parts):
+    return os.path.join(datadir, *parts)
+
 
 def load_bagofwords():
-    with open(datadir + "bagofwords/_all.txt", "r", encoding="utf8") as bwin:
+    with open(_path("bagofwords", "_all.txt"), "r", encoding="utf8") as bwin:
         for line in bwin:
-            linearr = line.split("\t")
-            bagofwords[linearr[0]] = int(linearr[1])
+            token, freq = line.split("\t")[:2]
+            bagofwords[token] = int(freq)
 
 
 def tokencheck(token):
-    if not token in bagofwords:
-        return False
-    return True
+    return token in bagofwords
+
+
+def _attr_value(attrs, name):
+    marker = " " + name + '="'
+    if marker not in attrs:
+        return ""
+    return attrs.split(marker, 1)[1].split('"', 1)[0]
 
 
 def normmapping(urn):
-    global ctsurl
-    global copyrighttoken
     res = cts_passage(urn, "&copyrighttoken=" + copyrighttoken)
-
     wordelements = res.split("<w")
-    wecount = 0
-    insg = str(len(wordelements))
+    total = str(len(wordelements))
     res = ""
-    for we in wordelements:
+    for wecount, we in enumerate(wordelements):
         if str(wecount).endswith("00"):
-            print("\rItems:" + str(wecount) + "/" + insg, sep=" ", end="", flush=True)
-        wecount += 1
-        if "</w" in we:
-            wetype = ""
-            subtype = ""
-            norm = ""
-            token = (
-                we.split(">")[1]
-                .split("</")[0]
-                .replace('"', " ")
-                .replace("'", " ")
-                .replace(".", "")
-                .strip()
-                .lower()
-            )
-            if tokencheck(token):
-                if 'norm="' in we:
-                    norm = (
-                        "|" + we.split('norm="')[1].split('"')[0].replace('"', "") + "|"
-                    )
-                    # if len(norm) == 2:
-                    #    norm=""
-                    if norm in normbag:
-                        normbag[norm] = normbag[norm] + 1
-                    else:
-                        normbag[norm] = 1
-                if "subtype=" in we:
-                    subtype = we.split('subtype="')[1].split('"')[0]
-                if "type=" in we:
-                    wetype = we.split('type="')[1].split('"')[0]
-                if len(norm.strip()) > 0:
-                    res += token + "\t" + norm + "\t" + wetype + "\t" + subtype + "\n"
-            else:
-                with open(datadir + "_ERROR.txt", "a", encoding="utf8") as errout:
-                    errout.write(urn + " normierowasch unknown token " + token + "\n")
+            print("\rItems:" + str(wecount) + "/" + total, sep=" ", end="", flush=True)
+        if "</w" not in we:
+            continue
+        word_attributes, word_content = we.split(">", 1)
+        token = (
+            word_content.split("</", 1)[0]
+            .replace('"', " ")
+            .replace("'", " ")
+            .replace(".", "")
+            .strip()
+            .lower()
+        )
+        if not tokencheck(token):
+            with open(_path("_ERROR.txt"), "a", encoding="utf8") as errout:
+                errout.write(urn + " normierowasch unknown token " + token + "\n")
+            continue
+        normvalue = _attr_value(word_attributes, "norm")
+        if not normvalue:
+            continue
+        norm = "|" + normvalue + "|"
+        normbag[norm] = normbag.get(norm, 0) + 1
+        wetype = _attr_value(word_attributes, "type")
+        subtype = _attr_value(word_attributes, "subtype")
+        res += "\t".join([token, norm, wetype, subtype]) + "\n"
     print("\rOK                                       ")
     return res
 
 
 def process(foldername):
-    for yearfile in sorted(os.listdir(foldername + "peryear")):
+    peryear = foldername + "peryear"
+    for yearfile in sorted(os.listdir(peryear)):
         print("process " + foldername + ":" + yearfile)
-        wb = dict()
-        with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
+        wb = Counter()
+        path = os.path.join(peryear, yearfile)
+        with open(path, "r", encoding="utf8") as inf:
             for line in inf:
-                token = line.replace("\n", "")
-                if token in wb:
-                    wb[token] = wb[token] + 1
-                else:
-                    wb[token] = 1
-        with open(foldername + "peryear/" + yearfile, "w", encoding="utf8") as outf:
-            for token, value in sorted(wb.items(), key=lambda x: x[1], reverse=True):
+                wb[line.replace("\n", "")] += 1
+        with open(path, "w", encoding="utf8") as outf:
+            for token, value in wb.most_common():
                 outf.write(token + "\t" + str(value) + "\n")
 
-    wb = dict()
-    for yearfile in sorted(os.listdir(foldername + "peryear")):
-        with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
+    wb = Counter()
+    for yearfile in sorted(os.listdir(peryear)):
+        with open(os.path.join(peryear, yearfile), "r", encoding="utf8") as inf:
             for line in inf:
                 linearr = line.split("\t")
-                token_norm = (
-                    linearr[0]
-                    + "\t"
-                    + linearr[1]
-                    + "\t"
-                    + linearr[2]
-                    + "\t"
-                    + linearr[3]
-                )
-                if token_norm in wb:
-                    wb[token_norm] = wb[token_norm] + int(linearr[4])
-                else:
-                    wb[token_norm] = int(linearr[4])
-    with open(foldername + "/_all.txt", "w", encoding="utf8") as outf:
-        for token_norm, value in sorted(wb.items(), key=lambda x: x[1], reverse=True):
+                wb["\t".join(linearr[:4])] += int(linearr[4])
+    with open(os.path.join(foldername, "_all.txt"), "w", encoding="utf8") as outf:
+        for token_norm, value in wb.most_common():
             outf.write(token_norm + "\t" + str(value) + "\n")
 
 
 def reset():
-    if not os.path.exists(datadir):
-        os.makedirs(datadir, exist_ok=True)
-    if os.path.exists(datadir + "normmapping"):
-        shutil.rmtree(datadir + "normmapping")
-    os.mkdir(datadir + "normmapping")
-    if os.path.exists(datadir + "normmappingperyear"):
-        shutil.rmtree(datadir + "normmappingperyear")
-    os.mkdir(datadir + "normmappingperyear")
+    os.makedirs(datadir, exist_ok=True)
+    for name in (MAPPING_DIR, PERYEAR_DIR):
+        path = _path(name)
+        if os.path.exists(path):
+            shutil.rmtree(path)
+        os.mkdir(path)
 
 
 def getdoclist(ctsns):
-    tmplist = ""
     if os.path.exists("urnlist.txt"):
         with open("urnlist.txt", "r", encoding="utf8") as inf:
-            for line in inf:
-                tmplist += line
-    else:
-        tmplist = cts_inventory(ctsns)
-    return tmplist.strip()
+            return inf.read().strip()
+    return cts_inventory(ctsns).strip()
 
 
 def collect():
@@ -141,262 +122,200 @@ def collect():
     if count == -1:
         count = len(doclist)
     for line in doclist:
-        urn = line.split("\t")[0]
-        urnarr = urn.split(".")
-        year = line.split("\t")[2]
+        parts = line.split("\t")
+        urn = parts[0]
+        year = parts[2]
 
-        if len(year) > 1 and count != 0:
+        if len(year) > 1 and count > 0:
             print(str(count) + " " + urn)
             count -= 1
             rs = normmapping(urn)
-            if len(rs.strip()) > 0:
+            if rs.strip():
+                urn_path = _path(MAPPING_DIR, urn.replace(":", "_#_") + ".txt")
+                year_path = _path(PERYEAR_DIR, year + ".txt")
                 with (
-                    open(
-                        datadir + "normmapping/" + urn.replace(":", "_#_") + ".txt",
-                        "w",
-                        encoding="utf8",
-                    ) as outf,
-                    open(
-                        datadir + "normmappingperyear/" + year + ".txt",
-                        "a",
-                        encoding="utf8",
-                    ) as outyf,
+                    open(urn_path, "w", encoding="utf8") as outf,
+                    open(year_path, "a", encoding="utf8") as outyf,
                 ):
                     outf.write(rs)
                     outyf.write(rs)
             else:
                 print("No Items")
-                count += 1
-    process(datadir + "normmapping")
-    with open(datadir + "normmapping/_normbag.txt", "w", encoding="utf8") as outf:
+
+    process(_path(MAPPING_DIR))
+    with open(_path(MAPPING_DIR, NORMBAG_FILE), "w", encoding="utf8") as outf:
         for token, value in sorted(normbag.items(), key=lambda x: x[1], reverse=True):
-            if len(token.strip()) > 0:
+            if token.strip():
                 outf.write(token + "\t" + str(value) + "\n")
 
 
-def index():
-    con = sqlite3.connect(datadir + "normmapping.db")
+def index(db_path=None):
+    db_path = db_path or _path(DB_NAME)
+    con = sqlite3.connect(db_path)
     cursor = con.cursor()
     print("Indexing...")
-    cursor.execute(
-        "CREATE INDEX tokenindextype ON tokennormtypesubtypefrequency(token);"
-    )
-    cursor.execute("CREATE INDEX normindextype ON tokennormtypesubtypefrequency(norm);")
-    cursor.execute("CREATE INDEX typeindextype ON tokennormtypesubtypefrequency(type);")
-    cursor.execute(
-        "CREATE INDEX subtypeindextype ON tokennormtypesubtypefrequency(subtype);"
-    )
-    cursor.execute(
-        "CREATE INDEX tokenindex ON tokennormtypesubtypedatefrequency(token);"
-    )
-    cursor.execute("CREATE INDEX normindex ON tokennormtypesubtypedatefrequency(norm);")
-    cursor.execute("CREATE INDEX typeindex ON tokennormtypesubtypedatefrequency(type);")
-    cursor.execute(
-        "CREATE INDEX subtypeindex ON tokennormtypesubtypedatefrequency(subtype);"
-    )
-    cursor.execute("CREATE INDEX dateindex ON tokennormtypesubtypedatefrequency(date);")
-    cursor.execute("CREATE INDEX normfrequencyindex ON normfrequency(norm);")
-    cursor.execute("CREATE INDEX normfrequencysortkeyindex ON normfrequency(sortkey);")
-    cursor.execute("CREATE INDEX normtokenindex ON normtokenfrequency(norm);")
-    cursor.execute("CREATE INDEX normtokentokenindex ON normtokenfrequency(token);")
-    cursor.execute("CREATE INDEX normurnindex ON urndatenormbag(urn);")
-    cursor.execute("CREATE INDEX urnindex ON urndatenormbag(normbag);")
-    cursor.execute("CREATE INDEX urndateindex ON urndatenormbag(date);")
-    cursor.execute("CREATE INDEX normnonambignorm ON normnonambig(norm);")
-    cursor.execute("CREATE INDEX normnonambigsortkey ON normnonambig(sortkey);")
+    for sql in (
+        "CREATE INDEX tokenindextype ON tokennormtypesubtypefrequency(token)",
+        "CREATE INDEX normindextype ON tokennormtypesubtypefrequency(norm)",
+        "CREATE INDEX typeindextype ON tokennormtypesubtypefrequency(type)",
+        "CREATE INDEX subtypeindextype ON tokennormtypesubtypefrequency(subtype)",
+        "CREATE INDEX tokenindex ON tokennormtypesubtypedatefrequency(token)",
+        "CREATE INDEX normindex ON tokennormtypesubtypedatefrequency(norm)",
+        "CREATE INDEX typeindex ON tokennormtypesubtypedatefrequency(type)",
+        "CREATE INDEX subtypeindex ON tokennormtypesubtypedatefrequency(subtype)",
+        "CREATE INDEX dateindex ON tokennormtypesubtypedatefrequency(date)",
+        "CREATE INDEX normfrequencyindex ON normfrequency(norm)",
+        "CREATE INDEX normfrequencysortkeyindex ON normfrequency(sortkey)",
+        "CREATE INDEX normtokenindex ON normtokenfrequency(norm)",
+        "CREATE INDEX normtokentokenindex ON normtokenfrequency(token)",
+        "CREATE INDEX normurnindex ON urndatenormbag(urn)",
+        "CREATE INDEX urnindex ON urndatenormbag(normbag)",
+        "CREATE INDEX urndateindex ON urndatenormbag(date)",
+        "CREATE INDEX normnonambignorm ON normnonambig(norm)",
+        "CREATE INDEX normnonambigsortkey ON normnonambig(sortkey)",
+    ):
+        cursor.execute(sql)
     con.commit()
     con.close()
 
 
-def initTables():
-    if os.path.exists(datadir + "normmapping.db"):
-        os.remove(datadir + "normmapping.db")
-    con = sqlite3.connect(datadir + "normmapping.db")
+def initTables(db_path=None):
+    db_path = db_path or _path(DB_NAME)
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    con = sqlite3.connect(db_path)
     cursor = con.cursor()
+    tl = str(tokenlength)
     cursor.execute(
-        "CREATE TABLE urndatenormbag(urn VARCHAR (50),date DATE,normbag text);"
+        "CREATE TABLE urndatenormbag(urn VARCHAR (50),date DATE,normbag text)"
     )
     cursor.execute(
-        "CREATE TABLE tokennormtypesubtypedatefrequency(token VARCHAR ("
-        + str(tokenlength)
-        + "),norm VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),date DATE,frequency INTEGER);"
+        "CREATE TABLE tokennormtypesubtypedatefrequency("
+        "token VARCHAR (" + tl + "),"
+        "norm VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),"
+        "date DATE,frequency INTEGER)"
     )
     cursor.execute(
-        "CREATE TABLE tokennormtypesubtypefrequency(token VARCHAR ("
-        + str(tokenlength)
-        + "),norm VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),frequency INTEGER);"
+        "CREATE TABLE tokennormtypesubtypefrequency("
+        "token VARCHAR (" + tl + "),"
+        "norm VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),"
+        "frequency INTEGER)"
     )
     cursor.execute(
-        "CREATE TABLE normfrequency(norm VARCHAR (50),frequency INTEGER,sortkey TEXT);"
+        "CREATE TABLE normfrequency(norm VARCHAR (50),frequency INTEGER,sortkey TEXT)"
     )
     cursor.execute(
-        "CREATE TABLE normtokenfrequency(norm VARCHAR (50),token VARCHAR ("
-        + str(tokenlength)
-        + "),frequency INTEGER);"
+        "CREATE TABLE normtokenfrequency("
+        "norm VARCHAR (50),token VARCHAR (" + tl + "),frequency INTEGER)"
     )
     cursor.execute(
-        "CREATE TABLE normnonambig(norm VARCHAR (50),frequency INTEGER,sortkey TEXT);"
+        "CREATE TABLE normnonambig(norm VARCHAR (50),frequency INTEGER,sortkey TEXT)"
     )
     con.commit()
     con.close()
+
+
+def _read_nonempty_lines(path):
+    with open(path, "r", encoding="utf8") as inf:
+        for line in inf:
+            if line.strip():
+                yield line
+
+
+def _fill(db_path):
+    initTables(db_path)
+    with closing(sqlite3.connect(db_path)) as con:
+        cursor = con.cursor()
+
+        normtokenbag = Counter()
+        tokennormtypesubtypebag = Counter()
+        doc_year = {}
+
+        for line in getdoclist(ctsns).split("\n"):
+            urn_date = line.split("\t")
+            doc_year[urn_date[0]] = urn_date[2]
+
+        for yearfile in sorted(os.listdir(_path(PERYEAR_DIR))):
+            print("sql normmappingperyear:" + yearfile)
+            year = yearfile.replace(".txt", "")
+            for line in _read_nonempty_lines(_path(PERYEAR_DIR, yearfile)):
+                linearr = line.split("\t")
+                token, norm, wetype, subtype = linearr[:4]
+                freq = int(linearr[4])
+                tokennormtypesubtypebag[(token, norm, wetype, subtype)] += freq
+                normtokenbag[(token, norm)] += freq
+                cursor.execute(
+                    "INSERT INTO tokennormtypesubtypedatefrequency"
+                    "(token,norm,type,subtype,date,frequency) VALUES(?,?,?,?,?,?)",
+                    (token, norm, wetype, subtype, int(year), freq),
+                )
+            con.commit()
+
+        # An ambiguous "|A|B|" entry counts towards both A and B, so the
+        # non-ambiguous totals are only complete after the whole file.
+        wb_nonambig = Counter()
+        for line in _read_nonempty_lines(_path(MAPPING_DIR, NORMBAG_FILE)):
+            norm, frequency = line.split("\t")[:2]
+            freq = int(frequency)
+            cursor.execute(
+                "INSERT INTO normfrequency(norm,frequency,sortkey) VALUES(?,?,?)",
+                (norm, freq, dsb_sortkey(norm.strip("|"))),
+            )
+            for part in norm.split("|"):
+                if part.strip():
+                    wb_nonambig[part] += freq
+
+        for norm, freq in wb_nonambig.items():
+            cursor.execute(
+                "INSERT INTO normnonambig(norm,frequency,sortkey) VALUES(?,?,?)",
+                ("|" + norm + "|", freq, dsb_sortkey(norm)),
+            )
+        con.commit()
+
+        for file in sorted(os.listdir(_path(MAPPING_DIR))):
+            if not file.startswith("urn_#_"):
+                continue
+            print("sql normmappingperurn:" + file)
+            bag = "#"
+            for line in _read_nonempty_lines(_path(MAPPING_DIR, file)):
+                bag += line.split("\t")[1] + "#"
+            while "#||#" in bag:
+                bag = bag.replace("#||#", "#")
+            urn = file.replace(".txt", "").replace("_#_", ":")
+            cursor.execute(
+                "INSERT INTO urndatenormbag(urn,date,normbag) VALUES(?,?,?)",
+                (urn, doc_year[urn], bag),
+            )
+        con.commit()
+
+        for (token, norm), freq in normtokenbag.items():
+            cursor.execute(
+                "INSERT INTO normtokenfrequency(token,norm,frequency) VALUES(?,?,?)",
+                (token, norm, freq),
+            )
+        con.commit()
+
+        for (token, norm, wetype, subtype), freq in tokennormtypesubtypebag.items():
+            cursor.execute(
+                "INSERT INTO tokennormtypesubtypefrequency"
+                "(token,norm,type,subtype,frequency) VALUES(?,?,?,?,?)",
+                (token, norm, wetype, subtype, freq),
+            )
+        con.commit()
 
 
 def db():
-    initTables()
-    con = sqlite3.connect(datadir + "normmapping.db")
-    cursor = con.cursor()
-
-    normtokenbag = {}
-    tokennormtypesubtypebag = {}
-    doc_year = {}
-    doclist = getdoclist(ctsns).split("\n")
-    for line in doclist:
-        urn_date = line.split("\t")
-        doc_year[urn_date[0]] = urn_date[2]
-
-    yearfiles = sorted(os.listdir(datadir + "normmappingperyear"))
-    for year in yearfiles:
-        print("sql normmappingperyear:" + year)
-        with open(datadir + "normmappingperyear/" + year, "r", encoding="utf8") as inf:
-            for line in inf.readlines():
-                if len(line.strip()) > 0:
-                    linearr = line.split("\t")
-                    toknorm = linearr[0] + "\t" + linearr[1]
-                    toknormtypesubtype = (
-                        linearr[0]
-                        + "\t"
-                        + linearr[1]
-                        + "\t"
-                        + linearr[2]
-                        + "\t"
-                        + linearr[3]
-                    )
-
-                    if toknormtypesubtype in tokennormtypesubtypebag:
-                        tokennormtypesubtypebag[toknormtypesubtype] = (
-                            tokennormtypesubtypebag[toknormtypesubtype]
-                            + int(linearr[4])
-                        )
-                    else:
-                        tokennormtypesubtypebag[toknormtypesubtype] = int(linearr[4])
-
-                    if toknorm in normtokenbag:
-                        normtokenbag[toknorm] = normtokenbag[toknorm] + int(linearr[4])
-                    else:
-                        normtokenbag[toknorm] = int(linearr[4])
-
-                    vals = (
-                        '"'
-                        + linearr[0]
-                        + '","'
-                        + linearr[1]
-                        + '","'
-                        + linearr[2]
-                        + '","'
-                        + linearr[3]
-                        + '",'
-                        + year.replace(".txt", "")
-                        + ","
-                        + linearr[4].strip()
-                    )
-                    query = (
-                        "INSERT INTO tokennormtypesubtypedatefrequency(token,norm,type,subtype,date,frequency) VALUES("
-                        + vals
-                        + ")"
-                    )
-                    cursor.execute(query)
-        con.commit()
-    with open(datadir + "normmapping/_normbag.txt", "r", encoding="utf8") as inf:
-        for line in inf.readlines():
-            if len(line.strip()) > 0:
-                linearr = line.split("\t")
-                vals = (
-                    '"'
-                    + linearr[0]
-                    + '",'
-                    + linearr[1].strip()
-                    + ',"'
-                    + dsb_sortkey(linearr[0].strip("|"))
-                    + '"'
-                )
-                query = (
-                    "INSERT INTO normfrequency(norm,frequency,sortkey) VALUES("
-                    + vals
-                    + ")"
-                )
-                cursor.execute(query)
-        con.commit()
-    files = sorted(os.listdir(datadir + "normmapping"))
-
-    wb_nonambig = {}
-    with open(datadir + "normmapping/_normbag.txt", "r", encoding="utf8") as inf:
-        for line in inf.readlines():
-            if len(line.strip()) > 0:
-                linearr = line.split("\t")
-                normarr = linearr[0].split("|")
-                for norm in normarr:
-                    if norm in wb_nonambig:
-                        wb_nonambig[norm] = wb_nonambig[norm] + int(linearr[1])
-                    else:
-                        wb_nonambig[norm] = int(linearr[1])
-
-    for norm in wb_nonambig:
-        vals = (
-            '"|'
-            + norm
-            + '|",'
-            + str(wb_nonambig[norm])
-            + ',"'
-            + dsb_sortkey(norm)
-            + '"'
-        )
-        query = "INSERT INTO normnonambig(norm,frequency,sortkey) VALUES(" + vals + ")"
-        cursor.execute(query)
-    con.commit()
-
-    for file in files:
-        if file.startswith("urn_#_"):
-            with open(datadir + "normmapping/" + file, "r", encoding="utf8") as inf:
-                normbag = "#"
-                for line in inf.readlines():
-                    if len(line.strip()) > 0:
-                        normbag += line.split("\t")[1] + "#"
-                while "#||#" in normbag:
-                    normbag = normbag.replace("#||#", "#")
-                urn = file.replace(".txt", "").replace("_#_", ":")
-                year = doc_year[urn]
-                vals = '"' + urn + '","' + year + '","' + normbag + '"'
-                query = (
-                    "INSERT INTO urndatenormbag(urn,date,normbag) VALUES(" + vals + ")"
-                )
-                cursor.execute(query)
-        con.commit()
-    for normtoken in normtokenbag:
-        vals = (
-            '"' + normtoken.replace("\t", '","') + '",' + str(normtokenbag[normtoken])
-        )
-        query = (
-            "INSERT INTO normtokenfrequency(token,norm,frequency) VALUES(" + vals + ")"
-        )
-        cursor.execute(query)
-    con.commit()
-    for toktypesubtypenorm in tokennormtypesubtypebag:
-        vals = (
-            '"'
-            + toktypesubtypenorm.replace("\t", '","')
-            + '",'
-            + str(tokennormtypesubtypebag[toktypesubtypenorm])
-        )
-        query = (
-            "INSERT INTO tokennormtypesubtypefrequency(token,norm,type,subtype,frequency) VALUES("
-            + vals
-            + ")"
-        )
-        cursor.execute(query)
-    con.commit()
-    con.close()
-
-    index()
+    """Rebuild the database via a temp file, so a failure keeps the old one."""
+    db_path = _path(DB_NAME)
+    temp_db_path = db_path + ".tmp"
+    try:
+        _fill(temp_db_path)
+        index(temp_db_path)
+        os.replace(temp_db_path, db_path)
+    except BaseException:
+        if os.path.exists(temp_db_path):
+            os.remove(temp_db_path)
+        raise
 
 
 def main(argv=None):
