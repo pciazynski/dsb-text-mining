@@ -1,6 +1,12 @@
 """Shared evaluation of a lemma/norm mapping against the bag of words."""
 
+from collections import defaultdict
+
 from settings import datadir
+
+
+class _WeightedDict(dict):
+    """A dict that also carries per-key weight attributes as side channels."""
 
 
 def collect_mapped_forms(mappingpath, inconsistenciespath):
@@ -54,22 +60,23 @@ def count_sorting_redundancy(bagpath):
     """Return (sorted entries, unsorted entries, tokens saved by sorting)."""
     unsortedlist = {}
     sortedlist = {}
-
     sortedtypecount = 0
     unsortedtypecount = 0
 
     with open(bagpath, "r", encoding="utf8") as inf:
         for line in inf:
-            count = int(line.split("\t")[1])
-            line = line.split("\t")[0]
-            linearr = line.split("|")
-            if len(linearr) > 3:
+            group, freq = line.split("\t")[:2]
+            parts = group.split("|")
+            if len(parts) <= 3:
+                continue
+            count = int(freq)
+            if group not in unsortedlist:
                 unsortedtypecount += count
-                unsortedlist["|".join(linearr)] = 1
-                linearr = sorted(linearr)
-                if not "|".join(linearr) in sortedlist:
-                    sortedtypecount += count
-                sortedlist["|".join(linearr)] = 1
+                unsortedlist[group] = 1
+            sortedkey = "|".join(sorted(parts))
+            if sortedkey not in sortedlist:
+                sortedtypecount += count
+                sortedlist[sortedkey] = 1
 
     return len(sortedlist), len(unsortedlist), unsortedtypecount - sortedtypecount
 
@@ -91,68 +98,93 @@ def write_stats(statspath, statslabel, yay, nay, incons, redundancy):
 
 
 def count_uniqueness(mappingpath):
-    """Return per mapping target: (uniqueness ratio, unique count, ambiguous count)."""
-    bag = {}
-    ambiquebag = {}
-    groupbag = {}
+    """Return per mapping target: (uniqueness ratio, unique count, ambiguous count).
+
+    The returned dicts also carry occurrence-weighted counterparts:
+    ``uniquenessbag.weighted_ratio``, ``uniquebag.weighted`` and
+    ``ambiquebag.weighted``.
+    """
+    total = defaultdict(int)
+    ambigue = defaultdict(int)
+    weighted_total = defaultdict(int)
+    weighted_ambigue = defaultdict(int)
 
     with open(mappingpath, "r", encoding="utf8") as inf:
-        for line in inf:
-            linearr = line.split("\t")
-            entry = linearr[1]
+        for rownum, line in enumerate(inf, start=1):
+            fields = line.rstrip("\n").split("\t")
+            if len(fields) < 5:
+                raise ValueError(f"row {rownum}: missing fields")
+            try:
+                count = int(fields[4].strip())
+            except ValueError:
+                raise ValueError(f"row {rownum}: invalid frequency") from None
+
+            entry = fields[1]
+            if entry == "":
+                continue
+            if not (entry.startswith("|") and entry.endswith("|")):
+                raise ValueError(f"row {rownum}: unwrapped target {entry!r}")
             entry = entry[1:-1]
-            if len(entry) > 0:
-                entryarr = entry.split("|")
-                if len(entryarr) > 1:
-                    if entry in groupbag:
-                        groupbag[entry] = groupbag[entry] + 1
-                    else:
-                        groupbag[entry] = 1
-                    for key in entryarr:
-                        if key in ambiquebag:
-                            ambiquebag[key] = ambiquebag[key] + 1
-                        else:
-                            ambiquebag[key] = 1
+            if not entry:
+                continue
 
-                for key in entryarr:
-                    if key in bag:
-                        bag[key] = bag[key] + 1
-                    else:
-                        bag[key] = 1
+            keys = entry.split("|")
+            ambiguous = len(keys) > 1
+            for key in keys:
+                total[key] += 1
+                weighted_total[key] += count
+                if ambiguous:
+                    ambigue[key] += 1
+                    weighted_ambigue[key] += count
 
-    uniquenessbag = {}
-    uniquebag = {}
+    uniquenessbag = _WeightedDict()
+    uniquebag = _WeightedDict()
+    ambiquebag = _WeightedDict()
+    weighted_ratio = _WeightedDict()
+    weighted_unique = _WeightedDict()
+    weighted_ambigue_out = _WeightedDict()
 
-    for entry in bag:
-        insg = bag[entry]
-        if entry in ambiquebag:
-            ambique = ambiquebag[entry]
-        else:
-            ambiquebag[entry] = 0
-            ambique = 0
-        unique = insg - ambique
-        uniquebag[entry] = unique
-        uniquenessbag[entry] = unique / insg
+    for key, insg in total.items():
+        amb = ambigue[key]
+        uniquebag[key] = insg - amb
+        uniquenessbag[key] = (insg - amb) / insg
+        ambiquebag[key] = amb
+
+        total_w = weighted_total[key]
+        amb_w = weighted_ambigue[key]
+        weighted_unique[key] = total_w - amb_w
+        weighted_ambigue_out[key] = amb_w
+        weighted_ratio[key] = (total_w - amb_w) / total_w if total_w else 0.0
+
+    uniquenessbag.weighted_ratio = weighted_ratio
+    uniquebag.weighted = weighted_unique
+    ambiquebag.weighted = weighted_ambigue_out
 
     return uniquenessbag, uniquebag, ambiquebag
 
 
 def write_uniqueness(uniquenesspath, uniqueness):
     uniquenessbag, uniquebag, ambiquebag = uniqueness
+    has_weights = hasattr(uniquenessbag, "weighted_ratio")
     with open(uniquenesspath, "w", encoding="utf8") as outf:
         for entry, value in sorted(
             uniquenessbag.items(), key=lambda x: x[1], reverse=True
         ):
-            outf.write(
-                entry
-                + "\t"
-                + str(uniquenessbag[entry])
-                + "\t"
-                + str(uniquebag[entry])
-                + "\t"
-                + str(ambiquebag[entry])
-                + "\n"
-            )
+            parts = [
+                entry,
+                str(uniquenessbag[entry]),
+                str(uniquebag[entry]),
+                str(ambiquebag[entry]),
+            ]
+            if has_weights:
+                parts.extend(
+                    [
+                        str(uniquenessbag.weighted_ratio[entry]),
+                        str(uniquebag.weighted[entry]),
+                        str(ambiquebag.weighted[entry]),
+                    ]
+                )
+            outf.write("\t".join(parts) + "\n")
 
 
 def run(prefix, statslabel):
