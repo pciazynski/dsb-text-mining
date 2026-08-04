@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-04
+
+- Made lemma and normalization data processing more reliable and auditable.
+- Each corpus passage is now downloaded only once per run, and every attempted document's processing status is recorded.
+- Improved evaluation data and added regression coverage for the corrected processing errors.
+
 ## 2026-07-28
 
 - added tests for PHP and JS

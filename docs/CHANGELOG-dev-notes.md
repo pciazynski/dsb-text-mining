@@ -1,3 +1,20 @@
+# Dev Notes (2026-08-04)
+
+## Lemma and norm ETL
+
+- Moved duplicated lemma/norm logic into `etl/mapping_etl.py`; the original modules remain thin, compatible entry points.
+- Fixed document limits and restricted/empty documents incorrectly affecting which documents were processed.
+- Fixed `type`/`subtype` leakage, empty targets, empty non-ambiguous rows, and unsafe database replacement. Rebuilds now use a temporary database and preserve the previous database on failure.
+- Added a shared per-run passage cache, so lemma and norm processing fetch each document once. Restricted or failed responses are not cached, and `setup.py` clears stale cache data.
+- Added `_status.txt` manifests with `ok`, `empty`, `restricted`, `invalid`, or `unavailable` per attempted document; one failed request no longer stops the batch.
+
+## Evaluation and tests
+
+- Consolidated lemma/norm evaluation in `etl/mappingeval.py`. Uniqueness output now includes both mapping-record and occurrence-weighted metrics and rejects malformed rows with row context.
+- Corrected sorting-redundancy counts for duplicate identical groups.
+- Added focused Python coverage for mapping, database rebuilds, evaluation, and passage caching. Added strict known-bug JS tests for evaluation labels and category names; those UI issues remain unresolved.
+- Clarified corpus/upstream-service documentation and simplified README test commands.
+
 # Dev Notes (2026-07-29)
 
 ## Multi-language test infrastructure (uncommitted, on dev-only-wortform)
