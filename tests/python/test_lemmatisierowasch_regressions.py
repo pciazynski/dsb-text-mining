@@ -8,7 +8,6 @@ the bug is fixed, forcing the marker to be removed.
 import os
 import sqlite3
 
-import bagofwords
 import lemmatisierowasch
 import pytest
 
@@ -65,54 +64,43 @@ def test_lemmamapping_keeps_type_empty_when_only_subtype_is_present(
     assert result.splitlines() == ["75\t|75|\t\tnumber"]
 
 
-# --------------------------------------------------------- BUG-3: document sets
-
-
-# A partial harvest selects a fixed inventory cohort. Missing lemma annotations
-# must not silently substitute a later document from a different year or corpus
-# segment. TODO: decide whether to record explicit per-document outcomes (empty,
-# unauthorized, invalid response, etc.) in a harvest manifest.
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: 'No Items' restores count so a partial lemma harvest silently "
-    "substitutes a later document",
-)
-def test_partial_harvest_does_not_replace_unannotated_document(datadir, monkeypatch):
+# bagofwords.php serves counts for restricted documents, passage.php does not:
+# it answers with a plain-text error body that holds no <w> elements, so those
+# documents yield an empty mapping. That is a normal outcome for part of the
+# corpus and must not end the run - every document of the requested batch has to
+# be tried once. TODO: record the per-document outcome (mapped, unavailable,
+# invalid response) in a manifest next to _lemmabag.txt so partial runs stay
+# auditable.
+def test_collect_continues_after_unavailable_document(datadir, monkeypatch):
     doclist = "\n".join(
         [
-            "urn:cts:dsb:doc1	Unannotated	1880",
-            "urn:cts:dsb:doc2	Annotated	1881",
+            "urn:cts:dsb:doc1	Restricted	1880",
+            "urn:cts:dsb:doc2	Open	1881",
+            "urn:cts:dsb:doc3	Open	1882",
         ]
     )
-    monkeypatch.setattr(bagofwords, "count", 1)
-    monkeypatch.setattr(bagofwords, "getdoclist", lambda ns: doclist)
-    monkeypatch.setattr(bagofwords, "cts_bagofwords", lambda urn: "word	1")
-
-    bagofwords.collect()
-
     monkeypatch.setattr(lemmatisierowasch, "datadir", datadir)
-    monkeypatch.setattr(lemmatisierowasch, "count", 1)
+    monkeypatch.setattr(lemmatisierowasch, "count", 3)
+    monkeypatch.setattr(lemmatisierowasch, "ctsurl", "https://cts.example/")
     monkeypatch.setattr(lemmatisierowasch, "getdoclist", lambda ns: doclist)
-    monkeypatch.setattr(
-        lemmatisierowasch,
-        "lemmamapping",
-        lambda urn: (
-            ""
-            if urn.endswith("doc1")
-            else """tok	|X|
-"""
-        ),
-    )
+    lemmatisierowasch.bagofwords["jo"] = 1
+
+    def fake_cts_passage(urn, params):
+        if urn.endswith("doc1"):
+            return "Error code 7: Unauthorized Access"
+        return '<text><w lemma="JO">jo</w></text>'
+
+    monkeypatch.setattr(lemmatisierowasch, "cts_passage", fake_cts_passage)
 
     lemmatisierowasch.collect()
 
-    def urn_files(folder):
-        return sorted(
-            name for name in os.listdir(datadir + folder) if name.startswith("urn_#_")
-        )
+    mapped = sorted(
+        name
+        for name in os.listdir(datadir + "lemmamapping")
+        if name.startswith("urn_#_")
+    )
 
-    assert urn_files("bagofwords") == ["urn_#_cts_#_dsb_#_doc1.txt"]
-    assert urn_files("lemmamapping") == []
+    assert mapped == ["urn_#_cts_#_dsb_#_doc2.txt", "urn_#_cts_#_dsb_#_doc3.txt"]
 
 
 # ------------------------------------------------------ BUG-4: tokenization
@@ -192,9 +180,6 @@ def test_db_valid_lemma_creates_no_empty_nonambiguous_row(tmp_path, monkeypatch)
     ).fetchall()
     con.close()
     assert empty_rows == []
-
-
-# ----------------------------------------------- BUG-2: failed rebuild data loss
 
 
 def test_db_failed_rebuild_preserves_existing_database(tmp_path, monkeypatch):

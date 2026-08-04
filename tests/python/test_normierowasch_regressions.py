@@ -30,7 +30,6 @@ def write_rows(path, columns):
             outf.write("\t".join(row) + "\n")
 
 
-# ------------------------------------------------------------------ BUG-1
 def test_normmapping_subtype_only_leaves_type_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(normierowasch, "datadir", str(tmp_path) + os.sep)
     normierowasch.bagofwords["75"] = 1
@@ -45,7 +44,6 @@ def test_normmapping_subtype_only_leaves_type_empty(tmp_path, monkeypatch):
     assert split_rows(result) == [["75", "|75|", "", "number"]]
 
 
-# ------------------------------------------------------------------ BUG-2
 def test_normmapping_following_element_attributes_do_not_leak(tmp_path, monkeypatch):
     monkeypatch.setattr(normierowasch, "datadir", str(tmp_path) + os.sep)
     normierowasch.bagofwords["woda"] = 1
@@ -63,7 +61,6 @@ def test_normmapping_following_element_attributes_do_not_leak(tmp_path, monkeypa
     assert split_rows(result) == [["woda", "|WODA|", "", ""]]
 
 
-# ------------------------------------------------------------------ BUG-3
 def test_normmapping_empty_norm_creates_no_mapping(tmp_path, monkeypatch):
     monkeypatch.setattr(normierowasch, "datadir", str(tmp_path) + os.sep)
     normierowasch.bagofwords["jo"] = 1
@@ -79,7 +76,6 @@ def test_normmapping_empty_norm_creates_no_mapping(tmp_path, monkeypatch):
     assert normierowasch.normbag == {}
 
 
-# ------------------------------------------------------------------ BUG-4
 def test_db_normnonambig_contains_no_empty_pipe_alternative(tmp_path, monkeypatch):
     monkeypatch.setattr(normierowasch, "datadir", str(tmp_path) + os.sep)
     monkeypatch.setattr(normierowasch, "tokenlength", 80)
@@ -110,8 +106,7 @@ def test_db_normnonambig_contains_no_empty_pipe_alternative(tmp_path, monkeypatc
     assert rows == [("|WODA|", 2)]
 
 
-# ------------------------------------------------------------------ BUG-5
-def test_collect_limit_one_does_not_harvest_second_document(tmp_path, monkeypatch):
+def test_collect_limit_one_does_not_process_second_document(tmp_path, monkeypatch):
     monkeypatch.setattr(normierowasch, "datadir", str(tmp_path) + os.sep)
     monkeypatch.setattr(normierowasch, "count", 1)
     monkeypatch.setattr(normierowasch, "ctsns", "dsb")
@@ -134,7 +129,6 @@ def test_collect_limit_one_does_not_harvest_second_document(tmp_path, monkeypatc
     assert not (tmp_path / "normmapping" / "urn_#_cts_#_dsb_#_doc2.txt").exists()
 
 
-# ------------------------------------------------------------------ BUG-6
 def test_db_failed_rebuild_preserves_existing_database(tmp_path, monkeypatch):
     monkeypatch.setattr(normierowasch, "datadir", str(tmp_path) + os.sep)
     monkeypatch.setattr(normierowasch, "tokenlength", 80)
