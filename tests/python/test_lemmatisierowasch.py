@@ -87,7 +87,9 @@ def test_lemmamapping_returns_known_annotated_words(
 
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
-    assert result == "dṙewo\t|DRJEWO|\t\t\ntog\t|TEN|TO|\t\t\n"
+    assert result == """dṙewo	|DRJEWO|
+tog	|TEN|TO|
+"""
     assert lemmatisierowasch.lemmabag == {"|DRJEWO|": 1, "|TEN|TO|": 1}
     assert not (tmp_path / "_ERROR.txt").exists()
 
@@ -128,7 +130,8 @@ def test_lemmamapping_subtype_without_type_also_becomes_type(
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
     # QUESTIONABLE: the substring check treats subtype= as a type= attribute.
-    assert result == "75\t|75|\tnumber\tnumber\n"
+    assert result == """75	|75|	number	number
+"""
 
 
 def test_process_counts_rows_and_aggregates_years(tmp_path):
@@ -137,28 +140,31 @@ def test_process_counts_rows_and_aggregates_years(tmp_path):
     os.makedirs(folder)
     os.makedirs(peryear)
     (peryear / "1880.txt").write_text(
-        """dṙewo	|DRJEWO|
-dṙewo	|DRJEWO|
-tog	|TEN|TO|
-""",
+        "\n".join(
+            [
+                "dṙewo	|DRJEWO|		",
+                "dṙewo	|DRJEWO|		",
+                "tog	|TEN|TO|		",
+            ]
+        )
+        + "\n",
         encoding="utf8",
     )
     (peryear / "1881.txt").write_text(
-        """dṙewo	|DRJEWO|
-""",
+        "\n".join(["dṙewo	|DRJEWO|		"]) + "\n",
         encoding="utf8",
     )
 
     lemmatisierowasch.process(folder)
 
     assert read_lines(peryear / "1880.txt") == [
-        "dṙewo\t|DRJEWO|\t\t\t2",
-        "tog\t|TEN|TO|\t\t\t1",
+        "dṙewo	|DRJEWO|			2",
+        "tog	|TEN|TO|			1",
     ]
-    assert read_lines(peryear / "1881.txt") == ["dṙewo\t|DRJEWO|\t\t\t1"]
+    assert read_lines(peryear / "1881.txt") == ["dṙewo	|DRJEWO|			1"]
     assert read_lines(tmp_path / "lemmamapping" / "_all.txt") == [
-        "dṙewo\t|DRJEWO|\t\t\t3",
-        "tog\t|TEN|TO|\t\t\t1",
+        "dṙewo	|DRJEWO|			3",
+        "tog	|TEN|TO|			1",
     ]
 
 
@@ -238,8 +244,7 @@ def test_db_populates_all_tables_and_indexes(tmp_path, monkeypatch):
     (
         mapping / "urn_#_cts_#_dsb_#_bramborske_nowiny_1880_51.20220111_#_.txt"
     ).write_text(
-        """dṙewo	|DRJEWO|
-""",
+        """dṙewo	|DRJEWO|		""",
         encoding="utf8",
     )
     (tmp_path / "urnlist.txt").write_text(

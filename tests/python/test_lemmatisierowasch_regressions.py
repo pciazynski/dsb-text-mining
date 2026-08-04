@@ -126,7 +126,8 @@ def test_lemmamapping_ignores_attributes_of_following_element(
 
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
-    assert result == "jo\t|JO|\t\t\n"
+    assert result == """jo	|JO|		
+"""
 
 
 # ------------------------------------------------------- BUG-6: empty lemmas

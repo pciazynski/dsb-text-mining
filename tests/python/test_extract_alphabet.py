@@ -134,7 +134,10 @@ def test_main_both_cases_keeps_combining_mark_in_both_cases(tmp_path, capsys):
 
     extract_alphabet.main(["--both-cases", str(infile)])
 
-    assert capsys.readouterr().out == "A a\nU\u0364 u\u0364\nW w\n"
+    assert capsys.readouterr().out == """A a
+U\u0364 u\u0364
+W w
+"""
 
 
 def test_main_lowercase_outputs_unique_lowercase_alphabet(tmp_path, capsys):
@@ -143,7 +146,8 @@ def test_main_lowercase_outputs_unique_lowercase_alphabet(tmp_path, capsys):
 
     extract_alphabet.main(["--lowercase", str(infile)])
 
-    assert capsys.readouterr().out == "a ć d e ę f g h k ł l ń ż\n"
+    assert capsys.readouterr().out == """a ć d e ę f g h k ł l ń ż
+"""
 
 
 def test_main_uppercase_outputs_unique_uppercase_alphabet(tmp_path, capsys):
@@ -152,7 +156,8 @@ def test_main_uppercase_outputs_unique_uppercase_alphabet(tmp_path, capsys):
 
     extract_alphabet.main(["--uppercase", str(infile)])
 
-    assert capsys.readouterr().out == "A Ć D E Ę F G H K Ł L Ń Ż\n"
+    assert capsys.readouterr().out == """A Ć D E Ę F G H K Ł L Ń Ż
+"""
 
 
 def test_main_full_unicode_name_outputs_one_named_letter_per_line(tmp_path, capsys):
@@ -259,7 +264,9 @@ def test_main_both_cases_with_output_writes_lines_to_file(tmp_path):
 
     extract_alphabet.main(["--both-cases", str(infile), str(outfile)])
 
-    assert outfile.read_text(encoding="utf8") == "A a\nB b\n"
+    assert outfile.read_text(encoding="utf8") == """A a
+B b
+"""
 
 
 def test_main_without_arguments_reads_bagofwords_all(datadir, capsys):
