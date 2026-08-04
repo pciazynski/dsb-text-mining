@@ -173,11 +173,6 @@ def test_db_valid_lemma_creates_no_empty_nonambiguous_row(tmp_path, monkeypatch)
 # ----------------------------------------------- BUG-2: failed rebuild data loss
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: db() runs initTables() first, so a malformed per-year row "
-    "destroys the previous database instead of preserving it",
-)
 def test_db_failed_rebuild_preserves_existing_database(tmp_path, monkeypatch):
     datadir = setup_db_env(tmp_path, monkeypatch)
 

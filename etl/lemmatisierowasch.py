@@ -4,6 +4,7 @@ import os
 import shutil
 import sqlite3
 from collections import Counter
+from contextlib import closing
 from settings import count, ctsns, datadir, copyrighttoken, tokenlength
 from pythoncts import *
 from dsb_collation import dsb_sortkey
@@ -82,10 +83,7 @@ def lemmamapping(urn):
             continue
         if 'lemma="' in wattr:
             lemmavalue = (
-                _attr_value(wattr, "lemma")
-                .replace('"', " ")
-                .replace("'", " ")
-                .strip()
+                _attr_value(wattr, "lemma").replace('"', " ").replace("'", " ").strip()
             )
             if lemmavalue:
                 lemma = "|" + lemmavalue + "|"
@@ -182,8 +180,9 @@ def collect():
                 outf.write(token + "\t" + str(value) + "\n")
 
 
-def index():
-    con = sqlite3.connect(_path(DB_NAME))
+def index(db_path=None):
+    db_path = db_path or _path(DB_NAME)
+    con = sqlite3.connect(db_path)
     cursor = con.cursor()
     print("Indexing...")
     for sql in (
@@ -210,8 +209,8 @@ def index():
     con.close()
 
 
-def initTables():
-    db_path = _path(DB_NAME)
+def initTables(db_path=None):
+    db_path = db_path or _path(DB_NAME)
     if os.path.exists(db_path):
         os.remove(db_path)
     con = sqlite3.connect(db_path)
@@ -253,95 +252,100 @@ def _read_nonempty_lines(path):
                 yield line
 
 
-def db():
-    initTables()
-    con = sqlite3.connect(_path(DB_NAME))
-    cursor = con.cursor()
+def _fill(db_path):
+    initTables(db_path)
+    with closing(sqlite3.connect(db_path)) as con:
+        cursor = con.cursor()
 
-    lemmatokenbag = Counter()
-    lemmatokentypesubtypebag = Counter()
-    doc_year = {}
+        lemmatokenbag = Counter()
+        lemmatokentypesubtypebag = Counter()
+        doc_year = {}
 
-    for line in getdoclist(ctsns).split("\n"):
-        urn_date = line.split("\t")
-        doc_year[urn_date[0]] = urn_date[2]
+        for line in getdoclist(ctsns).split("\n"):
+            urn_date = line.split("\t")
+            doc_year[urn_date[0]] = urn_date[2]
 
-    for yearfile in sorted(os.listdir(_path(PERYEAR_DIR))):
-        print("sql lemmamappingperyear:" + yearfile)
-        year = yearfile.replace(".txt", "")
-        for line in _read_nonempty_lines(_path(PERYEAR_DIR, yearfile)):
-            linearr = line.split("\t")
-            token, lemma, wetype, subtype = linearr[0], linearr[1], linearr[2], linearr[3]
-            freq = int(linearr[4])
-            lemmatokentypesubtypebag["\t".join((token, lemma, wetype, subtype))] += freq
-            lemmatokenbag[token + "\t" + lemma] += freq
+        for yearfile in sorted(os.listdir(_path(PERYEAR_DIR))):
+            print("sql lemmamappingperyear:" + yearfile)
+            year = yearfile.replace(".txt", "")
+            for line in _read_nonempty_lines(_path(PERYEAR_DIR, yearfile)):
+                linearr = line.split("\t")
+                token, lemma, wetype, subtype = linearr[:4]
+                freq = int(linearr[4])
+                lemmatokentypesubtypebag[(token, lemma, wetype, subtype)] += freq
+                lemmatokenbag[(token, lemma)] += freq
+                cursor.execute(
+                    "INSERT INTO tokenlemmatypesubtypedatefrequency"
+                    "(token,lemma,type,subtype,date,frequency) VALUES(?,?,?,?,?,?)",
+                    (token, lemma, wetype, subtype, int(year), freq),
+                )
+            con.commit()
+
+        # An ambiguous "|A|B|" entry counts towards both A and B, so the
+        # non-ambiguous totals are only complete after the whole file.
+        wb_nonambig = Counter()
+        for line in _read_nonempty_lines(_path(MAPPING_DIR, LEMMABAG_FILE)):
+            lemma, frequency = line.split("\t")[:2]
+            freq = int(frequency)
             cursor.execute(
-                "INSERT INTO tokenlemmatypesubtypedatefrequency"
-                "(token,lemma,type,subtype,date,frequency) VALUES(?,?,?,?,?,?)",
-                (token, lemma, wetype, subtype, int(year), freq),
+                "INSERT INTO lemmafrequency(lemma,frequency,sortkey) VALUES(?,?,?)",
+                (lemma, freq, dsb_sortkey(lemma.strip("|"))),
+            )
+            for part in lemma.split("|"):
+                if part.strip():
+                    wb_nonambig[part] += freq
+
+        for lemma, freq in wb_nonambig.items():
+            cursor.execute(
+                "INSERT INTO lemmanonambig(lemma,frequency,sortkey) VALUES(?,?,?)",
+                ("|" + lemma + "|", freq, dsb_sortkey(lemma)),
             )
         con.commit()
 
-    for line in _read_nonempty_lines(_path(MAPPING_DIR, LEMMABAG_FILE)):
-        linearr = line.split("\t")
-        lemma = linearr[0]
-        freq = int(linearr[1].strip())
-        cursor.execute(
-            "INSERT INTO lemmafrequency(lemma,frequency,sortkey) VALUES(?,?,?)",
-            (lemma, freq, dsb_sortkey(lemma.strip("|"))),
-        )
-    con.commit()
+        for file in sorted(os.listdir(_path(MAPPING_DIR))):
+            if not file.startswith("urn_#_"):
+                continue
+            print("sql lemmamappingperurn:" + file)
+            bag = "#"
+            for line in _read_nonempty_lines(_path(MAPPING_DIR, file)):
+                bag += line.split("\t")[1] + "#"
+            while "#||#" in bag:
+                bag = bag.replace("#||#", "#")
+            urn = file.replace(".txt", "").replace("_#_", ":")
+            cursor.execute(
+                "INSERT INTO urndatelemmabag(urn,date,lemmabag) VALUES(?,?,?)",
+                (urn, doc_year[urn], bag),
+            )
+        con.commit()
 
-    wb_nonambig = Counter()
-    for line in _read_nonempty_lines(_path(MAPPING_DIR, LEMMABAG_FILE)):
-        linearr = line.split("\t")
-        freq = int(linearr[1])
-        for lemma in linearr[0].split("|"):
-            if lemma.strip():
-                wb_nonambig[lemma] += freq
+        for (token, lemma), freq in lemmatokenbag.items():
+            cursor.execute(
+                "INSERT INTO lemmatokenfrequency(token,lemma,frequency) VALUES(?,?,?)",
+                (token, lemma, freq),
+            )
+        con.commit()
 
-    for lemma, freq in wb_nonambig.items():
-        cursor.execute(
-            "INSERT INTO lemmanonambig(lemma,frequency,sortkey) VALUES(?,?,?)",
-            ("|" + lemma + "|", freq, dsb_sortkey(lemma)),
-        )
-    con.commit()
+        for (token, lemma, wetype, subtype), freq in lemmatokentypesubtypebag.items():
+            cursor.execute(
+                "INSERT INTO tokenlemmatypesubtypefrequency"
+                "(token,lemma,type,subtype,frequency) VALUES(?,?,?,?,?)",
+                (token, lemma, wetype, subtype, freq),
+            )
+        con.commit()
 
-    for file in sorted(os.listdir(_path(MAPPING_DIR))):
-        if not file.startswith("urn_#_"):
-            continue
-        print("sql lemmamappingperurn:" + file)
-        bag = "#"
-        for line in _read_nonempty_lines(_path(MAPPING_DIR, file)):
-            bag += line.split("\t")[1] + "#"
-        while "#||#" in bag:
-            bag = bag.replace("#||#", "#")
-        urn = file.replace(".txt", "").replace("_#_", ":")
-        cursor.execute(
-            "INSERT INTO urndatelemmabag(urn,date,lemmabag) VALUES(?,?,?)",
-            (urn, doc_year[urn], bag),
-        )
-    con.commit()
 
-    for key, freq in lemmatokenbag.items():
-        token, lemma = key.split("\t", 1)
-        cursor.execute(
-            "INSERT INTO lemmatokenfrequency(token,lemma,frequency) VALUES(?,?,?)",
-            (token, lemma, freq),
-        )
-    con.commit()
-
-    for key, freq in lemmatokentypesubtypebag.items():
-        token, lemma, wetype, subtype = key.split("\t")
-        cursor.execute(
-            "INSERT INTO tokenlemmatypesubtypefrequency"
-            "(token,lemma,type,subtype,frequency) VALUES(?,?,?,?,?)",
-            (token, lemma, wetype, subtype, freq),
-        )
-    con.commit()
-    con.close()
-
-    index()
+def db():
+    """Rebuild the database via a temp file, so a failure keeps the old one."""
+    db_path = _path(DB_NAME)
+    temp_db_path = db_path + ".tmp"
+    try:
+        _fill(temp_db_path)
+        index(temp_db_path)
+        os.replace(temp_db_path, db_path)
+    except BaseException:
+        if os.path.exists(temp_db_path):
+            os.remove(temp_db_path)
+        raise
 
 
 def main(argv=None):
