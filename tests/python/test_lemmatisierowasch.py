@@ -24,7 +24,10 @@ def read_lines(path):
 def test_load_bagofwords_reads_token_frequencies(tmp_path, monkeypatch):
     os.makedirs(tmp_path / "bagofwords")
     (tmp_path / "bagofwords" / "_all.txt").write_text(
-        "a\t17307\nße\t7204\n", encoding="utf8"
+        """a	17307
+ße	7204
+""",
+        encoding="utf8",
     )
     monkeypatch.setattr(lemmatisierowasch, "datadir", str(tmp_path) + os.sep)
 
@@ -134,10 +137,17 @@ def test_process_counts_rows_and_aggregates_years(tmp_path):
     os.makedirs(folder)
     os.makedirs(peryear)
     (peryear / "1880.txt").write_text(
-        "dṙewo\t|DRJEWO|\t\t\n" "dṙewo\t|DRJEWO|\t\t\n" "tog\t|TEN|TO|\t\t\n",
+        """dṙewo	|DRJEWO|
+dṙewo	|DRJEWO|
+tog	|TEN|TO|
+""",
         encoding="utf8",
     )
-    (peryear / "1881.txt").write_text("dṙewo\t|DRJEWO|\t\t\n", encoding="utf8")
+    (peryear / "1881.txt").write_text(
+        """dṙewo	|DRJEWO|
+""",
+        encoding="utf8",
+    )
 
     lemmatisierowasch.process(folder)
 
@@ -170,13 +180,14 @@ def test_reset_replaces_mapping_directories(tmp_path, monkeypatch):
 def test_getdoclist_prefers_local_urnlist(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "urnlist.txt").write_text(
-        "urn:cts:dsb:bramborske_nowiny_1880_51.20220111:\tDocument\t1880\n",
+        """urn:cts:dsb:bramborske_nowiny_1880_51.20220111:	Document	1880
+""",
         encoding="utf8",
     )
 
     result = lemmatisierowasch.getdoclist("dsb")
 
-    assert result == ("urn:cts:dsb:bramborske_nowiny_1880_51.20220111:\tDocument\t1880")
+    assert result == "urn:cts:dsb:bramborske_nowiny_1880_51.20220111:	Document	1880"
 
 
 def test_inittables_creates_expected_empty_schema(tmp_path, monkeypatch):
@@ -214,13 +225,26 @@ def test_db_populates_all_tables_and_indexes(tmp_path, monkeypatch):
     peryear = tmp_path / "lemmamappingperyear"
     os.makedirs(mapping)
     os.makedirs(peryear)
-    (peryear / "1880.txt").write_text("dṙewo\t|DRJEWO|\t\t\t2\n", encoding="utf8")
-    (mapping / "_lemmabag.txt").write_text("|DRJEWO|\t2\n", encoding="utf8")
+    (peryear / "1880.txt").write_text(
+        """dṙewo	|DRJEWO|			2
+""",
+        encoding="utf8",
+    )
+    (mapping / "_lemmabag.txt").write_text(
+        """|DRJEWO|	2
+""",
+        encoding="utf8",
+    )
     (
         mapping / "urn_#_cts_#_dsb_#_bramborske_nowiny_1880_51.20220111_#_.txt"
-    ).write_text("dṙewo\t|DRJEWO|\t\t\n", encoding="utf8")
+    ).write_text(
+        """dṙewo	|DRJEWO|
+""",
+        encoding="utf8",
+    )
     (tmp_path / "urnlist.txt").write_text(
-        "urn:cts:dsb:bramborske_nowiny_1880_51.20220111:\tDocument\t1880\n",
+        """urn:cts:dsb:bramborske_nowiny_1880_51.20220111:	Document	1880
+""",
         encoding="utf8",
     )
     monkeypatch.chdir(tmp_path)

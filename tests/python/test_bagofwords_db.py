@@ -12,23 +12,33 @@ def make_corpus(datadir, monkeypatch):
     os.makedirs(datadir + "bagofwordsperyear", exist_ok=True)
 
     with open(datadir + "bagofwords/_all.txt", "w", encoding="utf8") as outf:
-        outf.write("wóda\t5\nluft\t5\nzemja\t1\n")
+        outf.write("""wóda	5
+luft	5
+zemja	1
+""")
 
     with open(datadir + "bagofwordsperyear/1800.txt", "w", encoding="utf8") as outf:
-        outf.write("wóda\t3\nzemja\t1\n")
+        outf.write("""wóda	3
+zemja	1
+""")
     with open(datadir + "bagofwordsperyear/1850.txt", "w", encoding="utf8") as outf:
-        outf.write("wóda\t2\nluft\t5\n")
+        outf.write("""wóda	2
+luft	5
+""")
 
     with open(
         datadir + "bagofwords/urn_#_cts_#_dsb_#_doc1.txt", "w", encoding="utf8"
     ) as outf:
-        outf.write("wóda\t3\nzemja\t1")
+        outf.write("""wóda	3
+zemja	1""")
     with open(
         datadir + "bagofwords/urn_#_cts_#_dsb_#_doc2.txt", "w", encoding="utf8"
     ) as outf:
-        outf.write("wóda\t2\nluft\t5")
+        outf.write("""wóda	2
+luft	5""")
 
-    doclist = "urn:cts:dsb:doc1\tDoc One\t1800\nurn:cts:dsb:doc2\tDoc Two\t1850"
+    doclist = """urn:cts:dsb:doc1	Doc One	1800
+urn:cts:dsb:doc2	Doc Two	1850"""
     monkeypatch.setattr(bagofwords, "getdoclist", lambda ns: doclist)
 
 

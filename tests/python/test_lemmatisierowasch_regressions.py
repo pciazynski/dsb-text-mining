@@ -48,13 +48,13 @@ def setup_remote_passage(tmp_path, monkeypatch, reset_cts_globals, payload):
 def test_partial_harvest_does_not_replace_unannotated_document(datadir, monkeypatch):
     doclist = "\n".join(
         [
-            "urn:cts:dsb:doc1\tUnannotated\t1880",
-            "urn:cts:dsb:doc2\tAnnotated\t1881",
+            "urn:cts:dsb:doc1	Unannotated	1880",
+            "urn:cts:dsb:doc2	Annotated	1881",
         ]
     )
     monkeypatch.setattr(bagofwords, "count", 1)
     monkeypatch.setattr(bagofwords, "getdoclist", lambda ns: doclist)
-    monkeypatch.setattr(bagofwords, "cts_bagofwords", lambda urn: "word\t1")
+    monkeypatch.setattr(bagofwords, "cts_bagofwords", lambda urn: "word	1")
 
     bagofwords.collect()
 
@@ -64,7 +64,12 @@ def test_partial_harvest_does_not_replace_unannotated_document(datadir, monkeypa
     monkeypatch.setattr(
         lemmatisierowasch,
         "lemmamapping",
-        lambda urn: "" if urn.endswith("doc1") else "tok\t|X|\t\t\n",
+        lambda urn: (
+            ""
+            if urn.endswith("doc1")
+            else """tok	|X|
+"""
+        ),
     )
 
     lemmatisierowasch.collect()
@@ -156,18 +161,21 @@ def test_db_valid_lemma_creates_no_empty_nonambiguous_row(tmp_path, monkeypatch)
     monkeypatch.setattr(lemmatisierowasch, "datadir", datadir)
     monkeypatch.setattr(lemmatisierowasch, "tokenlength", 80)
     monkeypatch.setattr(
-        lemmatisierowasch, "getdoclist", lambda ns: "urn:cts:dsb:doc1\tTitle\t1880"
+        lemmatisierowasch, "getdoclist", lambda ns: "urn:cts:dsb:doc1	Title	1880"
     )
     os.makedirs(datadir + "lemmamappingperyear")
     with open(datadir + "lemmamappingperyear/1880.txt", "w", encoding="utf8") as f:
-        f.write("dṙewo\t|DRJEWO|\t\t\t3\n")
+        f.write("""dṙewo	|DRJEWO|			3
+""")
     os.makedirs(datadir + "lemmamapping")
     with open(datadir + "lemmamapping/_lemmabag.txt", "w", encoding="utf8") as f:
-        f.write("|DRJEWO|\t3\n")
+        f.write("""|DRJEWO|	3
+""")
     with open(
         datadir + "lemmamapping/urn_#_cts_#_dsb_#_doc1.txt", "w", encoding="utf8"
     ) as f:
-        f.write("dṙewo\t|DRJEWO|\t\t\t3\n")
+        f.write("""dṙewo	|DRJEWO|			3
+""")
 
     lemmatisierowasch.db()
 
@@ -192,7 +200,7 @@ def test_db_failed_rebuild_preserves_existing_database(tmp_path, monkeypatch):
     monkeypatch.setattr(lemmatisierowasch, "datadir", datadir)
     monkeypatch.setattr(lemmatisierowasch, "tokenlength", 80)
     monkeypatch.setattr(
-        lemmatisierowasch, "getdoclist", lambda ns: "urn:cts:dsb:doc1\tTitle\t1880"
+        lemmatisierowasch, "getdoclist", lambda ns: "urn:cts:dsb:doc1	Title	1880"
     )
 
     con = sqlite3.connect(datadir + "lemmamapping.db")
@@ -203,7 +211,8 @@ def test_db_failed_rebuild_preserves_existing_database(tmp_path, monkeypatch):
 
     os.makedirs(datadir + "lemmamappingperyear")
     with open(datadir + "lemmamappingperyear/1880.txt", "w", encoding="utf8") as f:
-        f.write("brokenrow\n")
+        f.write("""brokenrow
+""")
     os.makedirs(datadir + "lemmamapping")
 
     try:

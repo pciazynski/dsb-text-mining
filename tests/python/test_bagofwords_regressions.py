@@ -25,7 +25,7 @@ def set_remote_document(monkeypatch, year, response):
     monkeypatch.setattr(
         bagofwords,
         "getdoclist",
-        lambda ns: "urn:cts:dsb:doc1\tDoc One\t" + year,
+        lambda ns: "urn:cts:dsb:doc1	Doc One	" + year,
     )
     monkeypatch.setattr(bagofwords, "cts_bagofwords", lambda urn: response)
 
@@ -33,9 +33,9 @@ def set_remote_document(monkeypatch, year, response):
 def test_collect_document_limit_stops_remote_requests(datadir, monkeypatch):
     doclist = "\n".join(
         [
-            "urn:cts:dsb:doc1\tDoc One\t1800",
-            "urn:cts:dsb:doc2\tDoc Two\t1801",
-            "urn:cts:dsb:doc3\tDoc Three\t1802",
+            "urn:cts:dsb:doc1	Doc One	1800",
+            "urn:cts:dsb:doc2	Doc Two	1801",
+            "urn:cts:dsb:doc3	Doc Three	1802",
         ]
     )
     requested_urns = []
@@ -44,7 +44,7 @@ def test_collect_document_limit_stops_remote_requests(datadir, monkeypatch):
     monkeypatch.setattr(
         bagofwords,
         "cts_bagofwords",
-        lambda urn: requested_urns.append(urn) or "word\t1",
+        lambda urn: requested_urns.append(urn) or "word	1",
     )
 
     bagofwords.collect()
@@ -123,7 +123,7 @@ def test_collect_traversal_year_rejected_without_external_file(datadir, monkeypa
     escaped_path = os.path.abspath(
         collection_dir + "bagofwordsperyear/" + year + ".txt"
     )
-    set_remote_document(monkeypatch, year, "word\t1")
+    set_remote_document(monkeypatch, year, "word	1")
 
     bagofwords.collect()
 
@@ -135,7 +135,7 @@ def test_collect_traversal_year_rejected_without_external_file(datadir, monkeypa
 
 
 def test_collect_non_numeric_year_rejected_without_document_data(datadir, monkeypatch):
-    set_remote_document(monkeypatch, "unknown", "word\t1")
+    set_remote_document(monkeypatch, "unknown", "word	1")
 
     bagofwords.collect()
 
@@ -147,7 +147,7 @@ def test_collect_non_numeric_year_rejected_without_document_data(datadir, monkey
 def test_collect_invalid_frequency_rejected_without_document_data(
     datadir, monkeypatch, frequency
 ):
-    set_remote_document(monkeypatch, "1800", "word\t" + frequency)
+    set_remote_document(monkeypatch, "1800", "word	" + frequency)
 
     bagofwords.collect()
 
@@ -167,7 +167,7 @@ def test_main_empty_response_does_not_insert_document(datadir, monkeypatch):
 
 
 def test_main_unicode_token_uses_canonical_case_in_all_tables(datadir, monkeypatch):
-    set_remote_document(monkeypatch, "1800", "Żož\t1")
+    set_remote_document(monkeypatch, "1800", "Żož	1")
 
     bagofwords.main([])
 
@@ -189,18 +189,18 @@ def make_corpus(datadir, monkeypatch, tokens, urn_tokens=None):
 
     with open(datadir + "bagofwords/_all.txt", "w", encoding="utf8") as outf:
         for token, freq in tokens.items():
-            outf.write(token + "\t" + str(freq) + "\n")
+            print(token, freq, sep="	", file=outf)
     with open(datadir + "bagofwordsperyear/1800.txt", "w", encoding="utf8") as outf:
         for token, freq in tokens.items():
-            outf.write(token + "\t" + str(freq) + "\n")
+            print(token, freq, sep="	", file=outf)
     with open(
         datadir + "bagofwords/urn_#_cts_#_dsb_#_doc1.txt", "w", encoding="utf8"
     ) as outf:
         for token, freq in (urn_tokens or tokens).items():
-            outf.write(token + "\t" + str(freq) + "\n")
+            print(token, freq, sep="	", file=outf)
 
     monkeypatch.setattr(
-        bagofwords, "getdoclist", lambda ns: "urn:cts:dsb:doc1\tDoc One\t1800"
+        bagofwords, "getdoclist", lambda ns: "urn:cts:dsb:doc1	Doc One	1800"
     )
 
 

@@ -4,11 +4,12 @@ import bagofwords
 
 
 def test_sanitycheck_accepts_two_column_payload():
-    assert bagofwords.sanitycheck("wóda\t3\nzemja\t1") is True
+    assert bagofwords.sanitycheck("""wóda	3
+zemja	1""") is True
 
 
 def test_sanitycheck_rejects_wrong_column_count():
-    assert bagofwords.sanitycheck("wóda\t3\t1850") is False
+    assert bagofwords.sanitycheck("wóda	3	1850") is False
     assert bagofwords.sanitycheck("wóda") is False
 
 
@@ -18,7 +19,8 @@ def test_sanitycheck_rejects_empty_string():
 
 def test_sanitycheck_rejects_trailing_newline():
     # A trailing newline yields an empty final line, which is not 2 columns.
-    assert bagofwords.sanitycheck("wóda\t3\n") is False
+    assert bagofwords.sanitycheck("""wóda	3
+""") is False
 
 
 # -------------------------------------------------------------------- process
@@ -82,7 +84,12 @@ def test_process_merges_duplicate_tokens_within_a_year(tmp_path, write_peryear):
     base = write_peryear(str(tmp_path / "bagofwords"), {1800: {}})
     peryear_file = base + "peryear/1800.txt"
     with open(peryear_file, "w", encoding="utf8") as outf:
-        outf.write("wóda\t2\nwóda\t3\nzemja\t1\n")
+        outf.write(
+            """wóda	2
+wóda	3
+zemja	1
+"""
+        )
 
     bagofwords.process(base)
 

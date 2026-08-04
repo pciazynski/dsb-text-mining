@@ -1,7 +1,19 @@
 import importlib
 import os
+import sys
 
 import pytest
+
+import config_def
+
+# Ensure tests are deterministic even when a local, untracked etl/config.py exists.
+sys.modules["config"] = config_def
+
+
+@pytest.fixture(autouse=True)
+def stable_config_module(monkeypatch):
+    """Force imports of config to resolve to config_def for every test."""
+    monkeypatch.setitem(sys.modules, "config", config_def)
 
 
 @pytest.fixture
@@ -52,7 +64,7 @@ def write_peryear():
                 os.path.join(peryear, str(year) + ".txt"), "w", encoding="utf8"
             ) as outf:
                 for token, freq in tokens.items():
-                    outf.write(token + "\t" + str(freq) + "\n")
+                    print(token, freq, sep="	", file=outf)
         return base
 
     return _write

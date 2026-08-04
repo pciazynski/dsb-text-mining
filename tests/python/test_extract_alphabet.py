@@ -4,19 +4,18 @@ import os
 import extract_alphabet
 
 # The example from the spec: token/frequency lines, tab separated.
-EXAMPLE_INPUT = (
-    "a\t17307\n"
-    "ße\t7204\n"
-    "jo\t6987\n"
-    "na\t5728\n"
-    "we\t5219\n"
-    "To\t4570\n"
-    "ten\t3918\n"
-    "až\t3775\n"
-    "do\t2981\n"
-    "ja\t2866\n"
-    "ſ\t2843.\n"
-)
+EXAMPLE_INPUT = """a	17307
+ße	7204
+jo	6987
+na	5728
+we	5219
+To	4570
+ten	3918
+až	3775
+do	2981
+ja	2866
+ſ	2843.
+"""
 
 EXAMPLE_OUTPUT = "a d e j n o ß ſ T t w ž"
 
@@ -251,7 +250,11 @@ def test_main_only_latin_keeps_combining_mark_on_latin_base_but_drops_cyrillic(
 
 def test_main_both_cases_with_output_writes_lines_to_file(tmp_path):
     infile = tmp_path / "in.txt"
-    infile.write_text("bA\ta\n", encoding="utf8")
+    infile.write_text(
+        """bA	a
+""",
+        encoding="utf8",
+    )
     outfile = tmp_path / "out.txt"
 
     extract_alphabet.main(["--both-cases", str(infile), str(outfile)])
