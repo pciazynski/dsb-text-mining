@@ -33,6 +33,16 @@ def setup_remote_passage(tmp_path, monkeypatch, reset_cts_globals, payload):
     )
 
 
+def setup_db_env(tmp_path, monkeypatch, doclist="urn:cts:dsb:doc1\tTitle\t1880"):
+    datadir = str(tmp_path) + os.sep
+    monkeypatch.setattr(lemmatisierowasch, "datadir", datadir)
+    monkeypatch.setattr(lemmatisierowasch, "tokenlength", 80)
+    monkeypatch.setattr(lemmatisierowasch, "getdoclist", lambda ns: doclist)
+    os.makedirs(datadir + "lemmamappingperyear")
+    os.makedirs(datadir + "lemmamapping")
+    return datadir
+
+
 # --------------------------------------------------------- BUG-3: document sets
 
 
@@ -106,14 +116,6 @@ def test_lemmamapping_excludes_comma_number_with_mismatched_tokenization(
     )
 
 
-# ---------------------------------------------------- BUG-5: attribute leakage
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: attributes from a following <note> element leak onto the word, "
-    "and type= matches inside subtype=",
-)
 def test_lemmamapping_ignores_attributes_of_following_element(
     tmp_path, monkeypatch, reset_cts_globals
 ):
@@ -126,18 +128,10 @@ def test_lemmamapping_ignores_attributes_of_following_element(
 
     result = lemmatisierowasch.lemmamapping("urn:cts:dsb:work")
 
-    assert result == """jo	|JO|		
+    assert result == """jo	|JO|
 """
 
 
-# ------------------------------------------------------- BUG-6: empty lemmas
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason='BUG: an empty lemma="" is stored as the || mapping instead of '
-    "being skipped",
-)
 def test_lemmamapping_empty_lemma_creates_no_mapping(
     tmp_path, monkeypatch, reset_cts_globals
 ):
@@ -152,23 +146,11 @@ def test_lemmamapping_empty_lemma_creates_no_mapping(
     assert lemmatisierowasch.lemmabag == {}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: pipe-splitting counts the empty boundary components, producing "
-    "an inflated || (empty) lemmanonambig row",
-)
 def test_db_valid_lemma_creates_no_empty_nonambiguous_row(tmp_path, monkeypatch):
-    datadir = str(tmp_path) + os.sep
-    monkeypatch.setattr(lemmatisierowasch, "datadir", datadir)
-    monkeypatch.setattr(lemmatisierowasch, "tokenlength", 80)
-    monkeypatch.setattr(
-        lemmatisierowasch, "getdoclist", lambda ns: "urn:cts:dsb:doc1	Title	1880"
-    )
-    os.makedirs(datadir + "lemmamappingperyear")
+    datadir = setup_db_env(tmp_path, monkeypatch)
     with open(datadir + "lemmamappingperyear/1880.txt", "w", encoding="utf8") as f:
         f.write("""dṙewo	|DRJEWO|			3
 """)
-    os.makedirs(datadir + "lemmamapping")
     with open(datadir + "lemmamapping/_lemmabag.txt", "w", encoding="utf8") as f:
         f.write("""|DRJEWO|	3
 """)
@@ -197,12 +179,7 @@ def test_db_valid_lemma_creates_no_empty_nonambiguous_row(tmp_path, monkeypatch)
     "destroys the previous database instead of preserving it",
 )
 def test_db_failed_rebuild_preserves_existing_database(tmp_path, monkeypatch):
-    datadir = str(tmp_path) + os.sep
-    monkeypatch.setattr(lemmatisierowasch, "datadir", datadir)
-    monkeypatch.setattr(lemmatisierowasch, "tokenlength", 80)
-    monkeypatch.setattr(
-        lemmatisierowasch, "getdoclist", lambda ns: "urn:cts:dsb:doc1	Title	1880"
-    )
+    datadir = setup_db_env(tmp_path, monkeypatch)
 
     con = sqlite3.connect(datadir + "lemmamapping.db")
     con.execute("CREATE TABLE marker(val TEXT)")
@@ -210,11 +187,9 @@ def test_db_failed_rebuild_preserves_existing_database(tmp_path, monkeypatch):
     con.commit()
     con.close()
 
-    os.makedirs(datadir + "lemmamappingperyear")
     with open(datadir + "lemmamappingperyear/1880.txt", "w", encoding="utf8") as f:
         f.write("""brokenrow
 """)
-    os.makedirs(datadir + "lemmamapping")
 
     try:
         lemmatisierowasch.db()

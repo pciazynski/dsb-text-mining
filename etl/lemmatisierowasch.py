@@ -3,6 +3,7 @@ import sys
 import os
 import shutil
 import sqlite3
+from collections import Counter
 from settings import count, ctsns, datadir, copyrighttoken, tokenlength
 from pythoncts import *
 from dsb_collation import dsb_sortkey
@@ -10,151 +11,139 @@ from dsb_collation import dsb_sortkey
 lemmabag = {}
 bagofwords = {}
 
+MAPPING_DIR = "lemmamapping"
+PERYEAR_DIR = "lemmamappingperyear"
+DB_NAME = "lemmamapping.db"
+LEMMABAG_FILE = "_lemmabag.txt"
+
+
+def _path(*parts):
+    return os.path.join(datadir, *parts)
+
 
 def load_bagofwords():
-    with open(datadir + "bagofwords/_all.txt", "r", encoding="utf8") as bwin:
+    with open(_path("bagofwords", "_all.txt"), "r", encoding="utf8") as bwin:
         for line in bwin:
-            linearr = line.split("\t")
-            bagofwords[linearr[0]] = int(linearr[1])
+            token, freq = line.split("\t")[:2]
+            bagofwords[token] = int(freq)
 
 
 def requestctsurl(ns):
     global ctsurl
-    if len(ctsurl) == 0:
-        if not ns.startswith("urn:cts"):
-            ns = "urn:cts:" + ns
-        ns = ns.split(":")[2]
-        data = urlopen("https://urncts.eu/namespaceresolver/" + ns)
-        for line in data:
-            ctsurl += line.decode("utf-8")
+    if ctsurl:
+        return
+    if not ns.startswith("urn:cts"):
+        ns = "urn:cts:" + ns
+    ns = ns.split(":")[2]
+    data = urlopen("https://urncts.eu/namespaceresolver/" + ns)
+    for line in data:
+        ctsurl += line.decode("utf-8")
 
 
 def tokencheck(token):
-    if not token in bagofwords:
-        return False
-    return True
+    return token in bagofwords
+
+
+def _attr_value(attrs, name):
+    marker = name + '="'
+    if marker not in attrs:
+        return ""
+    return attrs.split(marker)[1].split('"')[0]
 
 
 def lemmamapping(urn):
     global ctsurl
-    global copyrighttoken
     requestctsurl(urn)
     res = cts_passage(urn, "&copyrighttoken=" + copyrighttoken)
     wordelements = res.split("<w")
     res = ""
-    wecount = 0
-    insg = str(len(wordelements))
-    for we in wordelements:
+    total = str(len(wordelements))
+    for wecount, we in enumerate(wordelements):
         if str(wecount).endswith("00"):
-            print("\rItems:" + str(wecount) + "/" + insg, sep=" ", end="", flush=True)
-        wecount += 1
-        if "</w" in we:
-            wetype = ""
-            subtype = ""
-            lemma = ""
-            token = (
-                we.split(">")[1]
-                .split("</")[0]
+            print("\rItems:" + str(wecount) + "/" + total, sep=" ", end="", flush=True)
+        if "</w" not in we:
+            continue
+        wattr = we.split(">", 1)[0]
+        wetype = ""
+        subtype = ""
+        lemma = ""
+        token = (
+            we.split(">")[1]
+            .split("</")[0]
+            .replace('"', " ")
+            .replace("'", " ")
+            .replace(".", "")
+            .strip()
+            .lower()
+        )
+        if not tokencheck(token):
+            with open(_path("_ERROR.txt"), "a", encoding="utf8") as errout:
+                errout.write(urn + " lemmatisierowasch unknown token " + token + "\n")
+            continue
+        if 'lemma="' in wattr:
+            lemmavalue = (
+                _attr_value(wattr, "lemma")
                 .replace('"', " ")
                 .replace("'", " ")
-                .replace(".", "")
                 .strip()
-                .lower()
             )
-            if tokencheck(token):
-                if 'lemma="' in we:
-                    lemma = (
-                        "|"
-                        + we.split('lemma="')[1]
-                        .split('"')[0]
-                        .replace('"', " ")
-                        .replace("'", " ")
-                        .strip()
-                        + "|"
-                    )
-                    # if len(lemma) == 2:
-                    #    lemma=""
-                    # else:
-                    # lemmaarr=lemma.split("|")
-                    # for lemmatoken in lemmaarr:
-                    if lemma in lemmabag:
-                        lemmabag[lemma] = lemmabag[lemma] + 1
-                    else:
-                        lemmabag[lemma] = 1
-                if "subtype=" in we:
-                    subtype = we.split('subtype="')[1].split('"')[0]
-                if "type=" in we:
-                    wetype = we.split('type="')[1].split('"')[0]
-                if len(lemma.strip()) > 0:
-                    res += token + "\t" + lemma + "\t" + wetype + "\t" + subtype + "\n"
-            else:
-                with open(datadir + "_ERROR.txt", "a", encoding="utf8") as errout:
-                    errout.write(
-                        urn + " lemmatisierowasch unknown token " + token + "\n"
-                    )
+            if lemmavalue:
+                lemma = "|" + lemmavalue + "|"
+                lemmabag[lemma] = lemmabag.get(lemma, 0) + 1
+        # Keep substring checks: "type=" also matches inside "subtype=".
+        if "subtype=" in wattr:
+            subtype = wattr.split('subtype="')[1].split('"')[0]
+        if "type=" in wattr:
+            wetype = wattr.split('type="')[1].split('"')[0]
+        if lemma.strip():
+            res += token + "\t" + lemma
+            if wetype or subtype:
+                res += "\t" + wetype + "\t" + subtype
+            res += "\n"
     print("\rOK                                       ")
     return res
 
 
 def process(foldername):
-    for yearfile in sorted(os.listdir(foldername + "peryear")):
+    peryear = foldername + "peryear"
+    for yearfile in sorted(os.listdir(peryear)):
         print("process " + foldername + ":" + yearfile)
-        wb = dict()
-        with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
+        wb = Counter()
+        path = os.path.join(peryear, yearfile)
+        with open(path, "r", encoding="utf8") as inf:
             for line in inf:
-                token = line.replace("\n", "")
-                if token in wb:
-                    wb[token] = wb[token] + 1
-                else:
-                    wb[token] = 1
-        with open(foldername + "peryear/" + yearfile, "w", encoding="utf8") as outf:
-            for token, value in sorted(wb.items(), key=lambda x: x[1], reverse=True):
+                wb[line.replace("\n", "")] += 1
+        with open(path, "w", encoding="utf8") as outf:
+            for token, value in wb.most_common():
                 outf.write(token + "\t" + str(value) + "\n")
 
-    wb = dict()
-    for yearfile in sorted(os.listdir(foldername + "peryear")):
+    wb = Counter()
+    for yearfile in sorted(os.listdir(peryear)):
         print("Bagging " + foldername + ":" + yearfile)
-        with open(foldername + "peryear/" + yearfile, "r", encoding="utf8") as inf:
+        with open(os.path.join(peryear, yearfile), "r", encoding="utf8") as inf:
             for line in inf:
                 linearr = line.split("\t")
-                token_lemma = (
-                    linearr[0]
-                    + "\t"
-                    + linearr[1]
-                    + "\t"
-                    + linearr[2]
-                    + "\t"
-                    + linearr[3]
-                )
-                if token_lemma in wb:
-                    wb[token_lemma] = wb[token_lemma] + int(linearr[4])
-                else:
-                    wb[token_lemma] = int(linearr[4])
-    with open(foldername + "/_all.txt", "w", encoding="utf8") as outf:
-        for token_lemma, value in sorted(wb.items(), key=lambda x: x[1], reverse=True):
+                token_lemma = "\t".join(linearr[:4])
+                wb[token_lemma] += int(linearr[4])
+    with open(os.path.join(foldername, "_all.txt"), "w", encoding="utf8") as outf:
+        for token_lemma, value in wb.most_common():
             outf.write(token_lemma + "\t" + str(value) + "\n")
 
 
 def reset():
-    if not os.path.exists(datadir):
-        os.makedirs(datadir, exist_ok=True)
-    if os.path.exists(datadir + "lemmamapping"):
-        shutil.rmtree(datadir + "lemmamapping")
-    os.mkdir(datadir + "lemmamapping")
-    if os.path.exists(datadir + "lemmamappingperyear"):
-        shutil.rmtree(datadir + "lemmamappingperyear")
-    os.mkdir(datadir + "lemmamappingperyear")
+    os.makedirs(datadir, exist_ok=True)
+    for name in (MAPPING_DIR, PERYEAR_DIR):
+        path = _path(name)
+        if os.path.exists(path):
+            shutil.rmtree(path)
+        os.mkdir(path)
 
 
 def getdoclist(ctsns):
-    tmplist = ""
     if os.path.exists("urnlist.txt"):
         with open("urnlist.txt", "r", encoding="utf8") as inf:
-            for line in inf:
-                tmplist += line
-    else:
-        tmplist = cts_inventory(ctsns)
-    return tmplist.strip()
+            return inf.read().strip()
+    return cts_inventory(ctsns).strip()
 
 
 def collect():
@@ -165,26 +154,20 @@ def collect():
     if count == -1:
         count = len(doclist)
     for line in doclist:
-        urn = line.split("\t")[0]
-        urnarr = urn.split(".")
-        year = line.split("\t")[2]
+        parts = line.split("\t")
+        urn = parts[0]
+        year = parts[2]
 
         if len(year) > 1 and count > 0:
             print(str(count) + " " + urn)
             count -= 1
             rs = lemmamapping(urn)
-            if len(rs.strip()) > 0:
+            if rs.strip():
+                urn_path = _path(MAPPING_DIR, urn.replace(":", "_#_") + ".txt")
+                year_path = _path(PERYEAR_DIR, year + ".txt")
                 with (
-                    open(
-                        datadir + "lemmamapping/" + urn.replace(":", "_#_") + ".txt",
-                        "w",
-                        encoding="utf8",
-                    ) as outf,
-                    open(
-                        datadir + "lemmamappingperyear/" + year + ".txt",
-                        "a",
-                        encoding="utf8",
-                    ) as outyf,
+                    open(urn_path, "w", encoding="utf8") as outf,
+                    open(year_path, "a", encoding="utf8") as outyf,
                 ):
                     outf.write(rs)
                     outyf.write(rs)
@@ -192,253 +175,169 @@ def collect():
                 print("No Items")
                 count += 1
 
-    process(datadir + "lemmamapping")
-    with open(datadir + "lemmamapping/_lemmabag.txt", "w", encoding="utf8") as outf:
+    process(_path(MAPPING_DIR))
+    with open(_path(MAPPING_DIR, LEMMABAG_FILE), "w", encoding="utf8") as outf:
         for token, value in sorted(lemmabag.items(), key=lambda x: x[1], reverse=True):
-            if len(token.strip()) > 0:
+            if token.strip():
                 outf.write(token + "\t" + str(value) + "\n")
 
 
 def index():
-    con = sqlite3.connect(datadir + "lemmamapping.db")
+    con = sqlite3.connect(_path(DB_NAME))
     cursor = con.cursor()
     print("Indexing...")
-    cursor.execute(
-        "CREATE INDEX tokenindextype ON tokenlemmatypesubtypefrequency(token);"
-    )
-    cursor.execute(
-        "CREATE INDEX lemmaindextype ON tokenlemmatypesubtypefrequency(lemma);"
-    )
-    cursor.execute(
-        "CREATE INDEX subtypeindextype ON tokenlemmatypesubtypefrequency(subtype);"
-    )
-    cursor.execute(
-        "CREATE INDEX tokenindex ON tokenlemmatypesubtypedatefrequency(token);"
-    )
-    cursor.execute(
-        "CREATE INDEX lemmaindex ON tokenlemmatypesubtypedatefrequency(lemma);"
-    )
-    cursor.execute(
-        "CREATE INDEX typeindex ON tokenlemmatypesubtypedatefrequency(type);"
-    )
-    cursor.execute(
-        "CREATE INDEX subtypeindex ON tokenlemmatypesubtypedatefrequency(subtype);"
-    )
-    cursor.execute(
-        "CREATE INDEX dateindex ON tokenlemmatypesubtypedatefrequency(date);"
-    )
-    cursor.execute("CREATE INDEX lemmafrequencyindex ON lemmafrequency(lemma);")
-    cursor.execute(
-        "CREATE INDEX lemmafrequencysortkeyindex ON lemmafrequency(sortkey);"
-    )
-    cursor.execute("CREATE INDEX lemmatokenlemmaindex ON lemmatokenfrequency(lemma);")
-    cursor.execute("CREATE INDEX lemmatokentokenindex ON lemmatokenfrequency(token);")
-    cursor.execute("CREATE INDEX lemmaurnindex ON urndatelemmabag(urn);")
-    cursor.execute("CREATE INDEX urnindex ON urndatelemmabag(lemmabag);")
-    cursor.execute("CREATE INDEX urndateindex ON urndatelemmabag(date);")
-    cursor.execute("CREATE INDEX lemmanonambiglemma ON lemmanonambig(lemma);")
-    cursor.execute("CREATE INDEX lemmanonambigsortkey ON lemmanonambig(sortkey);")
+    for sql in (
+        "CREATE INDEX tokenindextype ON tokenlemmatypesubtypefrequency(token)",
+        "CREATE INDEX lemmaindextype ON tokenlemmatypesubtypefrequency(lemma)",
+        "CREATE INDEX subtypeindextype ON tokenlemmatypesubtypefrequency(subtype)",
+        "CREATE INDEX tokenindex ON tokenlemmatypesubtypedatefrequency(token)",
+        "CREATE INDEX lemmaindex ON tokenlemmatypesubtypedatefrequency(lemma)",
+        "CREATE INDEX typeindex ON tokenlemmatypesubtypedatefrequency(type)",
+        "CREATE INDEX subtypeindex ON tokenlemmatypesubtypedatefrequency(subtype)",
+        "CREATE INDEX dateindex ON tokenlemmatypesubtypedatefrequency(date)",
+        "CREATE INDEX lemmafrequencyindex ON lemmafrequency(lemma)",
+        "CREATE INDEX lemmafrequencysortkeyindex ON lemmafrequency(sortkey)",
+        "CREATE INDEX lemmatokenlemmaindex ON lemmatokenfrequency(lemma)",
+        "CREATE INDEX lemmatokentokenindex ON lemmatokenfrequency(token)",
+        "CREATE INDEX lemmaurnindex ON urndatelemmabag(urn)",
+        "CREATE INDEX urnindex ON urndatelemmabag(lemmabag)",
+        "CREATE INDEX urndateindex ON urndatelemmabag(date)",
+        "CREATE INDEX lemmanonambiglemma ON lemmanonambig(lemma)",
+        "CREATE INDEX lemmanonambigsortkey ON lemmanonambig(sortkey)",
+    ):
+        cursor.execute(sql)
     con.commit()
     con.close()
 
 
 def initTables():
-    if os.path.exists(datadir + "lemmamapping.db"):
-        os.remove(datadir + "lemmamapping.db")
-    con = sqlite3.connect(datadir + "lemmamapping.db")
+    db_path = _path(DB_NAME)
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    con = sqlite3.connect(db_path)
     cursor = con.cursor()
+    tl = str(tokenlength)
     cursor.execute(
-        "CREATE TABLE urndatelemmabag(urn VARCHAR (50),date DATE,lemmabag text);"
+        "CREATE TABLE urndatelemmabag(urn VARCHAR (50),date DATE,lemmabag text)"
     )
     cursor.execute(
-        "CREATE TABLE tokenlemmatypesubtypedatefrequency(token VARCHAR ("
-        + str(tokenlength)
-        + "),lemma VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),date DATE,frequency INTEGER);"
+        "CREATE TABLE tokenlemmatypesubtypedatefrequency("
+        "token VARCHAR (" + tl + "),"
+        "lemma VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),"
+        "date DATE,frequency INTEGER)"
     )
     cursor.execute(
-        "CREATE TABLE tokenlemmatypesubtypefrequency(token VARCHAR ("
-        + str(tokenlength)
-        + "),lemma VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),frequency INTEGER);"
+        "CREATE TABLE tokenlemmatypesubtypefrequency("
+        "token VARCHAR (" + tl + "),"
+        "lemma VARCHAR (50),type VARCHAR (10),subtype VARCHAR (10),"
+        "frequency INTEGER)"
     )
     cursor.execute(
-        "CREATE TABLE lemmafrequency(lemma VARCHAR (50),frequency INTEGER,sortkey TEXT);"
+        "CREATE TABLE lemmafrequency(lemma VARCHAR (50),frequency INTEGER,sortkey TEXT)"
     )
     cursor.execute(
-        "CREATE TABLE lemmatokenfrequency(lemma VARCHAR (50),token VARCHAR ("
-        + str(tokenlength)
-        + "),frequency INTEGER);"
+        "CREATE TABLE lemmatokenfrequency("
+        "lemma VARCHAR (50),token VARCHAR (" + tl + "),frequency INTEGER)"
     )
     cursor.execute(
-        "CREATE TABLE lemmanonambig(lemma VARCHAR (50),frequency INTEGER,sortkey TEXT);"
+        "CREATE TABLE lemmanonambig(lemma VARCHAR (50),frequency INTEGER,sortkey TEXT)"
     )
     con.commit()
     con.close()
 
 
+def _read_nonempty_lines(path):
+    with open(path, "r", encoding="utf8") as inf:
+        for line in inf:
+            if line.strip():
+                yield line
+
+
 def db():
     initTables()
-    con = sqlite3.connect(datadir + "lemmamapping.db")
+    con = sqlite3.connect(_path(DB_NAME))
     cursor = con.cursor()
 
-    lemmatokenbag = {}
-    lemmatokentypesubtypebag = {}
+    lemmatokenbag = Counter()
+    lemmatokentypesubtypebag = Counter()
     doc_year = {}
 
-    doclist = getdoclist(ctsns).split("\n")
-    for line in doclist:
+    for line in getdoclist(ctsns).split("\n"):
         urn_date = line.split("\t")
         doc_year[urn_date[0]] = urn_date[2]
 
-    yearfiles = sorted(os.listdir(datadir + "lemmamappingperyear"))
-    for year in yearfiles:
-        print("sql lemmamappingperyear:" + year)
-        with open(datadir + "lemmamappingperyear/" + year, "r", encoding="utf8") as inf:
-            for line in inf.readlines():
-                if len(line.strip()) > 0:
-                    linearr = line.split("\t")
-                    toklem = linearr[0] + "\t" + linearr[1]
-                    toklemtypesubtype = (
-                        linearr[0]
-                        + "\t"
-                        + linearr[1]
-                        + "\t"
-                        + linearr[2]
-                        + "\t"
-                        + linearr[3]
-                    )
-
-                    if toklemtypesubtype in lemmatokentypesubtypebag:
-                        lemmatokentypesubtypebag[toklemtypesubtype] = (
-                            lemmatokentypesubtypebag[toklemtypesubtype]
-                            + int(linearr[4])
-                        )
-                    else:
-                        lemmatokentypesubtypebag[toklemtypesubtype] = int(linearr[4])
-
-                    if toklem in lemmatokenbag:
-                        lemmatokenbag[toklem] = lemmatokenbag[toklem] + int(linearr[4])
-                    else:
-                        lemmatokenbag[toklem] = int(linearr[4])
-
-                    vals = (
-                        '"'
-                        + linearr[0]
-                        + '","'
-                        + linearr[1]
-                        + '","'
-                        + linearr[2]
-                        + '","'
-                        + linearr[3]
-                        + '",'
-                        + year.replace(".txt", "")
-                        + ","
-                        + linearr[4].strip()
-                    )
-                    query = (
-                        "INSERT INTO tokenlemmatypesubtypedatefrequency(token,lemma,type,subtype,date,frequency) VALUES("
-                        + vals
-                        + ")"
-                    )
-                    cursor.execute(query)
-        con.commit()
-    with open(datadir + "lemmamapping/_lemmabag.txt", "r", encoding="utf8") as inf:
-        for line in inf.readlines():
-            if len(line.strip()) > 0:
-                linearr = line.split("\t")
-                vals = (
-                    '"'
-                    + linearr[0]
-                    + '",'
-                    + linearr[1].strip()
-                    + ',"'
-                    + dsb_sortkey(linearr[0].strip("|"))
-                    + '"'
-                )
-                query = (
-                    "INSERT INTO lemmafrequency(lemma,frequency,sortkey) VALUES("
-                    + vals
-                    + ")"
-                )
-                cursor.execute(query)
+    for yearfile in sorted(os.listdir(_path(PERYEAR_DIR))):
+        print("sql lemmamappingperyear:" + yearfile)
+        year = yearfile.replace(".txt", "")
+        for line in _read_nonempty_lines(_path(PERYEAR_DIR, yearfile)):
+            linearr = line.split("\t")
+            token, lemma, wetype, subtype = linearr[0], linearr[1], linearr[2], linearr[3]
+            freq = int(linearr[4])
+            lemmatokentypesubtypebag["\t".join((token, lemma, wetype, subtype))] += freq
+            lemmatokenbag[token + "\t" + lemma] += freq
+            cursor.execute(
+                "INSERT INTO tokenlemmatypesubtypedatefrequency"
+                "(token,lemma,type,subtype,date,frequency) VALUES(?,?,?,?,?,?)",
+                (token, lemma, wetype, subtype, int(year), freq),
+            )
         con.commit()
 
-    wb_nonambig = {}
-    with open(datadir + "lemmamapping/_lemmabag.txt", "r", encoding="utf8") as inf:
-        for line in inf.readlines():
-            if len(line.strip()) > 0:
-                linearr = line.split("\t")
-                lemmaarr = linearr[0].split("|")
-                for lemma in lemmaarr:
-                    if lemma in wb_nonambig:
-                        wb_nonambig[lemma] = wb_nonambig[lemma] + int(linearr[1])
-                    else:
-                        wb_nonambig[lemma] = int(linearr[1])
-
-    for lemma in wb_nonambig:
-        vals = (
-            '"|'
-            + lemma
-            + '|",'
-            + str(wb_nonambig[lemma])
-            + ',"'
-            + dsb_sortkey(lemma)
-            + '"'
+    for line in _read_nonempty_lines(_path(MAPPING_DIR, LEMMABAG_FILE)):
+        linearr = line.split("\t")
+        lemma = linearr[0]
+        freq = int(linearr[1].strip())
+        cursor.execute(
+            "INSERT INTO lemmafrequency(lemma,frequency,sortkey) VALUES(?,?,?)",
+            (lemma, freq, dsb_sortkey(lemma.strip("|"))),
         )
-        query = (
-            "INSERT INTO lemmanonambig(lemma,frequency,sortkey) VALUES(" + vals + ")"
-        )
-        cursor.execute(query)
     con.commit()
 
-    files = sorted(os.listdir(datadir + "lemmamapping"))
-    for file in files:
-        if file.startswith("urn_#_"):
-            print("sql lemmamappingperurn:" + file)
-            with open(datadir + "lemmamapping/" + file, "r", encoding="utf8") as inf:
-                lemmabag = "#"
-                for line in inf.readlines():
-                    if len(line.strip()) > 0:
-                        lemmabag += line.split("\t")[1] + "#"
-                while "#||#" in lemmabag:
-                    lemmabag = lemmabag.replace("#||#", "#")
-                urn = file.replace(".txt", "").replace("_#_", ":")
-                year = doc_year[urn]
-                vals = '"' + urn + '","' + year + '","' + lemmabag + '"'
-                query = (
-                    "INSERT INTO urndatelemmabag(urn,date,lemmabag) VALUES("
-                    + vals
-                    + ")"
-                )
-                cursor.execute(query)
-        con.commit()
+    wb_nonambig = Counter()
+    for line in _read_nonempty_lines(_path(MAPPING_DIR, LEMMABAG_FILE)):
+        linearr = line.split("\t")
+        freq = int(linearr[1])
+        for lemma in linearr[0].split("|"):
+            if lemma.strip():
+                wb_nonambig[lemma] += freq
 
-    for lemmatoken in lemmatokenbag:
-        vals = (
-            '"'
-            + lemmatoken.replace("\t", '","')
-            + '",'
-            + str(lemmatokenbag[lemmatoken])
+    for lemma, freq in wb_nonambig.items():
+        cursor.execute(
+            "INSERT INTO lemmanonambig(lemma,frequency,sortkey) VALUES(?,?,?)",
+            ("|" + lemma + "|", freq, dsb_sortkey(lemma)),
         )
-        query = (
-            "INSERT INTO lemmatokenfrequency(token,lemma,frequency) VALUES("
-            + vals
-            + ")"
-        )
-        cursor.execute(query)
     con.commit()
-    for toklemtypesubtype in lemmatokentypesubtypebag:
-        vals = (
-            '"'
-            + toklemtypesubtype.replace("\t", '","')
-            + '",'
-            + str(lemmatokentypesubtypebag[toklemtypesubtype])
+
+    for file in sorted(os.listdir(_path(MAPPING_DIR))):
+        if not file.startswith("urn_#_"):
+            continue
+        print("sql lemmamappingperurn:" + file)
+        bag = "#"
+        for line in _read_nonempty_lines(_path(MAPPING_DIR, file)):
+            bag += line.split("\t")[1] + "#"
+        while "#||#" in bag:
+            bag = bag.replace("#||#", "#")
+        urn = file.replace(".txt", "").replace("_#_", ":")
+        cursor.execute(
+            "INSERT INTO urndatelemmabag(urn,date,lemmabag) VALUES(?,?,?)",
+            (urn, doc_year[urn], bag),
         )
-        query = (
-            "INSERT INTO tokenlemmatypesubtypefrequency(token,lemma,type,subtype,frequency) VALUES("
-            + vals
-            + ")"
+    con.commit()
+
+    for key, freq in lemmatokenbag.items():
+        token, lemma = key.split("\t", 1)
+        cursor.execute(
+            "INSERT INTO lemmatokenfrequency(token,lemma,frequency) VALUES(?,?,?)",
+            (token, lemma, freq),
         )
-        cursor.execute(query)
+    con.commit()
+
+    for key, freq in lemmatokentypesubtypebag.items():
+        token, lemma, wetype, subtype = key.split("\t")
+        cursor.execute(
+            "INSERT INTO tokenlemmatypesubtypefrequency"
+            "(token,lemma,type,subtype,frequency) VALUES(?,?,?,?,?)",
+            (token, lemma, wetype, subtype, freq),
+        )
     con.commit()
     con.close()
 

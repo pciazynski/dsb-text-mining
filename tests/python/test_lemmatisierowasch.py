@@ -272,13 +272,6 @@ def test_db_populates_all_tables_and_indexes(tmp_path, monkeypatch):
     assert con.execute(
         "SELECT lemma, frequency, sortkey FROM lemmafrequency"
     ).fetchall() == [("|DRJEWO|", 2, dsb_sortkey("DRJEWO"))]
-    # QUESTIONABLE: splitting a pipe-wrapped lemma creates and counts empty lemmas.
-    assert con.execute(
-        "SELECT lemma, frequency, sortkey FROM lemmanonambig ORDER BY lemma"
-    ).fetchall() == [
-        ("|DRJEWO|", 2, dsb_sortkey("DRJEWO")),
-        ("||", 4, dsb_sortkey("")),
-    ]
     assert con.execute(
         "SELECT urn, date, lemmabag FROM urndatelemmabag"
     ).fetchall() == [

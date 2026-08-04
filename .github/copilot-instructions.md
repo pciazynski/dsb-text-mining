@@ -28,7 +28,7 @@ First understand the problem: read the task and the code it touches, trace the r
 
 ## This project
 
-- Python ETL scripts in `etl/`, PHP API in `public/php/`, JS frontend in `public/js/`, tests in `tests/` (one folder per language: `tests/python/`, `tests/js/`, `tests/php/`).
+- Python ETL scripts in `etl/`, PHP API in `public/php/`, JS frontend in `public/js/`, tests in `tests/` (one folder per language: `tests/python/` (use `.venv/bin/python -m pytest` to run the tests), `tests/js/`, `tests/php/`).
 - Data paths come from `settings.datadir` (env override `DSB_DATADIR`); never hardcode paths.
 
 ## Reference docs (read only when relevant)

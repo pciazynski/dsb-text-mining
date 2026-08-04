@@ -1,6 +1,6 @@
 ---
 description: 'Use these guidelines when generating or updating Python tests.'
-applyTo: 'tests/python/**/*.py'
+applyTo: 'tests/python/**'
 ---
 
 # Python tests (dsb-text-mining)

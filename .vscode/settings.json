@@ -1,6 +1,7 @@
 {
   "chat.disableAIFeatures": false,
   "chat.tools.compressOutput.enabled": true,
+  "chat.tools.autoExpandFailures": true,
   "python.analysis.extraPaths": ["./etl"],
   "[markdown]": {
     "editor.formatOnSave": false,
