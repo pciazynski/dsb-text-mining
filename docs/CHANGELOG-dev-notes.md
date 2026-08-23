@@ -1,3 +1,7 @@
+# Dev Notes (2026-08-23)
+- implement A1 to A5 of searchBoxSimplficiationPlan.md
+
+
 # Dev Notes (2026-08-04)
 
 ## Lemma and norm ETL

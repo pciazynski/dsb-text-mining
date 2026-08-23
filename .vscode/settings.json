@@ -9,5 +9,11 @@
   },
   "search.exclude": {
     "public/vendor/traviz_slim": true
+  },
+  "chat.tools.terminal.autoApprove": {
+    "/^node --test tests/js/search\\.test\\.js$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   }
 }
