@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DsbTests;
 
+use DsbTests\Support\FixtureDb;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
@@ -24,8 +25,7 @@ final class SearchResolveTest extends TestCase
     $this->tempDir = sys_get_temp_dir() . '/dsb-search-resolve-' . bin2hex(random_bytes(8));
     mkdir($this->tempDir, 0700);
 
-    $this->pdo = new \PDO('sqlite:' . $this->tempDir . '/lemmamapping.db');
-    $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    $this->pdo = FixtureDb::open($this->tempDir . '/lemmamapping.db');
     $this->pdo->exec('CREATE TABLE lemmanonambig (lemma TEXT, frequency INTEGER, sortkey TEXT)');
     $this->pdo->exec('CREATE INDEX lemmanonambigsortkey ON lemmanonambig(sortkey)');
     $this->pdo->exec('CREATE TABLE lemmafrequency (lemma TEXT, frequency INTEGER, sortkey TEXT)');

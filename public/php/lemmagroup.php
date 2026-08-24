@@ -5,14 +5,8 @@ require_once __DIR__ . '/dsb_collation.php';
 require_once __DIR__ . '/searchfilter.php';
 
 $pdo = new PDO('sqlite:../data/lemmamapping.db');
-$options = search_options($_GET);
-$terms = split_terms((string) ($_GET['lemma'] ?? ''), $options);
+$cells = resolve_request_cells($pdo, 'lemma', $_GET);
 
-if ($terms === []) {
-	exit;
-}
-
-$cells = resolve_cells($pdo, 'lemma', $terms, $options);
 if ($cells === []) {
 	exit;
 }

@@ -1,20 +1,27 @@
 <?php
 header('Content-Type: text/plain');
 
-#token,lemma,norm,type,subtype,date,frequency
+require_once __DIR__ . '/dsb_collation.php';
+require_once __DIR__ . '/searchfilter.php';
 
-if (isset($_GET['lemma'])) {
-	$lemma = str_replace(",", '|%" OR lemma LIKE "%|', $_GET['lemma']);
-	$PDO = new PDO('sqlite:../data/lemmamapping.db');
-	$query = 'SELECT lemma,date, frequency as summe, token FROM tokenlemmatypesubtypedatefrequency';
-	(isset($_GET['exact'])) ? $query .= ' WHERE lemma = "|' . $lemma . '|"' : $query .= ' WHERE lemma LIKE "%|' . $lemma . '|%"';
-	(isset($_GET['sort'])) ? $query .= ' ORDER BY date ASC' : NULL;
-	$tab = "\t";
-	$nl = "\n";
-	$res = '';
+$pdo = new PDO('sqlite:../data/lemmamapping.db');
+$cells = resolve_request_cells($pdo, 'lemma', $_GET);
 
-	foreach ($PDO->query($query . ';') as $row) {
-		$res .= $row['lemma'] . $tab . $row['date'] . $tab . $row['summe'] . $tab . $row['token'] . $nl;
-	}
-	print($res);
+if ($cells === []) {
+	exit;
 }
+
+$clause = in_clause('lemma', $cells);
+$query = 'SELECT lemma, date, frequency AS summe, token FROM tokenlemmatypesubtypedatefrequency WHERE ' . $clause['sql'];
+if (array_key_exists('sort', $_GET)) {
+	$query .= ' ORDER BY date ASC';
+}
+
+$statement = $pdo->prepare($query);
+$statement->execute($clause['params']);
+
+$res = '';
+foreach ($statement as $row) {
+	$res .= $row['lemma'] . "\t" . $row['date'] . "\t" . $row['summe'] . "\t" . $row['token'] . "\n";
+}
+print($res);

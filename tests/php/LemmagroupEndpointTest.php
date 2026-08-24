@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DsbTests;
 
 use DsbTests\Support\DevServer;
+use DsbTests\Support\FixtureDb;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
@@ -24,8 +25,7 @@ final class LemmagroupEndpointTest extends TestCase
 
     $db = $this->server->dataDir() . '/lemmamapping.db';
     @unlink($db);
-    $pdo = new \PDO('sqlite:' . $db);
-    $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    $pdo = FixtureDb::open($db);
     $pdo->exec('CREATE TABLE tokenlemmatypesubtypedatefrequency (token TEXT, lemma TEXT, type TEXT, subtype TEXT, date TEXT, frequency INTEGER)');
     $pdo->exec('CREATE TABLE lemmafrequency (lemma TEXT, frequency INTEGER, sortkey TEXT)');
     $pdo->exec('CREATE TABLE lemmanonambig (lemma TEXT, frequency INTEGER, sortkey TEXT)');

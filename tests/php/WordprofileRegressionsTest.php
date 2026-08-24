@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DsbTests;
 
 use DsbTests\Support\DevServer;
+use DsbTests\Support\FixtureDb;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
@@ -20,7 +21,7 @@ final class WordprofileRegressionsTest extends TestCase
 
 		$bag = $dir . '/bagofwords.db';
 		@unlink($bag);
-		$pdo = new \PDO('sqlite:' . $bag);
+		$pdo = FixtureDb::open($bag);
 		$pdo->exec('CREATE TABLE tokencount (token TEXT, frequency INTEGER)');
 		$pdo->exec("INSERT INTO tokencount VALUES ('a', 100)");
 		$pdo->exec('CREATE TABLE tokendatecount (token TEXT, date TEXT, frequency INTEGER)');
@@ -29,7 +30,7 @@ final class WordprofileRegressionsTest extends TestCase
 
 		$lemma = $dir . '/lemmamapping.db';
 		@unlink($lemma);
-		$pdo = new \PDO('sqlite:' . $lemma);
+		$pdo = FixtureDb::open($lemma);
 		$pdo->exec('CREATE TABLE lemmatokenfrequency (token TEXT, lemma TEXT, frequency INTEGER)');
 		$pdo->exec("INSERT INTO lemmatokenfrequency VALUES ('a', '|A|', 10)");
 		$pdo->exec("INSERT INTO lemmatokenfrequency VALUES ('a', '|AN|', 3)");
@@ -37,13 +38,13 @@ final class WordprofileRegressionsTest extends TestCase
 
 		$norm = $dir . '/normmapping.db';
 		@unlink($norm);
-		$pdo = new \PDO('sqlite:' . $norm);
+		$pdo = FixtureDb::open($norm);
 		$pdo->exec('CREATE TABLE normtokenfrequency (token TEXT, norm TEXT, frequency INTEGER)');
 		$pdo->exec('CREATE TABLE tokennormtypesubtypedatefrequency (token TEXT, type TEXT, frequency INTEGER)');
 
 		$colloc = $dir . '/collocation.db';
 		@unlink($colloc);
-		$pdo = new \PDO('sqlite:' . $colloc);
+		$pdo = FixtureDb::open($colloc);
 		$pdo->exec('CREATE TABLE collocation (left TEXT, right TEXT, logdice REAL)');
 	}
 

@@ -110,6 +110,19 @@ function compile_term_pattern(string $term, array $opts): ?string
   return @preg_match($pattern, '') === false ? null : $pattern;
 }
 
+/** Whole request path: read the flags, split the term(s) of the $column param, resolve them to cells. */
+function resolve_request_cells(\PDO $pdo, string $column, array $get): array
+{
+  $options = search_options($get);
+  $terms = split_terms((string) ($get[$column] ?? ''), $options);
+
+  if ($terms === []) {
+    return [];
+  }
+
+  return array_values(array_unique(resolve_cells($pdo, $column, $terms, $options)));
+}
+
 function resolve_cells(\PDO $pdo, string $column, array $terms, array $options): array
 {
   $ci = $options['ci'] ?? true;

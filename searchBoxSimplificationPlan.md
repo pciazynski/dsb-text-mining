@@ -140,17 +140,17 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 > - `Content-Type: text/plain` is present.
 > Also assert `?lemma=drjewo&regex=1&list=1&trim=1&ci=0&ambig=0` (all five flags) returns a coherent body — the flag matrix must not blow up.
 
-#### C2 — `lemmasumperyear.php` and `lemmacountperyear.php`
+#### C2 — `lemmasumperyear.php` and `lemmacountperyear.php` DONE
 > **TDD Red.** Create `tests/php/LemmaperyearEndpointsTest.php` covering both endpoints against the same seeded fixture (add a `date` dimension with two years).
 > Pin for each endpoint: the default ci+ambig body; `ambig=0`; `ci=0`; `list=1` with `"drjewo, tej"`; `regex=1`; legacy `exact=1`; missing param; and the injection payload returning an empty body.
 > Specifically pin the current comma bug as **fixed**: `?lemma=drjewo,tej&list=1` must return rows for both terms. (Today `str_replace` mangles the second term into a malformed `LIKE`.)
 
-#### C3 — `lemmatoken.php`
+#### C3 — `lemmatoken.php` DONE
 > **TDD Red.** Extend the existing `LemmatokenEndpointTest.php` (keep its current tests passing) with the new flag matrix: `ci`, `ambig`, `list` (with `; ` and `, `), `regex`, legacy `exact`, and the injection payload returning an empty body.
 > If `tests/php/LemmatokenRegressionsTest.php` contains a `KnownBug` marker for the `lemma` SQL concatenation, **remove that marker** and convert it to a plain assertion here — Green will make it pass and the marker would otherwise XPASS-fail.
 > Also pin: `&inclusive` (used by lemmavariation) still behaves as before when the new flags are absent.
 
-#### C4 — `urnbylemma.php` year whitelist + `metadata.php` binding
+#### C4 — `urnbylemma.php` year whitelist + `metadata.php` binding DONE
 > **TDD Red.** Create `tests/php/DoclistEndpointsRegressionsTest.php` covering the two endpoints behind bwlemma's document list.
 > Behaviour to pin on `/php/urnbylemma.php`:
 > - The new flag matrix (`ci`/`ambig`/`list`/`regex`) on the `lemmabag` column, using the resolver's cells and `lemmabag LIKE` per cell.
