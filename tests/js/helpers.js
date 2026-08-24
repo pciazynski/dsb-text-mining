@@ -1,9 +1,6 @@
-// Shared helpers for the browser-frontend tests. Keep this file dependency-light:
-// jsdom is the only devDependency the suite is allowed to rely on.
-const assert = require('node:assert/strict');
+// Shared helpers for the browser-frontend tests. Keep this file dependency-light.
 const fs = require('node:fs');
 const path = require('node:path');
-const test = require('node:test');
 const { JSDOM } = require('jsdom');
 
 const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
@@ -13,7 +10,7 @@ const DOM_GLOBALS = ['window', 'document', 'location', 'navigator', 'XMLHttpRequ
 
 /**
  * Install a fresh jsdom window as globals so that global-scope scripts can be loaded.
- * Always call `restore()` (e.g. in a `finally` or `t.after`) — globals leak otherwise.
+ * Always call `restore()` in a `finally` — globals leak otherwise.
  */
 function withDom({
   html = '<!doctype html><body></body>',
@@ -58,32 +55,32 @@ function loadPage(relPath) {
 }
 
 /**
- * Strict expected-failure test for a known, unfixed bug (node:test has no xfail;
- * its built-in `todo` silently tolerates a pass and therefore rots like `skip`).
+ * Strict expected-failure test for a known, unfixed bug.
  *
  * `fn` asserts the CORRECT behavior. The test passes while the bug is present and
  * fails loudly the moment the bug is fixed, forcing the marker to be removed.
  */
 function knownBug(name, reason, fn) {
-  test(name + ' [BUG: ' + reason + ']', async () => {
+  it(name + ' [BUG: ' + reason + ']', async () => {
     let stillBroken = false;
     try {
       await fn();
-    } catch (err) {
+    } catch (error) {
       // Only a failed assertion counts as "still broken"; typos and load errors must surface.
-      if (err instanceof assert.AssertionError) {
+      if (error && typeof error === 'object' && 'matcherResult' in error) {
         stillBroken = true;
       } else {
-        throw err;
+        throw error;
       }
     }
 
-    assert.ok(
-      stillBroken,
-      'XPASS: "' +
-        reason +
-        '" no longer reproduces. Drop knownBug() and keep this as a plain test().',
-    );
+    if (!stillBroken) {
+      throw new Error(
+        'XPASS: "' +
+          reason +
+          '" no longer reproduces. Drop knownBug() and keep this as a plain it().',
+      );
+    }
   });
 }
 

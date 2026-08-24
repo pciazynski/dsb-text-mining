@@ -7,7 +7,7 @@ applyTo: 'tests/js/**'
 
 ## Setup & layout
 
-- Run: `npm test`; single file: `node --test tests/js/config.test.js`. Runner is `node:test` + `node:assert/strict`; the only devDependency is `jsdom` — do not add Vitest/Jest/Testing Library/Sinon.
+- Run: `npm test`; single file: `npx jest tests/js/config.test.js`. Runner is Jest with explicit jsdom instances from `tests/js/helpers.js`; do not add Vitest, Testing Library, Sinon, or another test framework.
 - Tests are CommonJS `tests/js/<subject>.test.js` (no `"type"` in package.json).
 - The frontend has no build step and no modules: `public/js/*.js` declare globals loaded via `<script src>`. Never add `import`/`export` there.
 - Reuse `tests/js/helpers.js` before writing new helpers:
@@ -32,9 +32,11 @@ if (typeof module !== 'undefined' && module.exports) {
 
 ## Conventions
 
-- One behavior per test; sentence-style names; Arrange-Act-Assert with blank lines; happy path first, then edge cases.
+- Group tests by subject with `describe('functionName', ...)`; write behavior-only `it(...)` descriptions so the combined Jest name reads naturally, e.g. `describe('splitTerms', ...)` plus `it('drops empty terms', ...)`.
+- Use Jest's global `expect`; do not import `node:assert`. Prefer `toBe` for primitives, `toEqual` for objects/arrays, `toMatch` for patterns, and specific numeric matchers such as `toBeGreaterThan`.
+- One observable behavior per test; Arrange-Act-Assert with blank lines; happy path first, then edge cases.
 - Tests are order-independent (own DOM, reloaded scripts) and must fail via assertion, never a load/`require` error. Run new tests before finishing.
-- Assert exact results where cheap (full strings, `assert.deepEqual` on arrays), not just `includes`.
+- Assert exact results where cheap (full strings and `toEqual` on arrays/objects), not just `includes` or partial truthiness.
 
 ## HTML tests
 
@@ -48,6 +50,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
 ## Known, unfixed bugs
 
-- `node:test`'s `{ todo }` doesn't fail on pass, so it rots like `skip` — never use it for bugs.
-- Use `knownBug(name, bugDescription, fn)` from `tests/js/helpers.js` (pytest-style strict xfail): write assertions for the CORRECT behavior; passes while broken, fails loudly (XPASS) once fixed. Only `AssertionError` is swallowed, so typos/load errors still fail.
+- Jest's `it.todo` and `it.skip` do not fail when a bug is fixed, so never use them for known bugs.
+- Use `knownBug(name, bugDescription, fn)` from `tests/js/helpers.js` (pytest-style strict xfail): write Jest expectations for the CORRECT behavior; it passes while the expectation fails and fails loudly (XPASS) once fixed. Only Jest matcher failures are swallowed, so typos, missing files, and runtime errors still fail.
 - Files: `tests/js/<subject>.regressions.test.js`.
