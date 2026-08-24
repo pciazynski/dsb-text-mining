@@ -230,6 +230,40 @@ final class SearchFilterTest extends TestCase
     $this->assertNull(compile_term_pattern('TE(J|N)', ['regex' => false, 'ci' => true]));
   }
 
+  public function testInClauseThreeCellsReturnsPlaceholdersAndOrderedParams(): void
+  {
+    $this->assertSame(
+      ['sql' => 'lemma IN (?,?,?)', 'params' => ['woda', '|bom|boma|', 'źěło']],
+      $this->inClause('lemma', ['woda', '|bom|boma|', 'źěło']),
+    );
+  }
+
+  public function testInClauseEmptyCellsReturnsNeverTrueClause(): void
+  {
+    $this->assertSame(
+      ['sql' => '1=0', 'params' => []],
+      $this->inClause('lemma', []),
+    );
+  }
+
+  public function testInClauseAcceptsWhitelistedColumns(): void
+  {
+    foreach (['lemma', 'norm', 'token', 'lemmabag', 'normbag'] as $column) {
+      $this->assertSame(
+        ['sql' => "$column IN (?)", 'params' => ['woda']],
+        $this->inClause($column, ['woda']),
+      );
+    }
+  }
+
+  public function testInClauseRejectsColumnOutsideWhitelist(): void
+  {
+    $this->assertTrue(function_exists('in_clause'), 'in_clause() must be defined');
+    $this->expectException(\InvalidArgumentException::class);
+
+    in_clause('lemma) OR 1=1 --', ['woda']);
+  }
+
   private function searchOptions(array $get): array
   {
     $this->assertTrue(function_exists('search_options'), 'search_options() must be defined');
@@ -247,5 +281,12 @@ final class SearchFilterTest extends TestCase
   private function assertCompileTermPatternExists(): void
   {
     $this->assertTrue(function_exists('compile_term_pattern'), 'compile_term_pattern() must be defined');
+  }
+
+  private function inClause(string $column, array $cells): array
+  {
+    $this->assertTrue(function_exists('in_clause'), 'in_clause() must be defined');
+
+    return in_clause($column, $cells);
   }
 }

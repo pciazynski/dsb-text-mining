@@ -84,7 +84,7 @@ Steps A1–A3 are parallel with A4–A5.
 
 ### Phase B — the PHP resolver *(depends on A1–A3)*
 
-#### B1 — resolve literal terms
+#### B1 — resolve literal terms DONE
 > **TDD Red.** Create `tests/php/SearchResolveTest.php`. It `require_once`s `public/php/searchfilter.php` and, in `setUp()`, builds a **temporary SQLite file** (in a temp dir it creates and deletes itself — do not touch `data`) with tables `lemmanonambig(lemma, frequency, sortkey)` and `lemmafrequency(lemma, frequency, sortkey)`.
 > Fixture rows (sortkey computed with the real `dsb_sortkey()` from `dsb_collation.php`, on the value with outer pipes stripped, exactly as `mapping_etl.py` does):
 > - `lemmanonambig`: `|DRJEWO|`, `|drjewo|`, `|DRĚŚ|`, `|DRJEWOWY|`, `|TEJ|`, `|NJEBYŚ LI|`
@@ -102,7 +102,7 @@ Steps A1–A3 are parallel with A4–A5.
 > - A term of `" OR 1=1 -- ` returns `[]` and does not throw (parameterisation).
 > Also assert with `EXPLAIN QUERY PLAN` that the `ci=true, ambig=false` lookup **uses the sortkey index** (`SEARCH` … `USING INDEX`, not `SCAN`) — this is the performance guarantee for the default mode.
 
-#### B2 — resolve lists and regexes, plus the cap
+#### B2 — resolve lists and regexes, plus the cap DONE
 > **TDD Red.** Add tests to `tests/php/SearchResolveTest.php` using the same fixture.
 > Behaviour to pin:
 > - **List**, `list=true, trim=true, ci=true, ambig=false`, raw input `"drjewo, tej"` (split via `split_terms` from A2) → `['|DRJEWO|','|TEJ|','|drjewo|']`. The reported bug — `TEJ` must be found.
@@ -113,7 +113,7 @@ Steps A1–A3 are parallel with A4–A5.
 > - **Invalid regex**: `regex=true`, term `(` returns `[]` and produces no PHP warning.
 > - **Cap**: seed 600 extra parts, resolve with `regex=true` and term `.*`; assert at most 500 cells come back (a `SEARCH_RESULT_CAP` constant in `searchfilter.php`) and that a companion function `resolve_was_truncated()` (or a by-ref/second return element — your call, pin one shape) reports truncation.
 
-#### B3 — parameterised `IN` clause builder
+#### B3 — parameterised `IN` clause builder DONE
 > **TDD Red.** Add tests to `tests/php/SearchFilterTest.php` for a pure function `in_clause(string $column, array $cells): array` in `public/php/searchfilter.php`, returning `['sql' => ..., 'params' => [...]]`.
 > Behaviour to pin:
 > - Three cells produce SQL of exactly `lemma IN (?,?,?)` and `params` equal to the three cells in order.
@@ -126,7 +126,7 @@ Steps A1–A3 are parallel with A4–A5.
 
 Each of C1–C5 is independent of the others and can run in parallel. All are HTTP smoke tests via `DevServer` (`DevServer.php`), seeded per-test into `$server->dataDir()`.
 
-#### C1 — `lemmagroup.php`
+#### C1 — `lemmagroup.php` DONE
 > **TDD Red.** Create `tests/php/LemmagroupEndpointTest.php`. Boot `DevServer`, seed `lemmamapping.db` in `dataDir()` with `tokenlemmatypesubtypedatefrequency`, `lemmafrequency` and `lemmanonambig` using the same small fixture as `tests/php/SearchResolveTest.php` (a handful of rows so exact bodies are assertable).
 > Behaviour to pin on `/php/lemmagroup.php`:
 > - Default request `?lemma=drjewo&sort` returns the exact tab-separated body for the case-insensitive, ambiguous-inclusive match — all cells containing `DRJEWO`, ordered by `sumfreq DESC`, newline-terminated.
