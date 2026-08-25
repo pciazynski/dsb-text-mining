@@ -6,13 +6,14 @@
   <script src="../../js/my_language.js"></script>
   <script src="../../js/datahandler.js"></script>
   <script src="../../js/config.js"></script>
+  <script src="../../js/search.js"></script>
 </head>
 
 <body>
   <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
   <script>
     diagramtitle = '';
-    var dataset = getQueryVariable('data');
+    var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
     var lemma = getQueryVariable('lemma');
     var exact = getQueryVariable('exact');
     var focus = getQueryVariable('focus');
@@ -27,7 +28,6 @@
     } else {
       focus = parseInt(focus);
     }
-    dataset = dataset + '?lemma=' + lemma + '&sort';
     if (focus == 3) {
       diagramtitle = 'Relative Jahressumme Token von Lemma ';
     } else {
@@ -35,9 +35,7 @@
     }
     diagramtitle += lemma;
 
-    if (exact == 1) {
-      dataset += '&exact';
-    } else {
+    if (exact != 1) {
       diagramtitle += ' inkl. ambig';
     }
 

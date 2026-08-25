@@ -6,13 +6,13 @@
     >
     <script src="../../js/datahandler.js"></script>
     <script src="../../js/config.js"></script>
+    <script src="../../js/search.js"></script>
   </head>
   <body>
     <div id="containerDiv"></div>
     <script type="text/javascript">
-      var dataset = getQueryVariable('data');
+      var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
       var lemma = getQueryVariable('lemma');
-      dataset = dataset + '?lemma=' + lemma;
       if (getQueryVariable('sort').length > 0) {
         dataset += '&sort';
       }

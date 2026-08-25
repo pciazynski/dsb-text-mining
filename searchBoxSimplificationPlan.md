@@ -158,7 +158,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 > Behaviour to pin on `/php/metadata.php`:
 > - `?author=`, `?year=`, `?lang=`, `?restricted=` filter correctly, and each of them with a `" OR 1=1 --` payload returns an empty body (all four are string-concatenated today).
 
-#### C5 — `prefixlemmasearch.php` (autocomplete)
+#### C5 — `prefixlemmasearch.php` (autocomplete) DONE
 > **TDD Red.** Create `tests/php/PrefixlemmasearchEndpointTest.php`, seeding `lemmanonambig` and `lemmafrequency`.
 > Behaviour to pin:
 > - `?lemma=drj&limit=30` (default, `ci=1`) returns `DRJEWO`, `DRJEWOWY`, `drjewo` — case-insensitive prefix, pipes stripped, newline-separated. **Today this is broken** because the input is uppercased and matched with a case-sensitive `LIKE` against mixed-case data.
@@ -174,7 +174,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 
 ### Phase D — bwlemma frontend *(depends on A4–A5; D3 depends on D2)*
 
-#### D1 — control enable/disable logic
+#### D1 — control enable/disable logic DONE
 > **TDD Red.** Add tests to `tests/js/search.test.js` for a function `searchControlState(opts)` exported from `public/js/search.js`. It is a **pure** function returning `{autocomplete: boolean, alphabetSort: boolean}` describing which controls should be enabled.
 > Behaviour to pin:
 > - Defaults (`regex:false, list:false`) → both `true`.
@@ -184,7 +184,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 > - `ci`, `trim`, `ambig` have no effect on the result.
 > Then add a second test for `applySearchControlState(document, opts)` — a thin DOM function, tested inside `withDom({html: '<input id="prefixsearchCheckBox" type="checkbox"><input id="searchinput">'})` — asserting it sets `disabled` on `#prefixsearchCheckBox` and detaches/reattaches the autocomplete on `#searchinput` accordingly. Assert the resulting `disabled` property values, not call sequences.
 
-#### D2 — bwlemma markup
+#### D2 — bwlemma markup DONE
 > **TDD Red.** Create `tests/js/bwlemma_index_html.test.js` using `loadPage('vis/bwlemma/index.html')` (static parse, no script execution) and `PUBLIC_DIR`.
 > Behaviour to pin:
 > - There is exactly **one** search text input, with id `searchinput`. The old `#lemma`, `#regexsearch` and `#lemmalist` inputs no longer exist.
@@ -194,7 +194,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 > - `js/search.js` is referenced by a `<script src>` that exists under `PUBLIC_DIR`, and it loads **after** `js/datahandler.js` and after `js/def_language.js`.
 > - Every new label reads from a `lang_*` global: assert `def_language.js` defines `lang_search_casesensitive`, `lang_search_regex`, `lang_search_list`, `lang_search_trim`, `lang_search_ambig` (grep the file text for the `var` declarations).
 
-#### D3 — bwlemma URL building *(depends on D2)*
+#### D3 — bwlemma URL building *(depends on D2)* DONE
 > **TDD Red.** Add tests to `tests/js/search.test.js` for `buildVisUrls(kind, term, opts, focus)` exported from `public/js/search.js` — a **pure** function returning the object of iframe `src` URLs for a vis (`{timeline, group, tokens}`), so the inline `updateTimeline`/`updateTimelineRegex`/`updateTimelineList` triple in bwlemma collapses into one code path.
 > Behaviour to pin for `kind: 'lemma'`:
 > - Defaults, term `DRJEWO`, `focus: 0` → `timeline` is `timeline.html?data=lemmasumperyear.php&lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort&focus=0` (assert the exact strings for all three URLs).
@@ -204,7 +204,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 > - A term with `&`, `=`, `#` or `TE(J|N)` is percent-encoded and round-trips.
 > - An empty/whitespace-only term returns `null` (caller does nothing).
 
-#### D4 — sub-page flag forwarding
+#### D4 — sub-page flag forwarding DONE
 > **TDD Red.** Add tests to `tests/js/search.test.js` for `phpUrlFromLocation(dataParam, fieldName, search)` exported from `public/js/search.js` — the function the bwlemma iframe sub-pages will use instead of hand-concatenating `dataset + '?lemma=' + lemma + '&sort'`.
 > Behaviour to pin:
 > - Given `search` of `'?data=lemmasumperyear.php&lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort&focus=0'`, it returns exactly `lemmasumperyear.php?lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort` — i.e. all five flags survive the hop into the iframe, and vis-only params (`focus`, `jitter`, `scale`) are dropped.
@@ -214,7 +214,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 > Then add a `loadPage` structural test asserting each of `vis/bwlemma/timeline.html`, `timelinesum.html`, `timelinesumlist.html`, `percenttimeline.html`, `percenttimelinesumlist.html`, `lemmalist.html`, `tokenlist.html`, `traviz.html`, `doclist.html` includes `js/search.js` via `<script src>`.
 > Finally pin that `timelinesumlist.html`'s per-series split uses `splitTerms` semantics: add a `search.js` test that `splitTerms('drjewo, tej', {list:true, trim:true})` gives the two series names `['drjewo','tej']` — no leading space in the second legend entry.
 
-#### D5 — deep-linking round trip
+#### D5 — deep-linking round trip DONE
 > **TDD Red.** Add tests to `tests/js/search.test.js` for `restoreSearchFromLocation(document, search)` exported from `public/js/search.js`, tested inside `withDom` with the bwlemma search markup and a `url`.
 > Behaviour to pin:
 > - `?lemma=DRJEWO&regex=1&list=1` sets `#searchinput.value` to `DRJEWO`, checks `#regexCheckBox` and `#listCheckBox`, leaves `#ciCheckBox`/`#trimCheckBox`/`#ambigCheckBox` checked, and disables `#prefixsearchCheckBox` (per D1).

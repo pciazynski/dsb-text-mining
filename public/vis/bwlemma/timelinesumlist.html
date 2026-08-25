@@ -6,6 +6,7 @@
   <script src="../../js/my_language.js"></script>
   <script src="../../js/datahandler.js"></script>
   <script src="../../js/config.js"></script>
+  <script src="../../js/search.js"></script>
 </head>
 
 <body>
@@ -29,8 +30,11 @@
       lemma = lemmalist[key];
       lemmacol = getColor('|' + lemma + '|');
       diagramtitle += ' <span style="color:' + lemmacol + '">' + lemma + '</span>';
-      var dataset = getQueryVariable('data');
-      dataset = dataset + '?lemma=' + lemma + '&sort';
+      var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
+      dataset = dataset.replace(
+        'lemma=' + encodeURIComponent(getQueryVariable('lemma')),
+        'lemma=' + encodeURIComponent(lemma),
+      );
       data_arr = readPHP(dataset).split('\n');
       if (data_arr.length > resultsetmax) {
         document.write(lang_error_resultset_too_large);

@@ -7,14 +7,14 @@
     <script src="../../js/my_language.js"></script>
     <script src="../../vendor/plotly.min.js"></script>
     <script src="../../js/datahandler.js"></script>
+    <script src="../../js/search.js"></script>
     <link rel="stylesheet" href="../../styles.css" />
   </head>
 
   <body style="text-align: left">
     <script>
-      var dataset = getQueryVariable('data');
+      var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
       var lemma = getQueryVariable('lemma');
-      dataset = dataset + '?lemma=' + lemma + '&sort';
       data_arr = readPHP(dataset).trim().split('\n');
 
       str = "<table style='border-collapse: collapse;text-align:left;'>";
