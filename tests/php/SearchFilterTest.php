@@ -22,7 +22,7 @@ final class SearchFilterTest extends TestCase
   public function testSearchOptionsEmptyInputReturnsDefaults(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
       $this->searchOptions([]),
     );
   }
@@ -30,31 +30,31 @@ final class SearchFilterTest extends TestCase
   public function testSearchOptionsFalseValuesTurnFlagsOff(): void
   {
     $this->assertSame(
-      ['ci' => false, 'regex' => false, 'list' => false, 'trim' => false, 'ambig' => false],
-      $this->searchOptions(['ci' => '0', 'regex' => '', 'list' => 'false', 'trim' => '0', 'ambig' => 'false']),
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => false, 'ambig' => false],
+      $this->searchOptions(['cs' => '0', 'regex' => '', 'list' => 'false', 'trim' => '0', 'ambig' => 'false']),
     );
   }
 
   public function testSearchOptionsBareValueTurnsFlagOff(): void
   {
     $this->assertSame(
-      ['ci' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
-      $this->searchOptions(['ci' => '']),
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      $this->searchOptions(['cs' => '']),
     );
   }
 
   public function testSearchOptionsTrueValuesTurnFlagsOn(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => true, 'list' => true, 'trim' => true, 'ambig' => true],
-      $this->searchOptions(['ci' => '1', 'regex' => 'true', 'list' => '1', 'trim' => 'true', 'ambig' => '1']),
+      ['cs' => true, 'regex' => true, 'list' => true, 'trim' => true, 'ambig' => true],
+      $this->searchOptions(['cs' => '1', 'regex' => 'true', 'list' => '1', 'trim' => 'true', 'ambig' => '1']),
     );
   }
 
   public function testSearchOptionsExactOneTurnsAmbigOff(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => false],
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => false],
       $this->searchOptions(['exact' => '1']),
     );
   }
@@ -62,7 +62,7 @@ final class SearchFilterTest extends TestCase
   public function testSearchOptionsExactZeroTurnsAmbigOn(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
       $this->searchOptions(['exact' => '0']),
     );
   }
@@ -70,7 +70,7 @@ final class SearchFilterTest extends TestCase
   public function testSearchOptionsExplicitAmbigOnWinsOverExact(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
       $this->searchOptions(['ambig' => '1', 'exact' => '1']),
     );
   }
@@ -78,7 +78,7 @@ final class SearchFilterTest extends TestCase
   public function testSearchOptionsExplicitAmbigOffWinsOverExact(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => false],
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => false],
       $this->searchOptions(['ambig' => '0', 'exact' => '0']),
     );
   }
@@ -86,9 +86,9 @@ final class SearchFilterTest extends TestCase
   public function testSearchOptionsGarbageValuesFallBackToDefaults(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
       $this->searchOptions([
-        'ci' => 'garbage',
+        'cs' => 'garbage',
         'regex' => 'garbage',
         'list' => 'garbage',
         'trim' => 'garbage',
@@ -100,7 +100,7 @@ final class SearchFilterTest extends TestCase
   public function testSearchOptionsUnknownParametersAreIgnored(): void
   {
     $this->assertSame(
-      ['ci' => true, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
       $this->searchOptions(['unknown' => '1']),
     );
   }
@@ -177,7 +177,7 @@ final class SearchFilterTest extends TestCase
   {
     $this->assertCompileTermPatternExists();
 
-    $options = ['regex' => true, 'ci' => false];
+    $options = ['regex' => true, 'cs' => true];
 
     $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'TEJ'));
     $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'TEN'));
@@ -189,7 +189,7 @@ final class SearchFilterTest extends TestCase
   {
     $this->assertCompileTermPatternExists();
 
-    $options = ['regex' => true, 'ci' => true];
+    $options = ['regex' => true, 'cs' => false];
 
     $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'tej'));
     $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'Tej'));
@@ -200,7 +200,7 @@ final class SearchFilterTest extends TestCase
   {
     $this->assertCompileTermPatternExists();
 
-    $options = ['regex' => true, 'ci' => false];
+    $options = ['regex' => true, 'cs' => true];
 
     foreach (['a/i', 'a#x', 'a}'] as $term) {
       $pattern = compile_term_pattern($term, $options);
@@ -217,7 +217,7 @@ final class SearchFilterTest extends TestCase
   {
     $this->assertCompileTermPatternExists();
 
-    $options = ['regex' => true, 'ci' => false];
+    $options = ['regex' => true, 'cs' => true];
 
     $this->assertNull(compile_term_pattern('(', $options));
     $this->assertNull(compile_term_pattern('a{2,1}', $options));
@@ -227,7 +227,7 @@ final class SearchFilterTest extends TestCase
   {
     $this->assertCompileTermPatternExists();
 
-    $this->assertNull(compile_term_pattern('TE(J|N)', ['regex' => false, 'ci' => true]));
+    $this->assertNull(compile_term_pattern('TE(J|N)', ['regex' => false, 'cs' => false]));
   }
 
   public function testInClauseThreeCellsReturnsPlaceholdersAndOrderedParams(): void

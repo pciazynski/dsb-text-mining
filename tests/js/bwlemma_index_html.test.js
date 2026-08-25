@@ -19,7 +19,7 @@ describe('vis/bwlemma/index.html', () => {
     const document = loadPage('vis/bwlemma/index.html');
 
     const expectedDefaults = {
-      ciCheckBox: true,
+      csCheckBox: false,
       regexCheckBox: false,
       listCheckBox: false,
       trimCheckBox: true,
@@ -31,6 +31,10 @@ describe('vis/bwlemma/index.html', () => {
       expect(checkbox?.getAttribute('type')).toBe('checkbox');
       expect(checkbox.hasAttribute('checked')).toBe(checked);
     }
+
+    expect(document.querySelector('#csCheckBox').getAttribute('onchange')).toBe(
+      'switchPrefixsearch()',
+    );
   });
 
   it('keeps alphabetical sorting off by default', () => {

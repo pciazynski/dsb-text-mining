@@ -99,9 +99,9 @@ final class LemmatokenEndpointTest extends TestCase
     ]), $response['body']);
   }
 
-  public function testCaseInsensitiveDisabledReturnsOnlyExactCase(): void
+  public function testCaseSensitiveEnabledReturnsOnlyExactCase(): void
   {
-    $response = $this->server->get('/php/lemmatoken.php?lemma=drjewo&ci=0&sort=1');
+    $response = $this->server->get('/php/lemmatoken.php?lemma=drjewo&cs=1&sort=1');
 
     $this->assertSame($this->body([
       ['|drjewo|', 'drjewo', 3],

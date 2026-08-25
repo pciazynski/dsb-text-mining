@@ -62,7 +62,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|DRJEWO|', '|DRJEWO|DRJEWOWY|', '|DRĚŚ|DRJEWO|', '|drjewo|'],
-      $this->resolve(['drjewo'], ['ci' => true, 'ambig' => true, 'regex' => false]),
+      $this->resolve(['drjewo'], ['cs' => false, 'ambig' => true, 'regex' => false]),
     );
   }
 
@@ -70,7 +70,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|DRJEWO|', '|drjewo|'],
-      $this->resolve(['drjewo'], ['ci' => true, 'ambig' => false, 'regex' => false]),
+      $this->resolve(['drjewo'], ['cs' => false, 'ambig' => false, 'regex' => false]),
     );
   }
 
@@ -78,7 +78,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|drjewo|'],
-      $this->resolve(['drjewo'], ['ci' => false, 'ambig' => false, 'regex' => false]),
+      $this->resolve(['drjewo'], ['cs' => true, 'ambig' => false, 'regex' => false]),
     );
   }
 
@@ -86,7 +86,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|DRJEWO|', '|DRJEWO|DRJEWOWY|', '|DRĚŚ|DRJEWO|'],
-      $this->resolve(['DRJEWO'], ['ci' => false, 'ambig' => true, 'regex' => false]),
+      $this->resolve(['DRJEWO'], ['cs' => true, 'ambig' => true, 'regex' => false]),
     );
   }
 
@@ -94,7 +94,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|DRĚŚ|DRJEWO|'],
-      $this->resolve(['drěś'], ['ci' => true, 'ambig' => true, 'regex' => false]),
+      $this->resolve(['drěś'], ['cs' => false, 'ambig' => true, 'regex' => false]),
     );
   }
 
@@ -102,7 +102,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertNotContains(
       '|DRJEWOWY|',
-      $this->resolve(['DRJEWO'], ['ci' => false, 'ambig' => true, 'regex' => false]),
+      $this->resolve(['DRJEWO'], ['cs' => true, 'ambig' => true, 'regex' => false]),
     );
   }
 
@@ -110,7 +110,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       [],
-      $this->resolve(['NJEEKSISTUJO'], ['ci' => true, 'ambig' => true, 'regex' => false]),
+      $this->resolve(['NJEEKSISTUJO'], ['cs' => false, 'ambig' => true, 'regex' => false]),
     );
   }
 
@@ -118,13 +118,13 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       [],
-      $this->resolve(['" OR 1=1 -- '], ['ci' => true, 'ambig' => true, 'regex' => false]),
+      $this->resolve(['" OR 1=1 -- '], ['cs' => false, 'ambig' => true, 'regex' => false]),
     );
   }
 
   public function testResolveCellsListFindsEveryCaseInsensitiveNonAmbiguousTerm(): void
   {
-    $options = ['list' => true, 'trim' => true, 'ci' => true, 'ambig' => false, 'regex' => false];
+    $options = ['list' => true, 'trim' => true, 'cs' => false, 'ambig' => false, 'regex' => false];
     $terms = split_terms('drjewo, tej', $options);
 
     $this->assertSame(
@@ -137,7 +137,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|DRJEWO|', '|DRJEWO|DRJEWOWY|', '|DRĚŚ|DRJEWO|'],
-      $this->resolve(['DRJEWO?'], ['ci' => false, 'ambig' => true, 'regex' => true]),
+      $this->resolve(['DRJEWO?'], ['cs' => true, 'ambig' => true, 'regex' => true]),
     );
   }
 
@@ -145,7 +145,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|DRJEWO|', '|DRJEWO|DRJEWOWY|', '|DRĚŚ|DRJEWO|'],
-      $this->resolve(['DR.*'], ['ci' => false, 'ambig' => true, 'regex' => true]),
+      $this->resolve(['DR.*'], ['cs' => true, 'ambig' => true, 'regex' => true]),
     );
   }
 
@@ -153,13 +153,13 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       ['|DRJEWO|', '|drjewo|', '|DRJEWO|DRJEWOWY|', '|DRĚŚ|DRJEWO|'],
-      $this->resolve(['dr.*o'], ['ci' => true, 'ambig' => true, 'regex' => true]),
+      $this->resolve(['dr.*o'], ['cs' => false, 'ambig' => true, 'regex' => true]),
     );
   }
 
   public function testResolveCellsListOfRegexesResolvesEveryPatternInOneCall(): void
   {
-    $options = ['list' => true, 'trim' => true, 'ci' => false, 'ambig' => true, 'regex' => true];
+    $options = ['list' => true, 'trim' => true, 'cs' => true, 'ambig' => true, 'regex' => true];
     $terms = split_terms('DR.*O;TE.', $options);
 
     $this->assertSame(
@@ -172,7 +172,7 @@ final class SearchResolveTest extends TestCase
   {
     $this->assertSame(
       [],
-      $this->resolve(['DR.*O'], ['ci' => false, 'ambig' => true, 'regex' => false]),
+      $this->resolve(['DR.*O'], ['cs' => true, 'ambig' => true, 'regex' => false]),
     );
   }
 
@@ -189,7 +189,7 @@ final class SearchResolveTest extends TestCase
     });
 
     try {
-      $results = $this->resolve(['('], ['ci' => false, 'ambig' => true, 'regex' => true]);
+      $results = $this->resolve(['('], ['cs' => true, 'ambig' => true, 'regex' => true]);
     } finally {
       restore_error_handler();
     }
@@ -213,7 +213,7 @@ final class SearchResolveTest extends TestCase
       'resolve_was_truncated() must be defined',
     );
 
-    $results = $this->resolve(['.*'], ['ci' => false, 'ambig' => true, 'regex' => true]);
+    $results = $this->resolve(['.*'], ['cs' => true, 'ambig' => true, 'regex' => true]);
     $truncationStatus = 'resolve_was_truncated';
 
     $this->assertLessThanOrEqual(500, count($results));

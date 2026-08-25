@@ -1,5 +1,5 @@
 var searchDefaults = {
-  ci: true,
+  cs: false,
   regex: false,
   list: false,
   trim: true,

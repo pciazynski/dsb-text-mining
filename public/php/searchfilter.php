@@ -7,7 +7,7 @@ if (!defined('SEARCH_RESULT_CAP')) {
 function search_options(array $get): array
 {
   $defaults = [
-    'ci' => true,
+    'cs' => false,
     'regex' => false,
     'list' => false,
     'trim' => true,
@@ -104,7 +104,7 @@ function compile_term_pattern(string $term, array $opts): ?string
   }
 
   $term = str_replace('~', '\\~', $term);
-  $modifiers = ($opts['ci'] ?? true) ? 'iu' : 'u';
+  $modifiers = ($opts['cs'] ?? false) ? 'u' : 'iu';
   $pattern = '~^(?:' . $term . ')$~' . $modifiers;
 
   return @preg_match($pattern, '') === false ? null : $pattern;
@@ -125,14 +125,14 @@ function resolve_request_cells(\PDO $pdo, string $column, array $get): array
 
 function resolve_cells(\PDO $pdo, string $column, array $terms, array $options): array
 {
-  $ci = $options['ci'] ?? true;
+  $caseSensitive = $options['cs'] ?? false;
   $ambig = $options['ambig'] ?? true;
 
   _search_truncated(false);
 
   $results = $ambig
-    ? _resolve_ambiguous_cells($pdo, 'lemmafrequency', $column, $terms, $ci, $options['regex'] ?? false)
-    : _resolve_nonambiguous_cells($pdo, 'lemmanonambig', $column, $terms, $ci);
+    ? _resolve_ambiguous_cells($pdo, 'lemmafrequency', $column, $terms, $caseSensitive, $options['regex'] ?? false)
+    : _resolve_nonambiguous_cells($pdo, 'lemmanonambig', $column, $terms, $caseSensitive);
 
   return _apply_search_result_cap($results);
 }
@@ -143,7 +143,7 @@ function _resolve_nonambiguous_cells(
   string $table,
   string $column,
   array $terms,
-  bool $ci,
+  bool $caseSensitive,
 ): array {
   $statement = $pdo->prepare(
     "SELECT $column, frequency FROM $table WHERE sortkey = :sortkey ORDER BY rowid",
@@ -159,7 +159,7 @@ function _resolve_nonambiguous_cells(
       $cell = $row[$column];
       $part = trim($cell, '|');
 
-      if (isset($seen[$cell]) || (!$ci && $part !== $term)) {
+      if (isset($seen[$cell]) || ($caseSensitive && $part !== $term)) {
         continue;
       }
       $seen[$cell] = true;
@@ -174,7 +174,7 @@ function _resolve_nonambiguous_cells(
     }
   }
 
-  if ($ci) {
+  if (!$caseSensitive) {
     usort($matches, '_compare_cell_matches');
   }
 
@@ -190,10 +190,10 @@ function _resolve_ambiguous_cells(
   string $table,
   string $column,
   array $terms,
-  bool $ci,
+  bool $caseSensitive,
   bool $regex,
 ): array {
-  $matchers = _build_term_matchers($terms, $ci, $regex);
+  $matchers = _build_term_matchers($terms, $caseSensitive, $regex);
   if ($matchers === []) {
     return [];
   }
@@ -206,7 +206,7 @@ function _resolve_ambiguous_cells(
   while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
     $cell = $row[$column];
     $parts = array_values(array_filter(explode('|', $cell)));
-    $comparableParts = ($ci && !$regex)
+    $comparableParts = (!$caseSensitive && !$regex)
       ? array_map(static fn(string $part): string => mb_strtolower($part, 'UTF-8'), $parts)
       : $parts;
 
@@ -241,20 +241,20 @@ function _resolve_ambiguous_cells(
 }
 
 /** Hoists the per-term work (casing, pattern compilation) out of the row loop. Unusable regexes drop out. */
-function _build_term_matchers(array $terms, bool $ci, bool $regex): array
+function _build_term_matchers(array $terms, bool $caseSensitive, bool $regex): array
 {
   $matchers = [];
 
   foreach ($terms as $term) {
-    $pattern = $regex ? compile_term_pattern($term, ['regex' => true, 'ci' => $ci]) : null;
+    $pattern = $regex ? compile_term_pattern($term, ['regex' => true, 'cs' => $caseSensitive]) : null;
     if ($regex && $pattern === null) {
       continue;
     }
 
     $matchers[] = [
       'pattern' => $pattern,
-      'comparable' => $ci ? mb_strtolower($term, 'UTF-8') : $term,
-      'upper' => $ci ? mb_strtoupper($term, 'UTF-8') : null,
+      'comparable' => $caseSensitive ? $term : mb_strtolower($term, 'UTF-8'),
+      'upper' => $caseSensitive ? null : mb_strtoupper($term, 'UTF-8'),
     ];
   }
 

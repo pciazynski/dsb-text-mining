@@ -95,9 +95,9 @@ final class LemmagroupEndpointTest extends TestCase
     ]), $response['body']);
   }
 
-  public function testCaseInsensitiveDisabledReturnsOnlyLowercaseCell(): void
+  public function testCaseSensitiveEnabledReturnsOnlyLowercaseCell(): void
   {
-    $response = $this->server->get('/php/lemmagroup.php?lemma=drjewo&ci=0');
+    $response = $this->server->get('/php/lemmagroup.php?lemma=drjewo&cs=1');
 
     $this->assertSame($this->body([
       ['|drjewo|', 5],
@@ -174,7 +174,7 @@ final class LemmagroupEndpointTest extends TestCase
   public function testAllSearchFlagsComposeWithoutError(): void
   {
     $response = $this->server->get(
-      '/php/lemmagroup.php?lemma=drjewo&regex=1&list=1&trim=1&ci=0&ambig=0',
+      '/php/lemmagroup.php?lemma=drjewo&regex=1&list=1&trim=1&cs=1&ambig=0',
     );
 
     $this->assertSame(200, $response['status']);

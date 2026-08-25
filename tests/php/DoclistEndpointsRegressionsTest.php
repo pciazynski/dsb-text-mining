@@ -48,9 +48,9 @@ final class DoclistEndpointsRegressionsTest extends TestCase
     ]));
   }
 
-  public function testUrnByLemmaCaseInsensitiveDisabledReturnsOnlyExactCase(): void
+  public function testUrnByLemmaCaseSensitiveEnabledReturnsOnlyExactCase(): void
   {
-    $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo&ci=0&sort');
+    $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo&cs=1&sort');
 
     $this->assertTextResponse($response, $this->urnBody([
       ['urn:doc:1880', '1880'],

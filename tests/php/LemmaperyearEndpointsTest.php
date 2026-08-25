@@ -108,9 +108,9 @@ final class LemmaperyearEndpointsTest extends TestCase
   }
 
   #[DataProvider('endpoints')]
-  public function testCaseInsensitiveDisabledReturnsOnlyExactCase(string $endpoint, bool $summed): void
+  public function testCaseSensitiveEnabledReturnsOnlyExactCase(string $endpoint, bool $summed): void
   {
-    $response = $this->server->get('/php/' . $endpoint . '?lemma=drjewo&ci=0');
+    $response = $this->server->get('/php/' . $endpoint . '?lemma=drjewo&cs=1');
 
     $this->assertResponse($response, [
       $summed

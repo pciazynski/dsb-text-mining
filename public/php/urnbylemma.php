@@ -5,7 +5,7 @@ if (isset($_GET['lemma'])) {
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
 
 	$includeAmbiguous = !isset($_GET['ambig']) || intval($_GET['ambig']) !== 0;
-	$caseInsensitive = !isset($_GET['ci']) || intval($_GET['ci']) !== 0;
+	$caseSensitive = isset($_GET['cs']) && intval($_GET['cs']) === 1;
 	$useRegex = isset($_GET['regex']) && intval($_GET['regex']) === 1;
 
 	if (isset($_GET['year']) && !preg_match('/^[0-9\s\-]*$/', $_GET['year'])) {
@@ -57,12 +57,12 @@ if (isset($_GET['lemma'])) {
 				foreach (explode('|', $lemmaCell) as $lemma) {
 					foreach ($lemmas as $searchLemma) {
 						if ($useRegex) {
-							$modifiers = $caseInsensitive ? 'i' : '';
+							$modifiers = $caseSensitive ? '' : 'i';
 							$match = preg_match('/' . $searchLemma . '/' . $modifiers, $lemma) === 1;
 						} else {
-							$match = $caseInsensitive
-								? strtoupper($searchLemma) === strtoupper($lemma)
-								: $searchLemma === $lemma;
+							$match = $caseSensitive
+								? $searchLemma === $lemma
+								: strtoupper($searchLemma) === strtoupper($lemma);
 						}
 
 						if ($match && ($includeAmbiguous || isset($nonAmbigLemmas['|' . $lemmaCell . '|']))) {

@@ -80,7 +80,11 @@
           </button>
         </div>
         <script>
-          autocomplete('searchinput', 'prefixlemmasearch.php?limit=30&sortby=frequency&lemma=', '');
+          autocomplete(
+            'searchinput',
+            'prefixlemmasearch.php?limit=30&sortby=frequency&cs=1&lemma=',
+            '',
+          );
         </script>
       </td>
       <td>
@@ -106,7 +110,7 @@
       <td></td>
       <td>
         <label
-          ><input id="ciCheckBox" checked type="checkbox" />
+          ><input id="csCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
           <script>
             document.write(lang_search_casesensitive);
           </script></label
@@ -402,9 +406,10 @@
       var sortby = document.getElementById('prefixsearchCheckBox').checked
         ? 'alphabet'
         : 'frequency';
+      var caseSensitive = document.getElementById('csCheckBox').checked ? '1' : '0';
       autocomplete(
         'searchinput',
-        'prefixlemmasearch.php?limit=30&sortby=' + sortby + '&lemma=',
+        'prefixlemmasearch.php?limit=30&sortby=' + sortby + '&cs=' + caseSensitive + '&lemma=',
         '',
       );
     };
@@ -430,7 +435,7 @@
     };
 
     // The clicked item is a concrete lemma cell: literal, unambiguous, single term.
-    var exactOptions = { ci: true, regex: false, list: false, trim: true, ambig: false };
+    var exactOptions = { cs: true, regex: false, list: false, trim: true, ambig: false };
 
     var setSrc = function (elid, url) {
       document.getElementById(elid).src = url;

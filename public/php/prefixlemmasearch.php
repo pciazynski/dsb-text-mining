@@ -4,7 +4,7 @@
  * Autocomplete suggestions for the lemma search box (newline-separated plain text).
  *
  * Called on every keystroke, so both sort orders must stay on a prefix range scan
- * of an index: sortkey for the case-insensitive default, lemma for ci=0.
+ * of an index: sortkey for the case-insensitive default, lemma for cs=1.
  */
 
 header('Content-Type: text/plain');
@@ -20,10 +20,10 @@ $limit = isset($_GET['limit']) && ctype_digit($_GET['limit']) && (int) $_GET['li
 	: 100;
 $limit = min($limit, 100);
 $sortby = ($_GET['sortby'] ?? '') === 'alphabet' ? 'sortkey ASC' : 'frequency DESC';
-$caseInsensitive = ($_GET['ci'] ?? '1') !== '0';
-$column = $caseInsensitive ? 'sortkey' : 'lemma';
+$caseSensitive = ($_GET['cs'] ?? '0') === '1';
+$column = $caseSensitive ? 'lemma' : 'sortkey';
 // Both columns are ordered prefixes, so "prefix <= value < prefix\xFF" is a range scan.
-$prefix = $caseInsensitive ? dsb_sortkey($lemma) : '|' . $lemma;
+$prefix = $caseSensitive ? '|' . $lemma : dsb_sortkey($lemma);
 $cutoff = isset($_GET['cutoff']) && ctype_digit($_GET['cutoff'])
 	? (int) $_GET['cutoff']
 	: null;

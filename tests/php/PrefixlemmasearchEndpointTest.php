@@ -24,7 +24,7 @@ final class PrefixlemmasearchEndpointTest extends TestCase
     ['|DRĚMAŚ|', 3],
     ['|DRJEWKO|', 2],
     ['|NJEBYŚ LI|', 1],
-    // Synthetic casing of the real WÓDA lemma, isolated to the ci=0 edge case.
+    // Synthetic casing of the real WÓDA lemma, isolated to the cs=1 edge case.
     ['|wóda|', 2],
   ];
 
@@ -84,21 +84,21 @@ final class PrefixlemmasearchEndpointTest extends TestCase
 
   public function testCaseSensitiveSearchReturnsOnlyMatchingCase(): void
   {
-    $response = $this->server->get('/php/prefixlemmasearch.php?lemma=w%C3%B3&ci=0');
+    $response = $this->server->get('/php/prefixlemmasearch.php?lemma=w%C3%B3&cs=1');
 
     $this->assertSuggestions(['wóda'], $response);
   }
 
   public function testCaseInsensitiveSearchIncludesLowercaseEdgeCase(): void
   {
-    $response = $this->server->get('/php/prefixlemmasearch.php?lemma=w%C3%B3&ci=1');
+    $response = $this->server->get('/php/prefixlemmasearch.php?lemma=w%C3%B3&cs=0');
 
     $this->assertSuggestions(['WÓDA', 'wóda'], $response);
   }
 
   public function testSorbianPrefixIsMatchedCaseInsensitivelyBySortkey(): void
   {
-    $response = $this->server->get('/php/prefixlemmasearch.php?lemma=dr%C4%9B%C5%9B&ci=1');
+    $response = $this->server->get('/php/prefixlemmasearch.php?lemma=dr%C4%9B%C5%9B&cs=0');
 
     $this->assertSuggestions(['DRĚŚ'], $response);
   }
@@ -212,11 +212,11 @@ final class PrefixlemmasearchEndpointTest extends TestCase
 
     foreach (['alphabet' => 'sortkey ASC', 'frequency' => 'frequency DESC'] as $sortby => $order) {
       $plans = [
-        'ci=1, sortby=' . $sortby => [
+        'cs=0, sortby=' . $sortby => [
           $this->explainPrefixQuery($pdo, 'sortkey', dsb_sortkey('drj'), $order),
           'lemmanonambigsortkey',
         ],
-        'ci=0, sortby=' . $sortby => [
+        'cs=1, sortby=' . $sortby => [
           $this->explainPrefixQuery($pdo, 'lemma', '|drj', $order),
           'lemmanonambiglemma',
         ],

@@ -32,7 +32,7 @@ function loadPhpUrlFromLocation() {
 const BWLEMMA_SEARCH_HTML = `
   <input id="prefixsearchCheckBox" type="checkbox">
   <input id="searchinput" type="text">
-  <input id="ciCheckBox" checked type="checkbox">
+  <input id="csCheckBox" checked type="checkbox">
   <input id="regexCheckBox" type="checkbox">
   <input id="listCheckBox" type="checkbox">
   <input id="trimCheckBox" checked type="checkbox">
@@ -47,7 +47,7 @@ describe('readSearchOptions', () => {
 
       // These defaults must agree exactly with PHP search_options() from step A1.
       expect(readSearchOptions('')).toEqual({
-        ci: true,
+        cs: false,
         regex: false,
         list: false,
         trim: true,
@@ -64,7 +64,7 @@ describe('readSearchOptions', () => {
       const { readSearchOptions } = loadSearch();
 
       expect(readSearchOptions('?lemma=DRJEWO&regex=1&list=1')).toEqual({
-        ci: true,
+        cs: false,
         regex: true,
         list: true,
         trim: true,
@@ -80,8 +80,8 @@ describe('readSearchOptions', () => {
     try {
       const { readSearchOptions } = loadSearch();
 
-      expect(readSearchOptions('?ci=0&ambig=0&trim=0')).toEqual({
-        ci: false,
+      expect(readSearchOptions('?cs=1&ambig=0&trim=0')).toEqual({
+        cs: true,
         regex: false,
         list: false,
         trim: false,
@@ -110,11 +110,11 @@ describe('searchOptionsFromForm', () => {
     const dom = withDom({ html: BWLEMMA_SEARCH_HTML });
     try {
       const { searchOptionsFromForm } = loadSearch();
-      dom.document.getElementById('ciCheckBox').checked = false;
+      dom.document.getElementById('csCheckBox').checked = false;
       dom.document.getElementById('regexCheckBox').checked = true;
 
       expect(searchOptionsFromForm(dom.document)).toEqual({
-        ci: false,
+        cs: false,
         regex: true,
         list: false,
         trim: true,
@@ -144,8 +144,8 @@ describe('searchQueryString', () => {
     try {
       const { searchQueryString } = loadSearch();
 
-      expect(searchQueryString('lemma', 'DRJEWO', { ci: true, ambig: true, trim: true })).toBe(
-        'lemma=DRJEWO&ci=1&ambig=1&trim=1',
+      expect(searchQueryString('lemma', 'DRJEWO', { cs: true, ambig: true, trim: true })).toBe(
+        'lemma=DRJEWO&cs=1&ambig=1&trim=1',
       );
     } finally {
       dom.restore();
@@ -159,13 +159,13 @@ describe('searchQueryString', () => {
 
       expect(
         searchQueryString('lemma', 'DRJEWO', {
-          ci: false,
+          cs: false,
           regex: false,
           list: false,
           trim: false,
           ambig: false,
         }),
-      ).toBe('lemma=DRJEWO&ci=0&regex=0&list=0&trim=0&ambig=0');
+      ).toBe('lemma=DRJEWO&cs=0&regex=0&list=0&trim=0&ambig=0');
     } finally {
       dom.restore();
     }
@@ -176,22 +176,22 @@ describe('searchQueryString', () => {
     try {
       const { searchQueryString } = loadSearch();
       const literalQuery = searchQueryString('lemma', 'a&b=c', {
-        ci: true,
+        cs: true,
         regex: false,
         list: false,
         trim: true,
         ambig: true,
       });
       const regexQuery = searchQueryString('lemma', 'TE(J|N)', {
-        ci: true,
+        cs: true,
         regex: true,
         list: false,
         trim: true,
         ambig: true,
       });
 
-      expect(literalQuery).toBe('lemma=a%26b%3Dc&ci=1&regex=0&list=0&trim=1&ambig=1');
-      expect(regexQuery).toBe('lemma=TE(J%7CN)&ci=1&regex=1&list=0&trim=1&ambig=1');
+      expect(literalQuery).toBe('lemma=a%26b%3Dc&cs=1&regex=0&list=0&trim=1&ambig=1');
+      expect(regexQuery).toBe('lemma=TE(J%7CN)&cs=1&regex=1&list=0&trim=1&ambig=1');
       expect(new URLSearchParams(literalQuery).get('lemma')).toBe('a&b=c');
       expect(new URLSearchParams(regexQuery).get('lemma')).toBe('TE(J|N)');
     } finally {
@@ -203,7 +203,7 @@ describe('searchQueryString', () => {
     const dom = withDom();
     try {
       const { readSearchOptions, searchQueryString } = loadSearch();
-      const flags = ['ci', 'regex', 'list', 'trim', 'ambig'];
+      const flags = ['cs', 'regex', 'list', 'trim', 'ambig'];
 
       for (let mask = 0; mask < 2 ** flags.length; mask += 1) {
         const options = Object.fromEntries(
@@ -238,7 +238,7 @@ describe('restoreSearchFromLocation', () => {
         expect(document.querySelector('#searchinput').value).toBe('DRJEWO');
         expect(document.querySelector('#regexCheckBox').checked).toBe(true);
         expect(document.querySelector('#listCheckBox').checked).toBe(true);
-        expect(document.querySelector('#ciCheckBox').checked).toBe(true);
+        expect(document.querySelector('#csCheckBox').checked).toBe(false);
         expect(document.querySelector('#trimCheckBox').checked).toBe(true);
         expect(document.querySelector('#ambigCheckBox').checked).toBe(true);
         expect(document.querySelector('#prefixsearchCheckBox').disabled).toBe(true);
@@ -282,7 +282,7 @@ describe('restoreSearchFromLocation', () => {
       restoreSearchFromLocation(dom.document, dom.window.location.search);
 
       expect(dom.document.querySelector('#searchinput').value).toBe('');
-      expect(dom.document.querySelector('#ciCheckBox').checked).toBe(true);
+      expect(dom.document.querySelector('#csCheckBox').checked).toBe(true);
       expect(dom.document.querySelector('#regexCheckBox').checked).toBe(false);
       expect(dom.document.querySelector('#listCheckBox').checked).toBe(false);
       expect(dom.document.querySelector('#trimCheckBox').checked).toBe(true);
@@ -315,11 +315,11 @@ describe('buildVisUrls', () => {
 
       expect(buildVisUrls('lemma', 'DRJEWO', {}, 0)).toEqual({
         timeline:
-          'timeline.html?data=lemmasumperyear.php&lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort&focus=0',
+          'timeline.html?data=lemmasumperyear.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=0',
         group:
-          'lemmalist.html?data=lemmagroup.php&lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort',
+          'lemmalist.html?data=lemmagroup.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort',
         tokens:
-          'tokenlist.html?data=lemmatoken.php&lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort',
+          'tokenlist.html?data=lemmatoken.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort',
       });
     } finally {
       dom.restore();
@@ -332,7 +332,7 @@ describe('buildVisUrls', () => {
       const buildVisUrls = loadBuildVisUrls();
 
       expect(buildVisUrls('lemma', 'DRJEWO', {}, 3).timeline).toBe(
-        'timeline.html?data=lemmacountperyear.php&lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort&focus=3',
+        'timeline.html?data=lemmacountperyear.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=3',
       );
     } finally {
       dom.restore();
@@ -346,11 +346,11 @@ describe('buildVisUrls', () => {
 
       expect(buildVisUrls('lemma', 'DRJEWO', { list: true }, 0)).toEqual({
         timeline:
-          'timelinesumlist.html?data=lemmasumperyear.php&lemma=DRJEWO&ci=1&regex=0&list=1&trim=1&ambig=1&sort&focus=0',
+          'timelinesumlist.html?data=lemmasumperyear.php&lemma=DRJEWO&cs=0&regex=0&list=1&trim=1&ambig=1&sort&focus=0',
         group:
-          'lemmalist.html?data=lemmagroup.php&lemma=DRJEWO&ci=1&regex=0&list=1&trim=1&ambig=1&sort',
+          'lemmalist.html?data=lemmagroup.php&lemma=DRJEWO&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
         tokens:
-          'tokenlist.html?data=lemmatoken.php&lemma=DRJEWO&ci=1&regex=0&list=1&trim=1&ambig=1&sort',
+          'tokenlist.html?data=lemmatoken.php&lemma=DRJEWO&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
       });
     } finally {
       dom.restore();
@@ -364,11 +364,11 @@ describe('buildVisUrls', () => {
 
       expect(buildVisUrls('lemma', 'TE(J|N)', { regex: true }, 0)).toEqual({
         timeline:
-          'timeline.html?data=lemmasumperyear.php&lemma=TE(J%7CN)&ci=1&regex=1&list=0&trim=1&ambig=1&sort&focus=0',
+          'timeline.html?data=lemmasumperyear.php&lemma=TE(J%7CN)&cs=0&regex=1&list=0&trim=1&ambig=1&sort&focus=0',
         group:
-          'lemmalist.html?data=lemmagroup.php&lemma=TE(J%7CN)&ci=1&regex=1&list=0&trim=1&ambig=1&sort',
+          'lemmalist.html?data=lemmagroup.php&lemma=TE(J%7CN)&cs=0&regex=1&list=0&trim=1&ambig=1&sort',
         tokens:
-          'tokenlist.html?data=lemmatoken.php&lemma=TE(J%7CN)&ci=1&regex=1&list=0&trim=1&ambig=1&sort',
+          'tokenlist.html?data=lemmatoken.php&lemma=TE(J%7CN)&cs=0&regex=1&list=0&trim=1&ambig=1&sort',
       });
     } finally {
       dom.restore();
@@ -407,10 +407,10 @@ describe('phpUrlFromLocation', () => {
     try {
       const phpUrlFromLocation = loadPhpUrlFromLocation();
       const search =
-        '?data=lemmasumperyear.php&lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort&focus=0';
+        '?data=lemmasumperyear.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=0';
 
       expect(phpUrlFromLocation('data', 'lemma', search)).toBe(
-        'lemmasumperyear.php?lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort',
+        'lemmasumperyear.php?lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort',
       );
     } finally {
       dom.restore();
@@ -424,7 +424,7 @@ describe('phpUrlFromLocation', () => {
       const search = '?data=lemmasumperyear.php&lemma=DRJEWO&jitter=2&scale=3&sort';
 
       expect(phpUrlFromLocation('data', 'lemma', search)).toBe(
-        'lemmasumperyear.php?lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort',
+        'lemmasumperyear.php?lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort',
       );
     } finally {
       dom.restore();
@@ -438,7 +438,7 @@ describe('phpUrlFromLocation', () => {
 
       expect(
         phpUrlFromLocation('data', 'lemma', '?data=lemmasumperyear.php&lemma=DRJEWO&exact=1&sort'),
-      ).toBe('lemmasumperyear.php?lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=0&sort');
+      ).toBe('lemmasumperyear.php?lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=0&sort');
     } finally {
       dom.restore();
     }
@@ -451,7 +451,7 @@ describe('phpUrlFromLocation', () => {
 
       expect(
         phpUrlFromLocation('data', 'lemma', '?data=lemmasumperyear.php&lemma=DRJEWO&sort'),
-      ).toBe('lemmasumperyear.php?lemma=DRJEWO&ci=1&regex=0&list=0&trim=1&ambig=1&sort');
+      ).toBe('lemmasumperyear.php?lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort');
     } finally {
       dom.restore();
     }
@@ -615,7 +615,7 @@ describe('searchControlState', () => {
         searchControlState({
           regex: false,
           list: false,
-          ci: false,
+          cs: true,
           trim: false,
           ambig: false,
         }),
