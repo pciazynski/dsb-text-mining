@@ -227,6 +227,26 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 
 ---
 
+
+### intermediate phase - fixing bugs:
+- Groß-/Kleinschreibung beachten is working reversed (maybe would be better to change in the code ci to cs - case sensitive?) - DONE
+
+- autocomplete is case sensitive after reload, and later is not, I think let's make it synced to the checkbox
+
+- examples write dynamically
+
+- inkl. ambig dynamically write (plot, remove from the button)
+
+- also other settings write dynamically on the plot
+
+- regexp without ambig does not work
+
+- weird, less used switches to the right (case senstive, leerzeichen)
+
+- vorschlage checkbox should be blocked if unavaillable
+
+- comma problem for regexp, is semicolon safer?
+
 ### Phase E — mirror to the other 4 vis *(depends on C + D; E1–E4 mutually parallel)*
 
 #### E1 — bwnorm

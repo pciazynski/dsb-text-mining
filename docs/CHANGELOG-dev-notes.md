@@ -1,3 +1,6 @@
+# Dev Notes (2026-08-25)
+- implement everything until the end of D from searchBoxSimplficiationPlan.md
+
 # Dev Notes (2026-08-23)
 - implement A1 to A5 of searchBoxSimplficiationPlan.md
 
