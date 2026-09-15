@@ -236,23 +236,14 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 - autocomplete is case sensitive after reload, and later is not, I think let's make it synced to the checkbox - DONE
 - regexp without ambig does not work - DONE
 - inkl. ambig dynamically write (plot, remove from the button) - DONE
-
-- weird, less used switches to the right (case senstive, leerzeichen)
-
-- examples write dynamically
-
-
-
-
-
-
+- weird, less used switches to the right (case senstive, leerzeichen) - DONE
+- examples write dynamically - DONE
 
 ### Phase E — mirror to the other 4 vis *(depends on C + D; E1–E4 mutually parallel)*
 
 #### E1 — bwnorm
 > **TDD Red.** Mirror Phase C and Phase D for bwnorm. Create `tests/php/NormSearchEndpointsTest.php` covering `normgroup.php`, `normsumperyear.php`, `normcountperyear.php`, `normtoken.php`, `urnbynorm.php` and `prefixnormsearch.php` with the same flag matrix and the same injection assertions as C1–C5, using `normmapping.db` with `normfrequency`/`normnonambig`/`tokennormtypesubtypedatefrequency`.
 > Create `tests/js/bwnorm_index_html.test.js` mirroring D2 (ids `searchinput`, five checkboxes, `prefixsearchCheckBox` unchecked, `js/search.js` loaded) and add `kind: 'norm'` cases to the `buildVisUrls` tests from D3, asserting the exact URLs with `norm=` and the `norm*` endpoints.
-> Note `prefixnormsearch.php` does **not** currently uppercase its input (unlike the lemma one) — pin that both now behave identically under `cs=0`/`cs=1`.
 
 #### E2 — bwword
 > **TDD Red.** Mirror for bwword. Create `tests/php/WordSearchEndpointsTest.php` covering `tokencountperyear.php` and `prefixsearch.php` against `bagofwords.db` (`tokencount(token, frequency, sortkey)` + `tokendatecount`).

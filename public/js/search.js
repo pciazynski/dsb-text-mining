@@ -205,18 +205,47 @@ var applyAmbigButtonLabel = function (doc) {
   button.textContent = ambigButtonLabel(checked);
 };
 
+var searchExample = function (options) {
+  var resolved = Object.assign({}, searchDefaults, options || {});
+  var literal = resolved.cs ? 'DRJEWO' : 'drjewo';
+  var regex = resolved.cs ? 'TE(J|N)' : 'te(j|n)';
+  var listItem = resolved.cs ? 'BOM' : 'bom';
+
+  if (resolved.regex && resolved.list) {
+    return regex + (resolved.trim ? '; ' : ';') + listItem;
+  }
+  if (resolved.regex) {
+    return regex;
+  }
+  if (resolved.list) {
+    return literal + (resolved.trim ? ', ' : ',') + listItem;
+  }
+  return literal;
+};
+
+var applySearchExample = function (doc) {
+  var example = doc && doc.getElementById ? doc.getElementById('searchexample') : null;
+  if (!example) {
+    return;
+  }
+
+  example.textContent = searchExample(searchOptionsFromForm(doc));
+};
+
 var restoreSearchFromLocation = function (doc, search) {
   var params = new URLSearchParams(search || '');
+  var searchInput = doc.getElementById('searchinput');
+  if (searchInput) {
+    searchInput.value = params.get('lemma') || '';
+  }
+
   if (!params.has('lemma')) {
+    applySearchControlState(doc, searchOptionsFromForm(doc));
+    applySearchExample(doc);
     return;
   }
 
   var options = readSearchOptions(search);
-  var searchInput = doc.getElementById('searchinput');
-  if (searchInput) {
-    searchInput.value = params.get('lemma');
-  }
-
   Object.keys(options).forEach(function (option) {
     var checkbox = doc.getElementById(option + 'CheckBox');
     if (checkbox) {
@@ -225,6 +254,7 @@ var restoreSearchFromLocation = function (doc, search) {
   });
 
   applySearchControlState(doc, options);
+  applySearchExample(doc);
 };
 
 // Test hook only. Browsers load this file via <script src>, where `module` is undefined.
@@ -243,6 +273,8 @@ if (typeof module !== 'undefined' && module.exports) {
     applySearchControlState,
     ambigButtonLabel,
     applyAmbigButtonLabel,
+    searchExample,
+    applySearchExample,
     restoreSearchFromLocation,
   };
 }

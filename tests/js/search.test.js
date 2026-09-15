@@ -91,11 +91,12 @@ function runBwlemmaPlotPage(page, search, phpResponses) {
 const BWLEMMA_SEARCH_HTML = `
   <input id="prefixsearchCheckBox" type="checkbox">
   <input id="searchinput" type="text">
-  <input id="csCheckBox" checked type="checkbox">
+  <input id="csCheckBox" type="checkbox">
   <input id="regexCheckBox" type="checkbox">
   <input id="listCheckBox" type="checkbox">
   <input id="trimCheckBox" checked type="checkbox">
   <input id="ambigCheckBox" checked type="checkbox">
+  <span id="searchexample"></span>
 `;
 
 describe('readSearchOptions', () => {
@@ -341,7 +342,7 @@ describe('restoreSearchFromLocation', () => {
       restoreSearchFromLocation(dom.document, dom.window.location.search);
 
       expect(dom.document.querySelector('#searchinput').value).toBe('');
-      expect(dom.document.querySelector('#csCheckBox').checked).toBe(true);
+      expect(dom.document.querySelector('#csCheckBox').checked).toBe(false);
       expect(dom.document.querySelector('#regexCheckBox').checked).toBe(false);
       expect(dom.document.querySelector('#listCheckBox').checked).toBe(false);
       expect(dom.document.querySelector('#trimCheckBox').checked).toBe(true);
@@ -363,6 +364,22 @@ describe('restoreSearchFromLocation', () => {
         expect(document.body.innerHTML).not.toContain('onerror');
       },
     );
+  });
+
+  it('shows the example that matches the restored options', () => {
+    expectRestoredSearch(
+      'https://example.test/vis/bwlemma/?lemma=DRJEWO&regex=1&list=1&trim=1&cs=0',
+      (document) => {
+        expect(document.querySelector('#searchexample').textContent).toBe('te(j|n); bom');
+      },
+    );
+  });
+
+  it('shows the lowercase example for the untouched form when every option is off', () => {
+    // The page restores on every load, so this is the example a first-time visitor sees.
+    expectRestoredSearch('https://example.test/vis/bwlemma/', (document) => {
+      expect(document.querySelector('#searchexample').textContent).toBe('drjewo');
+    });
   });
 });
 
@@ -989,6 +1006,159 @@ describe('applyAmbigButtonLabel', () => {
       checkbox.checked = true;
       checkbox.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
       expect(button.textContent).toBe(lang_ambigsearch);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('searchExample', () => {
+  it.each([
+    ['a plain term', { cs: false, regex: false, list: false, trim: false }, 'drjewo'],
+    ['a regex', { cs: false, regex: true, list: false, trim: false }, 'te(j|n)'],
+    ['a list', { cs: false, regex: false, list: true, trim: false }, 'drjewo,bom'],
+    [
+      'a list with a space after the comma',
+      { cs: false, regex: false, list: true, trim: true },
+      'drjewo, bom',
+    ],
+    [
+      'a semicolon-separated regex list',
+      { cs: false, regex: true, list: true, trim: false },
+      'te(j|n);bom',
+    ],
+    [
+      'a semicolon-separated regex list with a space after the semicolon',
+      { cs: false, regex: true, list: true, trim: true },
+      'te(j|n); bom',
+    ],
+  ])('shows %s', (_description, options, expected) => {
+    const dom = withDom();
+    try {
+      const { searchExample } = loadSearch();
+      expect(typeof searchExample).toBe('function');
+
+      expect(searchExample({ ...options, ambig: true })).toBe(expected);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it.each([
+    ['a plain term', { cs: true, regex: false, list: false, trim: false }, 'DRJEWO'],
+    ['a regex', { cs: true, regex: true, list: false, trim: false }, 'TE(J|N)'],
+    ['a list', { cs: true, regex: false, list: true, trim: false }, 'DRJEWO,BOM'],
+    [
+      'a list with a space after the comma',
+      { cs: true, regex: false, list: true, trim: true },
+      'DRJEWO, BOM',
+    ],
+    [
+      'a semicolon-separated regex list',
+      { cs: true, regex: true, list: true, trim: false },
+      'TE(J|N);BOM',
+    ],
+    [
+      'a semicolon-separated regex list with a space after the semicolon',
+      { cs: true, regex: true, list: true, trim: true },
+      'TE(J|N); BOM',
+    ],
+  ])(
+    'shows %s in upper case when the search is case sensitive',
+    (_description, options, expected) => {
+      const dom = withDom();
+      try {
+        const { searchExample } = loadSearch();
+
+        expect(searchExample({ ...options, ambig: true })).toBe(expected);
+      } finally {
+        dom.restore();
+      }
+    },
+  );
+
+  it('is unaffected by the ambiguity option', () => {
+    const dom = withDom();
+    try {
+      const { searchExample } = loadSearch();
+      const options = { cs: false, regex: true, list: true, trim: true };
+
+      expect(searchExample({ ...options, ambig: false })).toBe(
+        searchExample({ ...options, ambig: true }),
+      );
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('applySearchExample', () => {
+  it('writes the example for the current checkbox state', () => {
+    const dom = withDom({ html: BWLEMMA_SEARCH_HTML });
+    try {
+      const { applySearchExample } = loadSearch();
+      expect(typeof applySearchExample).toBe('function');
+      dom.document.getElementById('csCheckBox').checked = false;
+      dom.document.getElementById('listCheckBox').checked = true;
+
+      applySearchExample(dom.document);
+
+      expect(dom.document.getElementById('searchexample').textContent).toBe('drjewo, bom');
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('follows the user ticking and unticking the search options', () => {
+    const dom = withDom({ html: BWLEMMA_SEARCH_HTML });
+    try {
+      const { applySearchExample } = loadSearch();
+      const example = dom.document.getElementById('searchexample');
+      const tick = (id, checked) => {
+        const checkbox = dom.document.getElementById(id);
+        checkbox.checked = checked;
+        checkbox.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+      };
+      ['csCheckBox', 'regexCheckBox', 'listCheckBox', 'trimCheckBox', 'ambigCheckBox'].forEach(
+        (id) => {
+          dom.document
+            .getElementById(id)
+            .addEventListener('change', () => applySearchExample(dom.document));
+        },
+      );
+
+      tick('csCheckBox', false);
+      expect(example.textContent).toBe('drjewo');
+
+      tick('regexCheckBox', true);
+      expect(example.textContent).toBe('te(j|n)');
+
+      tick('listCheckBox', true);
+      expect(example.textContent).toBe('te(j|n); bom');
+
+      tick('trimCheckBox', false);
+      expect(example.textContent).toBe('te(j|n);bom');
+
+      tick('regexCheckBox', false);
+      expect(example.textContent).toBe('drjewo,bom');
+
+      tick('csCheckBox', true);
+      expect(example.textContent).toBe('DRJEWO,BOM');
+
+      tick('listCheckBox', false);
+      expect(example.textContent).toBe('DRJEWO');
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('leaves the page alone when it has no example element', () => {
+    const dom = withDom({ html: BWLEMMA_SEARCH_HTML });
+    try {
+      const { applySearchExample } = loadSearch();
+      dom.document.getElementById('searchexample').remove();
+
+      expect(() => applySearchExample(dom.document)).not.toThrow();
     } finally {
       dom.restore();
     }

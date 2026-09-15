@@ -93,7 +93,7 @@
         <script>
           document.write(lang_example);
         </script>
-        CHÓŚEBUZ
+        <span id="searchexample"></span>
       </td>
       <td style="text-align: left">
         <script>
@@ -136,13 +136,13 @@
       <td style="text-align: left">
         <div style="display: flex; gap: 0.5em; white-space: nowrap">
           <label
-            ><input id="csCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+            ><input id="csCheckBox" type="checkbox" onchange="switchSearchOptions()" />
             <script>
               document.write(lang_search_casesensitive);
             </script></label
           >
           <label
-            ><input id="trimCheckBox" checked type="checkbox" />
+            ><input id="trimCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
             <script>
               document.write(lang_search_trim);
             </script></label
@@ -415,6 +415,7 @@
       var options = searchOptionsFromForm(document);
       applySearchControlState(document, options);
       applyAmbigButtonLabel(document);
+      applySearchExample(document);
       switchPrefixsearch();
     };
 

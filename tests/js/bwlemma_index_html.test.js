@@ -33,7 +33,7 @@ describe('vis/bwlemma/index.html', () => {
     }
 
     expect(document.querySelector('#csCheckBox').getAttribute('onchange')).toBe(
-      'switchPrefixsearch()',
+      'switchSearchOptions()',
     );
   });
 
@@ -76,6 +76,23 @@ describe('vis/bwlemma/index.html', () => {
     expect(checkbox?.getAttribute('type')).toBe('checkbox');
     expect(checkbox.hasAttribute('checked')).toBe(false);
     expect(checkbox.closest('label')).not.toBeNull();
+  });
+
+  it('has a placeholder for the example instead of a hard-coded one', () => {
+    const document = loadPage('vis/bwlemma/index.html');
+
+    expect(document.querySelector('#searchexample')).not.toBeNull();
+    expect(document.documentElement.textContent).not.toContain('CHÓŚEBUZ');
+  });
+
+  it('wires every search option checkbox to the shared change handler', () => {
+    const document = loadPage('vis/bwlemma/index.html');
+
+    for (const id of ['csCheckBox', 'regexCheckBox', 'listCheckBox', 'trimCheckBox']) {
+      expect(document.querySelector(`#${id}`).getAttribute('onchange')).toBe(
+        'switchSearchOptions()',
+      );
+    }
   });
 
   it('initializes autocomplete case-insensitively when case sensitivity is unchecked', () => {
