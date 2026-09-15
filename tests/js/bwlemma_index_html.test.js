@@ -37,13 +37,24 @@ describe('vis/bwlemma/index.html', () => {
     );
   });
 
-  it('keeps alphabetical sorting off by default', () => {
+  it.each(['regexCheckBox', 'listCheckBox'])(
+    'updates prefix-search availability when %s changes',
+    (id) => {
+      const document = loadPage('vis/bwlemma/index.html');
+      const onchange = document.querySelector(`#${id}`).getAttribute('onchange');
+
+      expect(onchange).toBe('switchSearchOptions()');
+    },
+  );
+
+  it('groups alphabetical sorting with its text so both can be greyed out', () => {
     const document = loadPage('vis/bwlemma/index.html');
 
     const checkbox = document.querySelector('#prefixsearchCheckBox');
 
     expect(checkbox?.getAttribute('type')).toBe('checkbox');
     expect(checkbox.hasAttribute('checked')).toBe(false);
+    expect(checkbox.closest('label')).not.toBeNull();
   });
 
   it('initializes autocomplete case-insensitively when case sensitivity is unchecked', () => {
@@ -54,6 +65,20 @@ describe('vis/bwlemma/index.html', () => {
 
     expect(document.querySelector('#csCheckBox').checked).toBe(false);
     expect(initialization).toContain('&cs=0&lemma=');
+  });
+
+  it('passes the current mode state when refreshing autocomplete', () => {
+    const document = loadPage('vis/bwlemma/index.html');
+    const inlineSource = [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .join('\n');
+    const switchPrefixsearch = inlineSource.match(
+      /var switchPrefixsearch = function \(\) \{[\s\S]*?\n    \};/,
+    )?.[0];
+
+    expect(switchPrefixsearch).toMatch(
+      /autocomplete\([\s\S]*?searchControlState\(searchOptionsFromForm\(document\)\)\.autocomplete[\s\S]*?\)/,
+    );
   });
 
   it('loads the existing search script after its dependencies', () => {

@@ -1,4 +1,7 @@
-const { withDom, loadScript, loadPage } = require('./helpers');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const { PUBLIC_DIR, withDom, loadScript, loadPage } = require('./helpers');
 
 function loadSearch() {
   try {
@@ -713,27 +716,49 @@ describe('searchControlState', () => {
     }
   });
 
-  it('disables and re-enables alphabet sorting and autocomplete', () => {
+  it.each([
+    ['regex', { regex: true, list: false }],
+    ['list', { regex: false, list: true }],
+  ])('keeps the search input enabled in %s mode', (_mode, options) => {
     const dom = withDom({
       html: '<input id="prefixsearchCheckBox" type="checkbox"><input id="searchinput">',
     });
     try {
       const { applySearchControlState } = loadSearch();
-      const alphabetSort = dom.document.getElementById('prefixsearchCheckBox');
       const searchInput = dom.document.getElementById('searchinput');
 
-      expect(typeof applySearchControlState).toBe('function');
-      applySearchControlState(dom.document, { regex: true, list: false });
+      applySearchControlState(dom.document, options);
+
+      expect(searchInput.disabled).toBe(false);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it.each([
+    ['regex', { regex: true, list: false }],
+    ['list', { regex: false, list: true }],
+  ])('disables and greys alphabet sorting in %s mode', (_mode, options) => {
+    const stylesheet = fs.readFileSync(path.join(PUBLIC_DIR, 'digilabstyles.css'), 'utf8');
+    const dom = withDom({
+      html:
+        '<style>' +
+        stylesheet +
+        '</style><label><input id="prefixsearchCheckBox" type="checkbox">Alphabetical</label>',
+    });
+    try {
+      const { applySearchControlState } = loadSearch();
+      const alphabetSort = dom.document.getElementById('prefixsearchCheckBox');
+      const alphabetSortLabel = alphabetSort.closest('label');
+
+      applySearchControlState(dom.document, options);
+
       expect(alphabetSort.disabled).toBe(true);
-      expect(searchInput.disabled).toBe(true);
+      expect(dom.window.getComputedStyle(alphabetSortLabel).color).toBe('rgb(128, 128, 128)');
 
       applySearchControlState(dom.document, { regex: false, list: false });
       expect(alphabetSort.disabled).toBe(false);
-      expect(searchInput.disabled).toBe(false);
-
-      applySearchControlState(dom.document, { regex: false, list: true });
-      expect(alphabetSort.disabled).toBe(true);
-      expect(searchInput.disabled).toBe(true);
+      expect(dom.window.getComputedStyle(alphabetSortLabel).color).toBe('rgb(0, 0, 0)');
     } finally {
       dom.restore();
     }

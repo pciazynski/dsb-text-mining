@@ -233,7 +233,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 
 - autocomplete is case sensitive after reload, and later is not, I think let's make it synced to the checkbox - DONE
 
-- list makes the plot not showing ambig
+- list makes the plot not showing ambig - DONE
 
 - examples write dynamically
 
@@ -245,7 +245,7 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 
 - weird, less used switches to the right (case senstive, leerzeichen)
 
-- vorschlage checkbox should be blocked if unavaillable
+- vorschlage checkbox should be blocked if unavaillable - DONE
 
 - comma problem for regexp, is semicolon safer?
 

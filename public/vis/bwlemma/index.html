@@ -49,10 +49,12 @@
     <tr>
       <td></td>
       <td>
-        <input id="prefixsearchCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
-        <script>
-          document.write(lang_prefixsearchalphabet_dsb);
-        </script>
+        <label
+          ><input id="prefixsearchCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+          <script>
+            document.write(lang_prefixsearchalphabet_dsb);
+          </script></label
+        >
       </td>
     </tr>
     <tr>
@@ -116,13 +118,13 @@
           </script></label
         >
         <label
-          ><input id="regexCheckBox" type="checkbox" />
+          ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
           <script>
             document.write(lang_search_regex);
           </script></label
         >
         <label
-          ><input id="listCheckBox" type="checkbox" />
+          ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
           <script>
             document.write(lang_search_list);
           </script></label
@@ -402,6 +404,11 @@
       }
     };
 
+    var switchSearchOptions = function () {
+      applySearchControlState(document, searchOptionsFromForm(document));
+      switchPrefixsearch();
+    };
+
     var switchPrefixsearch = function () {
       var sortby = document.getElementById('prefixsearchCheckBox').checked
         ? 'alphabet'
@@ -411,6 +418,7 @@
         'searchinput',
         'prefixlemmasearch.php?limit=30&sortby=' + sortby + '&cs=' + caseSensitive + '&lemma=',
         '',
+        searchControlState(searchOptionsFromForm(document)).autocomplete,
       );
     };
 

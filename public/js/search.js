@@ -174,12 +174,12 @@ var searchControlState = function (options) {
 var applySearchControlState = function (doc, options) {
   var state = searchControlState(options);
   var alphabetSort = doc.getElementById('prefixsearchCheckBox');
-  var searchInput = doc.getElementById('searchinput');
   if (alphabetSort) {
     alphabetSort.disabled = !state.alphabetSort;
-  }
-  if (searchInput) {
-    searchInput.disabled = !state.autocomplete;
+    var alphabetSortLabel = alphabetSort.closest('label');
+    if (alphabetSortLabel) {
+      alphabetSortLabel.style.color = alphabetSort.disabled ? 'gray' : 'black';
+    }
   }
 };
 
