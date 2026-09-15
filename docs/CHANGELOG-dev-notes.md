@@ -1,3 +1,6 @@
+# Dev Notes (2026-09-15)
+- fixed bugs from searchBoxSimplificationPlan.md
+
 # Dev Notes (2026-08-25)
 - implement everything until the end of D from searchBoxSimplficiationPlan.md
 
