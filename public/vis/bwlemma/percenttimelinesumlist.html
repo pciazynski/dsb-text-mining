@@ -17,7 +17,7 @@
     var ploturls = listPlotUrlsFromLocation('data', 'lemma', window.location.search);
     dataset = ploturls && ploturls[0];
     var lemma = getQueryVariable('lemma');
-    var exact = getQueryVariable('exact');
+    var searchOptions = readSearchOptions(window.location.search);
     var focus = getQueryVariable('focus');
     var jitter = getQueryVariable('jitter');
     if (jitter.length == 0) {
@@ -37,7 +37,7 @@
     }
     diagramtitle += lemma;
 
-    if (exact != 1) {
+    if (searchOptions.ambig) {
       diagramtitle += ' inkl. ambig';
     }
 

@@ -16,13 +16,17 @@
     var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
     var lemmalist = listTermsFromLocation(window.location.search);
     var ploturls = listPlotUrlsFromLocation('data', 'lemma', window.location.search);
+    var searchOptions = readSearchOptions(window.location.search);
     var jitter = getQueryVariable('jitter');
     if (jitter.length == 0) {
       jitter = defjitter;
     } else {
       jitter = parseFloat(jitter);
     }
-    diagramtitle = 'Jahressumme Lemma inkl. ambig';
+    diagramtitle = 'Jahressumme Lemma';
+    if (searchOptions.ambig) {
+      diagramtitle += ' inkl. ambig';
+    }
     var rawPlotData = [];
     var maxval = 0;
     var minval = 10000000;

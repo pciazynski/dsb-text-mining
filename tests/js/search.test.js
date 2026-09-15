@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { JSDOM } = require('jsdom');
 
 const { PUBLIC_DIR, withDom, loadScript, loadPage } = require('./helpers');
 
@@ -42,6 +43,49 @@ function loadListPlotTraces() {
   const { listPlotTraces } = loadSearch();
   expect(typeof listPlotTraces).toBe('function');
   return listPlotTraces;
+}
+
+function runBwlemmaPlotPage(page, search, phpResponses) {
+  const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis', 'bwlemma', page), 'utf8');
+  const dom = new JSDOM(html, {
+    runScripts: 'outside-only',
+    url: 'https://example.test/vis/bwlemma/' + page + search,
+  });
+  const externalScripts = [...dom.window.document.querySelectorAll('script[src]')].map((script) =>
+    script.getAttribute('src'),
+  );
+  const inlineScripts = [...dom.window.document.querySelectorAll('script:not([src])')].map(
+    (script) => script.textContent,
+  );
+  const plotCalls = [];
+
+  dom.window.Plotly = {
+    Icons: { camera: {} },
+    downloadImage() {},
+    newPlot(_target, data, layout, configuration) {
+      plotCalls.push({ data, layout, configuration });
+      return dom.window.document.getElementById('myDiv');
+    },
+  };
+
+  externalScripts
+    .filter((source) => source.startsWith('../../js/'))
+    .forEach((source) => {
+      const scriptPath = path.join(PUBLIC_DIR, 'js', path.basename(source));
+      dom.window.eval(fs.readFileSync(scriptPath, 'utf8'));
+    });
+
+  dom.window.readPHP = (url) => {
+    expect(Object.prototype.hasOwnProperty.call(phpResponses, url)).toBe(true);
+    return phpResponses[url];
+  };
+
+  inlineScripts.forEach((source) => dom.window.eval(source));
+
+  return {
+    close: () => dom.window.close(),
+    plotCalls,
+  };
 }
 
 const BWLEMMA_SEARCH_HTML = `
@@ -628,6 +672,55 @@ describe('bwlemma iframe pages', () => {
 
     expect(inlineSource).toMatch(/\bdata\s*=\s*listPlotTraces\(\s*[^,]+\s*,\s*sep\s*\)/);
   });
+
+  it.each([
+    ['omits', 'off', '0', 'Lemma DRJEWO'],
+    ['includes', 'on', '1', 'Lemma DRJEWO inkl. ambig'],
+  ])(
+    '%s inkl. ambig in the timeline title when ambig search is %s',
+    (_verb, _state, ambig, title) => {
+      const search =
+        '?data=lemmasumperyear.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=' +
+        ambig +
+        '&sort&focus=0';
+      const page = runBwlemmaPlotPage('timeline.html', search, {
+        ['lemmasumperyear.php?lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=' + ambig + '&sort']:
+          '|DRJEWO|\t1880\t3\n',
+      });
+      try {
+        expect(page.plotCalls[0].layout.title.text).toBe(title);
+        expect(page.plotCalls[0].layout.title.text.includes('inkl. ambig')).toBe(ambig === '1');
+      } finally {
+        page.close();
+      }
+    },
+  );
+
+  it.each([
+    ['omits', 'off', '0'],
+    ['includes', 'on', '1'],
+  ])(
+    '%s inkl. ambig in the list timeline title when ambig search is %s',
+    (_verb, _state, ambig) => {
+      const search =
+        '?data=lemmasumperyear.php&lemma=drjewo&cs=0&regex=0&list=1&trim=1&ambig=' +
+        ambig +
+        '&sort&focus=0';
+      const page = runBwlemmaPlotPage('timelinesumlist.html', search, {
+        ['lemmasumperyear.php?lemma=drjewo&cs=0&regex=0&list=1&trim=1&ambig=' + ambig + '&sort']:
+          '|DRJEWO|\t1880\t3\n',
+      });
+      try {
+        const title = page.plotCalls[0].layout.title.text;
+
+        expect(title.startsWith('Jahressumme Lemma')).toBe(true);
+        expect(title).toContain('>drjewo</span>');
+        expect(title.includes('inkl. ambig')).toBe(ambig === '1');
+      } finally {
+        page.close();
+      }
+    },
+  );
 });
 
 // PHP twin: tests/php/SearchFilterTest.php. Keep these splitTerms cases in sync.
