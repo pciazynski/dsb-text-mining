@@ -110,37 +110,44 @@
     </tr>
     <tr>
       <td></td>
-      <td>
-        <label
-          ><input id="csCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
-          <script>
-            document.write(lang_search_casesensitive);
-          </script></label
-        >
-        <label
-          ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
-          <script>
-            document.write(lang_search_regex);
-          </script></label
-        >
-        <label
-          ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
-          <script>
-            document.write(lang_search_list);
-          </script></label
-        >
-        <label
-          ><input id="trimCheckBox" checked type="checkbox" />
-          <script>
-            document.write(lang_search_trim);
-          </script></label
-        >
-        <label
-          ><input id="ambigCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
-          <script>
-            document.write(lang_search_ambig);
-          </script></label
-        >
+      <td style="padding: 0">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5em">
+          <label
+            ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_regex);
+            </script></label
+          >
+          <label
+            ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_list);
+            </script></label
+          >
+          <label
+            ><input id="ambigCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_ambig);
+            </script></label
+          >
+        </div>
+      </td>
+      <td></td>
+      <td style="text-align: left">
+        <div style="display: flex; gap: 0.5em; white-space: nowrap">
+          <label
+            ><input id="csCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+            <script>
+              document.write(lang_search_casesensitive);
+            </script></label
+          >
+          <label
+            ><input id="trimCheckBox" checked type="checkbox" />
+            <script>
+              document.write(lang_search_trim);
+            </script></label
+          >
+        </div>
       </td>
     </tr>
   </table>

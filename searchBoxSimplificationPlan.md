@@ -242,7 +242,6 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 - examples write dynamically
 
 
-- also other settings write dynamically on the plot
 
 
 
