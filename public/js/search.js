@@ -145,7 +145,8 @@ var listPlotTraces = function (rawData, separator) {
 };
 
 var splitTerms = function (raw, opts) {
-  var terms = opts.list ? raw.split(/[;,]/) : [raw];
+  var separator = opts.regex ? ';' : /[;,]/;
+  var terms = opts.list ? raw.split(separator) : [raw];
 
   return terms
     .map(function (term) {

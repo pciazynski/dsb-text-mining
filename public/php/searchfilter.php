@@ -63,7 +63,8 @@ function _search_bool(mixed $value): ?bool
 
 function split_terms(string $raw, array $opts): array
 {
-  $terms = ($opts['list'] ?? false) ? preg_split('/[;,]/', $raw) : [$raw];
+  $separator = ($opts['regex'] ?? false) ? '/;/' : '/[;,]/';
+  $terms = ($opts['list'] ?? false) ? preg_split($separator, $raw) : [$raw];
   $trim = $opts['trim'] ?? true;
   $result = [];
 

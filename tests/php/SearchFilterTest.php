@@ -173,6 +173,30 @@ final class SearchFilterTest extends TestCase
     );
   }
 
+  public function testSplitTermsRegexListSplitsOnlyOnSemicolon(): void
+  {
+    $this->assertSame(
+      ['te(j|n)', 'bom'],
+      $this->splitTerms('te(j|n);bom', ['list' => true, 'regex' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsRegexListDoesNotTreatCommaAsSeparator(): void
+  {
+    $this->assertSame(
+      ['te(j|n),bom'],
+      $this->splitTerms('te(j|n),bom', ['list' => true, 'regex' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsRegexListKeepsCommaInsideQuantifier(): void
+  {
+    $this->assertSame(
+      ['a{2,5}'],
+      $this->splitTerms('a{2,5}', ['list' => true, 'regex' => true, 'trim' => true]),
+    );
+  }
+
   public function testCompileTermPatternCaseSensitiveRegexIsFullyAnchored(): void
   {
     $this->assertCompileTermPatternExists();

@@ -501,6 +501,41 @@ describe('listPlotUrlsFromLocation', () => {
       dom.restore();
     }
   });
+
+  it('splits a regex list only on semicolon so each pattern keeps its commas', () => {
+    const dom = withDom();
+    try {
+      const listPlotUrlsFromLocation = loadListPlotUrlsFromLocation();
+      const search =
+        '?data=lemmasumperyear.php&lemma=' +
+        encodeURIComponent('te(j|n);bom') +
+        '&cs=0&regex=1&list=1&trim=1&ambig=1&sort&focus=0';
+
+      expect(listPlotUrlsFromLocation('data', 'lemma', search)).toEqual([
+        'lemmasumperyear.php?lemma=te(j%7Cn)&cs=0&regex=1&list=1&trim=1&ambig=1&sort',
+        'lemmasumperyear.php?lemma=bom&cs=0&regex=1&list=1&trim=1&ambig=1&sort',
+      ]);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('leaves a regex quantifier with an internal comma as a single URL', () => {
+    const dom = withDom();
+    try {
+      const listPlotUrlsFromLocation = loadListPlotUrlsFromLocation();
+      const search =
+        '?data=lemmasumperyear.php&lemma=' +
+        encodeURIComponent('a{2,5}') +
+        '&cs=0&regex=1&list=1&trim=1&ambig=1&sort&focus=0';
+
+      expect(listPlotUrlsFromLocation('data', 'lemma', search)).toEqual([
+        'lemmasumperyear.php?lemma=a%7B2%2C5%7D&cs=0&regex=1&list=1&trim=1&ambig=1&sort',
+      ]);
+    } finally {
+      dom.restore();
+    }
+  });
 });
 
 describe('listPlotTraces', () => {
@@ -673,6 +708,44 @@ describe('splitTerms', () => {
       const splitTerms = loadSplitTerms();
 
       expect(splitTerms('\u00a0drjewo\u00a0', { list: true, trim: true })).toEqual(['drjewo']);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('splits a regex list only on semicolon', () => {
+    const dom = withDom();
+    try {
+      const splitTerms = loadSplitTerms();
+
+      expect(splitTerms('te(j|n);bom', { list: true, regex: true, trim: true })).toEqual([
+        'te(j|n)',
+        'bom',
+      ]);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('does not treat comma as a regex-list separator', () => {
+    const dom = withDom();
+    try {
+      const splitTerms = loadSplitTerms();
+
+      expect(splitTerms('te(j|n),bom', { list: true, regex: true, trim: true })).toEqual([
+        'te(j|n),bom',
+      ]);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('keeps a comma inside a regex quantifier as one term', () => {
+    const dom = withDom();
+    try {
+      const splitTerms = loadSplitTerms();
+
+      expect(splitTerms('a{2,5}', { list: true, regex: true, trim: true })).toEqual(['a{2,5}']);
     } finally {
       dom.restore();
     }

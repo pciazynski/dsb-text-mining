@@ -168,6 +168,46 @@ final class SearchResolveTest extends TestCase
     );
   }
 
+  public function testResolveRequestCellsRegexListSplitsOnlyOnSemicolon(): void
+  {
+    $this->assertTrue(
+      function_exists('resolve_request_cells'),
+      'resolve_request_cells() must be defined',
+    );
+
+    $this->assertSame(
+      ['|DRJEWO|', '|DRJEWO|DRJEWOWY|', '|DRĚŚ|DRJEWO|', '|TEJ|'],
+      resolve_request_cells($this->pdo, 'lemma', [
+        'lemma' => 'DR.*O;TE.',
+        'regex' => '1',
+        'list' => '1',
+        'cs' => '1',
+        'ambig' => '1',
+        'trim' => '1',
+      ]),
+    );
+  }
+
+  public function testResolveRequestCellsRegexListKeepsCommaInsideQuantifier(): void
+  {
+    $this->assertTrue(
+      function_exists('resolve_request_cells'),
+      'resolve_request_cells() must be defined',
+    );
+
+    $this->assertSame(
+      ['|DRJEWO|', '|DRJEWO|DRJEWOWY|', '|DRĚŚ|DRJEWO|'],
+      resolve_request_cells($this->pdo, 'lemma', [
+        'lemma' => 'DR.{2,5}O',
+        'regex' => '1',
+        'list' => '1',
+        'cs' => '1',
+        'ambig' => '1',
+        'trim' => '1',
+      ]),
+    );
+  }
+
   public function testResolveCellsRegexDisabledTreatsMetacharactersLiterally(): void
   {
     $this->assertSame(
