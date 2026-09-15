@@ -17,12 +17,12 @@ The words in corpus data has 3 representations:
 | --------------- | ---------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Surface form    | Text inside `<w>` | Historical spelling, graphemics, OCR/transcription study, improving the corpus itself, finding rare words | Might be written in very old spellings, might have typos or other problems, are often inflected forms |
 | Normalized form | `<w norm="...">`                                           | Helps searching and reading in modern Lower Sorbian spelling | Optional in corpus data; may contain alternatives separated by vertical bars               |
-| Lemma           | `<w lemma="...">`                                          | Lexical and morphological aggregation, to analyse words without paying attention to spelling or declinated/conjugated forms                    | Optional; may be ambiguous (separated by vertical bars) and is not a full morphological analysis       |
+| Lemma           | `<w lemma="...">`                                          | Lexical and morphological aggregation, to analyse words without paying attention to spelling or declinated/conjugated forms                    | Optional; may be ambiguous (separated by vertical bars) and often is not a full morphological analysis       |
 
 Surface forms preserve historical variation but inflate type counts through
 orthographic variants. Normalized forms support comparison with modern Lower
 Sorbian but erase part of that variation. Lemmas aggregate lexical candidates
-but do not encode a complete morphological analysis. In ideal world those representations should be equivalent, but sometimes some equivalents are missing. E.g. for some words the norm and lemma form is completely missing.
+but do not encode a complete morphological analysis (although sometimes they can). In ideal world those representations should be equivalent, but sometimes some equivalents are missing. E.g. for some words the norm and lemma form is completely missing.
 
 
 ## Corpus snapshot and biases
@@ -101,3 +101,25 @@ can additionally differ only by spelling or case, for example
 `Bóda|buda|Buda`. Missing, ambiguous, multiword, apostrophe-bearing, and
 case-varying values are all present in the live corpus. `deletexml` and `nl` are
 presence-only output flags.
+
+Lemmas can have further linguistic annotations like `_bed2` or `_verb`, but often they do not have any.
+
+Manually annotated lemmas will be marked using exclamation mark, for example:
+```xml
+<w lemma="!STRUSK" norm="struski">ſtrußki</w>
+```
+
+### Example of lexical annotation
+A historical sentence like this: "Do ßerbſkeje rėzy pſcheſtawjone a wendane wot Dolnołužyſkego wotrėda Maſchize Sserbſkeje." can be encoded as:
+```xml
+<w lemma="DO" norm="Do">Do</w> <w lemma="SERBSKI" norm="serbskeje">ßerbſkeje</w>
+<w lemma="RĚC_fem|RĚCYŚ|RĚCA" norm="rěcy">rėzy</w>
+<w lemma="PŚESTAJONY|PŚESTAJIŚ" norm="pśestajone">pſcheſtawjone</w>
+<w lemma="A_bed2|A_bed1" norm="a">a</w>
+<w lemma="WENDANY" norm="wendane">wendane</w> <w lemma="WÓT" norm="wót">wot</w>
+<w lemma="DOLNOŁUŽYSKI" norm="Dolnołužyskego">Dolnołužyſkego</w>
+<w lemma="WÓTRĚD" norm="wótrěda">wotrėda</w>
+<w lemma="MAŚICA" norm="Maśice">Maſchize</w>
+<w lemma="SERBSKI" norm="Serbskeje">Sserbſkeje</w><pc>.</pc>
+```.
+
