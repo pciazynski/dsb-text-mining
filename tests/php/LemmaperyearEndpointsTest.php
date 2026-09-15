@@ -37,6 +37,7 @@ final class LemmaperyearEndpointsTest extends TestCase
       ['drjewa', '|DRJEWO|', '1881', 5],
       ['drjewje', '|DRJEWO|DRJEWOWY|', '1880', 2],
       ['tej', '|TEJ|', '1881', 1],
+      ['ten', '|TEN|', '1880', 3],
       ['drjewo', '|drjewo|', '1880', 4],
       ['wóda', '|WÓDA|', '1881', 7],
     ];
@@ -51,6 +52,7 @@ final class LemmaperyearEndpointsTest extends TestCase
       '|DRJEWO|' => 13,
       '|DRJEWO|DRJEWOWY|' => 2,
       '|TEJ|' => 1,
+      '|TEN|' => 3,
       '|drjewo|' => 4,
       '|WÓDA|' => 7,
     ]);
@@ -58,6 +60,7 @@ final class LemmaperyearEndpointsTest extends TestCase
       '|DRJEWO|' => 13,
       '|DRJEWOWY|' => 2,
       '|TEJ|' => 1,
+      '|TEN|' => 3,
       '|drjewo|' => 4,
       '|WÓDA|' => 7,
     ]);
@@ -151,6 +154,18 @@ final class LemmaperyearEndpointsTest extends TestCase
       ['|DRJEWO|', '1881', 5, 'drjewa'],
       ['|DRJEWO|DRJEWOWY|', '1880', 2, 'drjewje'],
       ['|drjewo|', '1880', 4, 'drjewo'],
+    ]);
+  }
+
+  public function testRegexWithAmbigDisabledReturnsMatchingRowsForSummedTimeline(): void
+  {
+    $response = $this->server->get(
+      '/php/lemmasumperyear.php?lemma=te%28j%7Cn%29&regex=1&ambig=0&sort',
+    );
+
+    $this->assertResponse($response, [
+      ['|TEN|', '1880', 3],
+      ['|TEJ|', '1881', 1],
     ]);
   }
 

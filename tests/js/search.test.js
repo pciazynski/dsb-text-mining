@@ -837,3 +837,67 @@ describe('searchControlState', () => {
     }
   });
 });
+
+describe('ambigButtonLabel', () => {
+  it.each([
+    ['plain search', false, 'lang_searchitem'],
+    ['ambig-inclusive search', true, 'lang_ambigsearch'],
+  ])('returns the %s label', (_description, ambig, labelName) => {
+    const dom = withDom();
+    try {
+      const { ambigButtonLabel } = loadSearch();
+      const labels = loadScript('def_language.js');
+
+      expect(ambigButtonLabel(ambig)).toBe(labels[labelName]);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('applyAmbigButtonLabel', () => {
+  const HTML =
+    '<input id="ambigCheckBox" checked type="checkbox">' +
+    '<button id="ambigSearchButton">Suche inkl Ambig</button>';
+
+  it.each([
+    ['ambig-inclusive', true, 'lang_ambigsearch'],
+    ['plain', false, 'lang_searchitem'],
+  ])('shows the %s label for the checkbox state', (_description, checked, labelName) => {
+    const dom = withDom({ html: HTML });
+    try {
+      const { applyAmbigButtonLabel } = loadSearch();
+      const labels = loadScript('def_language.js');
+      dom.document.getElementById('ambigCheckBox').checked = checked;
+
+      applyAmbigButtonLabel(dom.document);
+
+      expect(dom.document.getElementById('ambigSearchButton').textContent).toBe(labels[labelName]);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('flips the button label when the checkbox is unchecked and re-checked by the user', () => {
+    const dom = withDom({ html: HTML });
+    try {
+      const { applyAmbigButtonLabel } = loadSearch();
+      const { lang_searchitem, lang_ambigsearch } = loadScript('def_language.js');
+      const checkbox = dom.document.getElementById('ambigCheckBox');
+      const button = dom.document.getElementById('ambigSearchButton');
+      checkbox.addEventListener('change', () => applyAmbigButtonLabel(dom.document));
+      applyAmbigButtonLabel(dom.document);
+      expect(button.textContent).toBe(lang_ambigsearch);
+
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+      expect(button.textContent).toBe(lang_searchitem);
+
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+      expect(button.textContent).toBe(lang_ambigsearch);
+    } finally {
+      dom.restore();
+    }
+  });
+});

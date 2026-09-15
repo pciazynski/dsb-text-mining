@@ -75,7 +75,7 @@
               }
             "
           />
-          <button onclick="updateTimeline()">
+          <button id="ambigSearchButton" onclick="updateTimeline()">
             <script>
               document.write(lang_ambigsearch);
             </script>
@@ -136,7 +136,7 @@
           </script></label
         >
         <label
-          ><input id="ambigCheckBox" checked type="checkbox" />
+          ><input id="ambigCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
           <script>
             document.write(lang_search_ambig);
           </script></label
@@ -405,7 +405,9 @@
     };
 
     var switchSearchOptions = function () {
-      applySearchControlState(document, searchOptionsFromForm(document));
+      var options = searchOptionsFromForm(document);
+      applySearchControlState(document, options);
+      applyAmbigButtonLabel(document);
       switchPrefixsearch();
     };
 

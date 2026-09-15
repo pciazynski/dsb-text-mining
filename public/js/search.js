@@ -184,6 +184,27 @@ var applySearchControlState = function (doc, options) {
   }
 };
 
+var languageLabel = function (name, fallback) {
+  return typeof globalThis !== 'undefined' && globalThis[name] ? globalThis[name] : fallback;
+};
+
+var ambigButtonLabel = function (ambig) {
+  var searchLabel = languageLabel('lang_searchitem', 'Suche');
+  var ambigLabel = languageLabel('lang_ambigsearch', 'Suche inkl Ambig');
+  return ambig ? ambigLabel : searchLabel;
+};
+
+var applyAmbigButtonLabel = function (doc) {
+  var checkbox = doc.getElementById('ambigCheckBox');
+  var button = doc.getElementById('ambigSearchButton');
+  if (!button) {
+    return;
+  }
+
+  var checked = checkbox ? checkbox.checked : true;
+  button.textContent = ambigButtonLabel(checked);
+};
+
 var restoreSearchFromLocation = function (doc, search) {
   var params = new URLSearchParams(search || '');
   if (!params.has('lemma')) {
@@ -220,6 +241,8 @@ if (typeof module !== 'undefined' && module.exports) {
     listTermsFromLocation,
     searchControlState,
     applySearchControlState,
+    ambigButtonLabel,
+    applyAmbigButtonLabel,
     restoreSearchFromLocation,
   };
 }

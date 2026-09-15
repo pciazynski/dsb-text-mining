@@ -47,6 +47,27 @@ describe('vis/bwlemma/index.html', () => {
     },
   );
 
+  it('refreshes the search button label when the ambig checkbox changes', () => {
+    const document = loadPage('vis/bwlemma/index.html');
+    const onchange = document.querySelector('#ambigCheckBox').getAttribute('onchange');
+
+    expect(onchange).toBe('switchSearchOptions()');
+  });
+
+  it('updates the search button label as part of switchSearchOptions', () => {
+    const document = loadPage('vis/bwlemma/index.html');
+    const inlineSource = [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .join('\n');
+    const switchSearchOptions = inlineSource.match(
+      /var switchSearchOptions = function \(\) \{[\s\S]*?\n    \};/,
+    )?.[0];
+
+    // Wired to a nonexistent button would silently no-op, so confirm the target actually exists.
+    expect(switchSearchOptions).toMatch(/applyAmbigButtonLabel\(document\)/);
+    expect(document.getElementById('ambigSearchButton')).not.toBeNull();
+  });
+
   it('groups alphabetical sorting with its text so both can be greyed out', () => {
     const document = loadPage('vis/bwlemma/index.html');
 

@@ -108,3 +108,8 @@ var lang_switchtokentypesum = 'Summe Token | Type';
 var lang_tokentyperatio = 'Type/Token Ratio';
 var lang_switchprintonline = 'Print | Online';
 var lang_typorec = 'Typo-Erkennung';
+
+// Test hook only. Browsers load this file via <script src>, where `module` is undefined.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { lang_searchitem, lang_ambigsearch };
+}

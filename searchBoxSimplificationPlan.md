@@ -230,10 +230,13 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 
 ### intermediate phase - fixing bugs:
 - Groß-/Kleinschreibung beachten is working reversed (maybe would be better to change in the code ci to cs - case sensitive?) - DONE
-
-- autocomplete is case sensitive after reload, and later is not, I think let's make it synced to the checkbox - DONE
-
+- vorschlage checkbox should be blocked if unavaillable - DONE
 - list makes the plot not showing ambig - DONE
+- comma problem for regexp, is semicolon safer - DONE
+- autocomplete is case sensitive after reload, and later is not, I think let's make it synced to the checkbox - DONE
+- regexp without ambig does not work - DONE
+
+- weird, less used switches to the right (case senstive, leerzeichen)
 
 - examples write dynamically
 
@@ -241,13 +244,9 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 
 - also other settings write dynamically on the plot
 
-- regexp without ambig does not work
 
-- weird, less used switches to the right (case senstive, leerzeichen)
 
-- vorschlage checkbox should be blocked if unavaillable - DONE
 
-- comma problem for regexp, is semicolon safer?
 
 ### Phase E — mirror to the other 4 vis *(depends on C + D; E1–E4 mutually parallel)*
 

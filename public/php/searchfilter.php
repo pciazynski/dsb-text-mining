@@ -133,7 +133,14 @@ function resolve_cells(\PDO $pdo, string $column, array $terms, array $options):
 
   $results = $ambig
     ? _resolve_ambiguous_cells($pdo, 'lemmafrequency', $column, $terms, $caseSensitive, $options['regex'] ?? false)
-    : _resolve_nonambiguous_cells($pdo, 'lemmanonambig', $column, $terms, $caseSensitive);
+    : _resolve_nonambiguous_cells(
+      $pdo,
+      'lemmanonambig',
+      $column,
+      $terms,
+      $caseSensitive,
+      $options['regex'] ?? false,
+    );
 
   return _apply_search_result_cap($results);
 }
@@ -145,7 +152,12 @@ function _resolve_nonambiguous_cells(
   string $column,
   array $terms,
   bool $caseSensitive,
+  bool $regex,
 ): array {
+  if ($regex) {
+    return _resolve_ambiguous_cells($pdo, $table, $column, $terms, $caseSensitive, true);
+  }
+
   $statement = $pdo->prepare(
     "SELECT $column, frequency FROM $table WHERE sortkey = :sortkey ORDER BY rowid",
   );

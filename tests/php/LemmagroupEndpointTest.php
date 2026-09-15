@@ -31,6 +31,7 @@ final class LemmagroupEndpointTest extends TestCase
     $pdo->exec('CREATE TABLE lemmanonambig (lemma TEXT, frequency INTEGER, sortkey TEXT)');
 
     $lemmaCells = [
+      '|TEN|',
       '|DRJEWO|',
       '|drjewo|',
       '|DRĚŚ|DRJEWO|',
@@ -39,6 +40,7 @@ final class LemmagroupEndpointTest extends TestCase
       '|NJEBYŚ LI|',
     ];
     $nonambiguousCells = [
+      '|TEN|',
       '|DRJEWO|',
       '|drjewo|',
       '|DRĚŚ|',
@@ -145,6 +147,16 @@ final class LemmagroupEndpointTest extends TestCase
       ]),
       $response['body'],
     );
+  }
+
+  public function testRegexWithAmbigDisabledReturnsMatchingRowsForTable(): void
+  {
+    $response = $this->server->get('/php/lemmagroup.php?lemma=te%28j%7Cn%29&regex=1&ambig=0&sort');
+
+    $this->assertSame($this->body([
+      ['|TEN|', 7],
+      ['|TEJ|', 2],
+    ]), $response['body']);
   }
 
   public function testRegexMetacharactersAreLiteralWithoutRegexFlag(): void
