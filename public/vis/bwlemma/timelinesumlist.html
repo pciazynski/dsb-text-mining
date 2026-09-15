@@ -13,7 +13,10 @@
   <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
   <script>
     diagramtitle = '';
-    var lemmalist = getQueryVariable('lemma').split(',');
+    var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
+    var searchOptions = readSearchOptions(window.location.search);
+    var lemmalist = listTermsFromLocation(window.location.search);
+    var ploturls = listPlotUrlsFromLocation('data', 'lemma', window.location.search);
     var jitter = getQueryVariable('jitter');
     if (jitter.length == 0) {
       jitter = defjitter;
@@ -21,64 +24,32 @@
       jitter = parseFloat(jitter);
     }
     diagramtitle = 'Jahressumme Lemma inkl. ambig';
-    var data = [];
-    maxval = 0;
-    minval = 10000000;
-    entrycount = 0;
+    var rawPlotData = [];
+    var maxval = 0;
+    var minval = 10000000;
+    var entrycount = 0;
 
-    for (key in lemmalist) {
-      lemma = lemmalist[key];
-      lemmacol = getColor('|' + lemma + '|');
+    lemmalist.forEach(function (lemma, index) {
+      var lemmacol = getColor('|' + lemma + '|');
       diagramtitle += ' <span style="color:' + lemmacol + '">' + lemma + '</span>';
-      var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
-      dataset = dataset.replace(
-        'lemma=' + encodeURIComponent(getQueryVariable('lemma')),
-        'lemma=' + encodeURIComponent(lemma),
-      );
-      data_arr = readPHP(dataset).split('\n');
+      var dataset = ploturls[index];
+      var data_arr = readPHP(dataset).split('\n');
       if (data_arr.length > resultsetmax) {
         document.write(lang_error_resultset_too_large);
       } else {
-        aggrodata = [];
-        for (var i = 0; i < data_arr.length; i++) {
-          if (data_arr[i].trim().length > 0) {
-            tmp = data_arr[i].split(sep);
-            if (aggrodata[tmp[1]] != undefined) {
-              aggrodata[tmp[1]] = aggrodata[tmp[1]] + parseInt(tmp[2]);
-            } else {
-              aggrodata[tmp[1]] = parseInt(tmp[2]);
-            }
-          }
-        }
-        date = [];
-        count = [];
-
-        for (key in aggrodata) {
-          date.push(key);
-          count.push(aggrodata[key]);
-          if (aggrodata[key] < minval) {
-            minval = aggrodata[key];
-          }
-          if (aggrodata[key] > maxval) {
-            maxval = aggrodata[key];
-          }
-        }
-
-        entrycount += date.length;
-        var trace = {
-          x: date,
-          y: count,
-          name: lemma,
-          mode: 'markers',
-          marker: {
-            //size:markersize(date.length),
-            opaciy: 0.2,
-            color: getColor('|' + lemma + '|'),
-          },
-        };
-        data.push(trace);
+        rawPlotData.push(data_arr.join('\n'));
       }
-    }
+    });
+
+    var data = listPlotTraces(rawPlotData.join('\n'), sep);
+    data.forEach(function (trace) {
+      trace.marker = { opaciy: 0.2, color: getColor(trace.name) };
+      entrycount += trace.x.length;
+      trace.y.forEach(function (value) {
+        minval = Math.min(minval, value);
+        maxval = Math.max(maxval, value);
+      });
+    });
 
     if (getQueryVariable('scale') === 'log') {
       minval = Math.log(1);

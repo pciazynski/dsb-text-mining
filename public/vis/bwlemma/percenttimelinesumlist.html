@@ -14,6 +14,8 @@
   <script>
     diagramtitle = '';
     var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
+    var ploturls = listPlotUrlsFromLocation('data', 'lemma', window.location.search);
+    dataset = ploturls && ploturls[0];
     var lemma = getQueryVariable('lemma');
     var exact = getQueryVariable('exact');
     var focus = getQueryVariable('focus');

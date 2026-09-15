@@ -29,6 +29,18 @@ function loadPhpUrlFromLocation() {
   return phpUrlFromLocation;
 }
 
+function loadListPlotUrlsFromLocation() {
+  const { listPlotUrlsFromLocation } = loadSearch();
+  expect(typeof listPlotUrlsFromLocation).toBe('function');
+  return listPlotUrlsFromLocation;
+}
+
+function loadListPlotTraces() {
+  const { listPlotTraces } = loadSearch();
+  expect(typeof listPlotTraces).toBe('function');
+  return listPlotTraces;
+}
+
 const BWLEMMA_SEARCH_HTML = `
   <input id="prefixsearchCheckBox" type="checkbox">
   <input id="searchinput" type="text">
@@ -470,6 +482,59 @@ describe('phpUrlFromLocation', () => {
   });
 });
 
+describe('listPlotUrlsFromLocation', () => {
+  it('requests ambiguous forms for every trimmed lemma in list mode', () => {
+    const dom = withDom();
+    try {
+      const listPlotUrlsFromLocation = loadListPlotUrlsFromLocation();
+      const search =
+        '?data=lemmasumperyear.php&lemma=drjewo%2C%20bom&cs=0&regex=0&list=1&trim=1&ambig=1&sort&focus=0';
+
+      expect(listPlotUrlsFromLocation('data', 'lemma', search)).toEqual([
+        'lemmasumperyear.php?lemma=drjewo&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
+        'lemmasumperyear.php?lemma=bom&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
+      ]);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('listPlotTraces', () => {
+  it('plots every ambiguous lemma cell returned for a list search', () => {
+    const dom = withDom();
+    try {
+      const listPlotTraces = loadListPlotTraces();
+      const rawData = [
+        '|BOM|\t1880\t3',
+        '|DRJEWO|\t1880\t8',
+        '|DRĚŚ|DRJEWO|\t1881\t2',
+        '|BOM|BOMOWY|\t1882\t4',
+        '|DRJEWO|DRJEWOWY|\t1880\t2',
+        '|DRJEWO|\t1881\t5',
+        '',
+      ].join('\n');
+
+      const traces = listPlotTraces(rawData, '\t').map(({ name, x, y, mode }) => ({
+        name,
+        x,
+        y,
+        mode,
+      }));
+
+      expect(traces).toEqual([
+        { name: '|BOM|', x: ['1880'], y: [3], mode: 'markers' },
+        { name: '|DRJEWO|', x: ['1880', '1881'], y: [8, 5], mode: 'markers' },
+        { name: '|DRĚŚ|DRJEWO|', x: ['1881'], y: [2], mode: 'markers' },
+        { name: '|BOM|BOMOWY|', x: ['1882'], y: [4], mode: 'markers' },
+        { name: '|DRJEWO|DRJEWOWY|', x: ['1880'], y: [2], mode: 'markers' },
+      ]);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
 describe('bwlemma iframe pages', () => {
   const pages = [
     'timeline.html',
@@ -501,6 +566,29 @@ describe('bwlemma iframe pages', () => {
     expect(inlineSource).toMatch(
       /\bdataset\s*=\s*phpUrlFromLocation\(\s*['"]data['"]\s*,\s*['"]lemma['"]\s*,\s*(?:window\.)?location\.search\s*\)/,
     );
+  });
+
+  it.each(['timelinesumlist.html', 'percenttimelinesumlist.html'])(
+    '%s builds each plotted series with the list search options',
+    (page) => {
+      const document = loadPage('vis/bwlemma/' + page);
+      const inlineSource = [...document.querySelectorAll('script:not([src])')]
+        .map((script) => script.textContent)
+        .join('\n');
+
+      expect(inlineSource).toMatch(
+        /listPlotUrlsFromLocation\(\s*['"]data['"]\s*,\s*['"]lemma['"]\s*,\s*(?:window\.)?location\.search\s*\)/,
+      );
+    },
+  );
+
+  it('renders the summed list plot from traces grouped by returned lemma cell', () => {
+    const document = loadPage('vis/bwlemma/timelinesumlist.html');
+    const inlineSource = [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .join('\n');
+
+    expect(inlineSource).toMatch(/\bdata\s*=\s*listPlotTraces\(\s*[^,]+\s*,\s*sep\s*\)/);
   });
 });
 

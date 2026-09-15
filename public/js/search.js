@@ -93,6 +93,57 @@ var phpUrlFromLocation = function (dataKey, termKey, search) {
   return data + '?' + query + (params.has('sort') ? '&sort' : '');
 };
 
+var listPlotUrlsFromLocation = function (dataKey, termKey, search) {
+  var params = new URLSearchParams(search || '');
+  var term = params.get(termKey);
+  if (term === null) {
+    return null;
+  }
+
+  return listTermsFromLocation(search).map(function (item) {
+    var itemSearch = new URLSearchParams(search || '');
+    itemSearch.set(termKey, item);
+    return phpUrlFromLocation(dataKey, termKey, '?' + itemSearch.toString());
+  });
+};
+
+var listPlotTraces = function (rawData, separator) {
+  var traces = [];
+  var traceByName = Object.create(null);
+  var rows = String(rawData || '').split('\n');
+
+  rows.forEach(function (row) {
+    if (row.trim() === '') {
+      return;
+    }
+
+    var cells = row.split(separator);
+    var name = cells[0];
+    var year = cells[1];
+    var count = parseInt(cells[2], 10);
+    if (!name || !year || Number.isNaN(count)) {
+      return;
+    }
+
+    var trace = traceByName[name];
+    if (!trace) {
+      trace = { x: [], y: [], name: name, mode: 'markers' };
+      traceByName[name] = trace;
+      traces.push(trace);
+    }
+
+    var yearIndex = trace.x.indexOf(year);
+    if (yearIndex === -1) {
+      trace.x.push(year);
+      trace.y.push(count);
+    } else {
+      trace.y[yearIndex] += count;
+    }
+  });
+
+  return traces;
+};
+
 var splitTerms = function (raw, opts) {
   var terms = opts.list ? raw.split(/[;,]/) : [raw];
 
@@ -103,6 +154,16 @@ var splitTerms = function (raw, opts) {
     .filter(function (term) {
       return term !== '';
     });
+};
+
+var listTermsFromLocation = function (search) {
+  var params = new URLSearchParams(search || '');
+  var term = params.get('lemma');
+  if (term === null) {
+    return [];
+  }
+
+  return splitTerms(term, readSearchOptions(search));
 };
 
 var searchControlState = function (options) {
@@ -152,7 +213,10 @@ if (typeof module !== 'undefined' && module.exports) {
     searchQueryString,
     buildVisUrls,
     phpUrlFromLocation,
+    listPlotUrlsFromLocation,
+    listPlotTraces,
     splitTerms,
+    listTermsFromLocation,
     searchControlState,
     applySearchControlState,
     restoreSearchFromLocation,
