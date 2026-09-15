@@ -231,7 +231,9 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 ### intermediate phase - fixing bugs:
 - Groß-/Kleinschreibung beachten is working reversed (maybe would be better to change in the code ci to cs - case sensitive?) - DONE
 
-- autocomplete is case sensitive after reload, and later is not, I think let's make it synced to the checkbox
+- autocomplete is case sensitive after reload, and later is not, I think let's make it synced to the checkbox - DONE
+
+- list makes the plot not showing ambig
 
 - examples write dynamically
 

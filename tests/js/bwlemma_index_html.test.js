@@ -46,6 +46,16 @@ describe('vis/bwlemma/index.html', () => {
     expect(checkbox.hasAttribute('checked')).toBe(false);
   });
 
+  it('initializes autocomplete case-insensitively when case sensitivity is unchecked', () => {
+    const document = loadPage('vis/bwlemma/index.html');
+    const initialization = [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .find((source) => source.includes("autocomplete(\n            'searchinput'"));
+
+    expect(document.querySelector('#csCheckBox').checked).toBe(false);
+    expect(initialization).toContain('&cs=0&lemma=');
+  });
+
   it('loads the existing search script after its dependencies', () => {
     const document = loadPage('vis/bwlemma/index.html');
     const sources = [...document.querySelectorAll('script[src]')].map((script) =>
