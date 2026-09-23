@@ -1,5 +1,7 @@
 {
   "chat.disableAIFeatures": false,
+  "chat.agent.thinkingStyle": "collapsedPreview",
+  "chat.agent.thinking.collapsedTools": "off",
   "chat.tools.compressOutput.enabled": true,
   "chat.tools.autoExpandFailures": true,
   "python.analysis.extraPaths": ["./etl"],
