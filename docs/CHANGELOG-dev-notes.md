@@ -1,6 +1,6 @@
 # Dev Notes (2026-09-23)
 - `searchBoxSimplificationPlan` verified
-- E0a, E0f, E0b implemented
+- Whole E0 Phase implemented
 
 # Dev Notes (2026-09-15)
 - fixed bugs from searchBoxSimplificationPlan.md
