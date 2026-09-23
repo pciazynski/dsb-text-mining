@@ -111,6 +111,25 @@ final class LemmaperyearEndpointsTest extends TestCase
   }
 
   #[DataProvider('endpoints')]
+  public function testClickedAmbiguousCellReturnsItsTimelineRows(string $endpoint, bool $summed): void
+  {
+    $pdo = FixtureDb::open($this->server->dataDir() . '/lemmamapping.db');
+    $this->insertLemmaRows($pdo, 'lemmafrequency', ['|DRĚŚ|DRJEWO|' => 3]);
+    $pdo->exec("INSERT INTO tokenlemmatypesubtypedatefrequency VALUES ('drjewo', '|DRĚŚ|DRJEWO|', '', '', '1880', 3)");
+
+    $response = $this->server->get(
+      '/php/' . $endpoint . '?lemma=' . rawurlencode('DRĚŚ|DRJEWO')
+        . '&cs=1&regex=0&list=0&trim=1&ambig=0&sort',
+    );
+
+    $this->assertResponse($response, [
+      $summed
+        ? ['|DRĚŚ|DRJEWO|', '1880', 3]
+        : ['|DRĚŚ|DRJEWO|', '1880', 3, 'drjewo'],
+    ]);
+  }
+
+  #[DataProvider('endpoints')]
   public function testCaseSensitiveEnabledReturnsOnlyExactCase(string $endpoint, bool $summed): void
   {
     $response = $this->server->get('/php/' . $endpoint . '?lemma=drjewo&cs=1');

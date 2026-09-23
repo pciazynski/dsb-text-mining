@@ -133,10 +133,13 @@ function resolve_cells(\PDO $pdo, string $column, array $terms, array $options):
   $caseSensitive = $options['cs'] ?? false;
   $ambig = $options['ambig'] ?? true;
   $regex = $options['regex'] ?? false;
-  $table = $column === 'token' ? 'tokencount' : $column . 'frequency';
-  $nonAmbiguousTable = $column === 'token' ? 'tokencount' : $column . 'nonambig';
+  [$table, $nonAmbiguousTable] = _search_tables_for_column($column);
 
   _search_truncated(false);
+
+  if (!$regex && $column !== 'token' && array_filter($terms, static fn(string $term): bool => str_contains($term, '|')) !== []) {
+    return _resolve_mixed_literal_terms($pdo, $column, $table, $nonAmbiguousTable, $terms, $caseSensitive, $ambig);
+  }
 
   $useAmbiguousCells = $column !== 'token' && $ambig;
   $results = $useAmbiguousCells
@@ -144,6 +147,65 @@ function resolve_cells(\PDO $pdo, string $column, array $terms, array $options):
     : _resolve_nonambiguous_cells($pdo, $nonAmbiguousTable, $column, $terms, $caseSensitive, $regex);
 
   return _apply_search_result_cap($results);
+}
+
+function _search_tables_for_column(string $column): array
+{
+  if ($column === 'token') {
+    return ['tokencount', 'tokencount'];
+  }
+
+  return [$column . 'frequency', $column . 'nonambig'];
+}
+
+function _resolve_mixed_literal_terms(
+  \PDO $pdo,
+  string $column,
+  string $table,
+  string $nonAmbiguousTable,
+  array $terms,
+  bool $caseSensitive,
+  bool $ambig,
+): array {
+  $explicitResults = [];
+  $partResults = [];
+
+  foreach ($terms as $term) {
+    if (str_contains($term, '|')) {
+      array_push($explicitResults, ..._resolve_explicit_cell($pdo, $table, $column, $term, $caseSensitive));
+      continue;
+    }
+
+    $matches = $ambig
+      ? _resolve_ambiguous_cells($pdo, $table, $column, [$term], $caseSensitive, false)
+      : _resolve_nonambiguous_cells($pdo, $nonAmbiguousTable, $column, [$term], $caseSensitive, false);
+    array_push($partResults, ...$matches);
+  }
+
+  return _apply_search_result_cap(array_values(array_unique([...$explicitResults, ...$partResults])));
+}
+
+function _resolve_explicit_cell(
+  \PDO $pdo,
+  string $table,
+  string $column,
+  string $term,
+  bool $caseSensitive,
+): array {
+  $cell = '|' . trim($term, '|') . '|';
+  $statement = $pdo->prepare("SELECT $column FROM $table WHERE sortkey = :sortkey ORDER BY rowid");
+  $statement->execute(['sortkey' => dsb_sortkey(trim($cell, '|'))]);
+  $matches = [];
+
+  while ($candidate = $statement->fetchColumn()) {
+    if (($caseSensitive && $candidate === $cell)
+      || (!$caseSensitive && mb_strtolower($candidate, 'UTF-8') === mb_strtolower($cell, 'UTF-8'))
+    ) {
+      $matches[] = $candidate;
+    }
+  }
+
+  return $matches;
 }
 
 /** One row per distinct part, so an indexed sortkey seek finds every candidate for a term. */

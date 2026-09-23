@@ -97,6 +97,23 @@ final class LemmagroupEndpointTest extends TestCase
     ]), $response['body']);
   }
 
+  public function testClickedAmbiguousCellReturnsItsGroupRow(): void
+  {
+    $response = $this->server->get(
+      '/php/lemmagroup.php?lemma=' . rawurlencode('DRĚŚ|DRJEWO')
+        . '&cs=1&regex=0&list=0&trim=1&ambig=0&sort',
+    );
+
+    $this->assertSame(200, $response['status']);
+    $this->assertSame($this->body([
+      ['|DRĚŚ|DRJEWO|', 4],
+    ]), $response['body']);
+    $this->assertMatchesRegularExpression(
+      '/^Content-Type:\s*text\/plain/im',
+      implode(PHP_EOL, $response['headers']),
+    );
+  }
+
   public function testCaseSensitiveEnabledReturnsOnlyLowercaseCell(): void
   {
     $response = $this->server->get('/php/lemmagroup.php?lemma=drjewo&cs=1');

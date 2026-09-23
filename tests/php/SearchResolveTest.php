@@ -6,6 +6,7 @@ namespace DsbTests;
 
 use DsbTests\Support\FixtureDb;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[CoversNothing]
@@ -29,6 +30,7 @@ final class SearchResolveTest extends TestCase
     $this->pdo->exec('CREATE TABLE lemmanonambig (lemma TEXT, frequency INTEGER, sortkey TEXT)');
     $this->pdo->exec('CREATE INDEX lemmanonambigsortkey ON lemmanonambig(sortkey)');
     $this->pdo->exec('CREATE TABLE lemmafrequency (lemma TEXT, frequency INTEGER, sortkey TEXT)');
+    $this->pdo->exec('CREATE INDEX lemmafrequencysortkeyindex ON lemmafrequency(sortkey)');
 
     $this->insertRows('lemmanonambig', [
       '|DRJEWO|',
@@ -53,6 +55,7 @@ final class SearchResolveTest extends TestCase
     $this->pdo->exec('CREATE TABLE normnonambig (norm TEXT, frequency INTEGER, sortkey TEXT)');
     $this->pdo->exec('CREATE INDEX normnonambigsortkey ON normnonambig(sortkey)');
     $this->pdo->exec('CREATE TABLE normfrequency (norm TEXT, frequency INTEGER, sortkey TEXT)');
+    $this->pdo->exec('CREATE INDEX normfrequencysortkeyindex ON normfrequency(sortkey)');
 
     $this->insertRows('normnonambig', [
       '|Drjewka|',
@@ -124,6 +127,140 @@ final class SearchResolveTest extends TestCase
       ['|DRĚŚ|DRJEWO|'],
       $this->resolve(['drěś'], ['cs' => false, 'ambig' => true, 'regex' => false]),
     );
+  }
+
+  public static function wholeCellFixtures(): array
+  {
+    return [
+      'lemma' => [
+        'lemma',
+        'DRĚŚ|DRJEWO',
+        'drěś|drjewo',
+        '|DRĚŚ|DRJEWO|',
+        '|DRJEWO|',
+        'DRJEWO|DRĚŚ',
+        'drjewo;DRĚŚ|DRJEWO',
+        '|drjewo|',
+        ['|DRĚŚ|', '|DRJEWO|'],
+      ],
+      'norm' => [
+        'norm',
+        'Drjewka|drjewka',
+        'drjewka|drjewka',
+        '|Drjewka|drjewka|',
+        '|drjewa|',
+        'drjewka|Drjewka',
+        'drjewka;Drjewka|drjewka',
+        '|drjewka|',
+        ['|Drjewka|', '|drjewka|'],
+      ],
+    ];
+  }
+
+  #[DataProvider('wholeCellFixtures')]
+  public function testLiteralWholeCellIgnoresAmbigAndMatchesCase(
+    string $column,
+    string $cellTerm,
+    string $lowercaseTerm,
+    string $cell,
+    string $singleCell,
+    string $reversedTerm,
+    string $list,
+    string $partCell,
+    array $regexParts,
+  ): void {
+    foreach ([true, false] as $ambig) {
+      $this->assertSame([$cell], resolve_cells(
+        $this->pdo,
+        $column,
+        [$cellTerm],
+        ['cs' => true, 'ambig' => $ambig, 'regex' => false]
+      ));
+    }
+
+    foreach ([true, false] as $ambig) {
+      $this->assertSame([$cell], resolve_cells(
+        $this->pdo,
+        $column,
+        [$lowercaseTerm],
+        ['cs' => false, 'ambig' => $ambig, 'regex' => false]
+      ));
+    }
+    $this->assertSame([], resolve_cells(
+      $this->pdo,
+      $column,
+      [$lowercaseTerm],
+      ['cs' => true, 'ambig' => false, 'regex' => false]
+    ));
+    $this->assertSame([], resolve_cells(
+      $this->pdo,
+      $column,
+      [$reversedTerm],
+      ['cs' => true, 'ambig' => false, 'regex' => false]
+    ));
+  }
+
+  #[DataProvider('wholeCellFixtures')]
+  public function testLiteralPipedTermWithOuterPipesMatchesSingleCell(
+    string $column,
+    string $cellTerm,
+    string $lowercaseTerm,
+    string $cell,
+    string $singleCell,
+  ): void {
+    $this->assertSame([$singleCell], resolve_cells(
+      $this->pdo,
+      $column,
+      [$singleCell],
+      ['cs' => true, 'ambig' => false, 'regex' => false]
+    ));
+  }
+
+  #[DataProvider('wholeCellFixtures')]
+  public function testLiteralListCombinesWholeCellAndPart(
+    string $column,
+    string $cellTerm,
+    string $lowercaseTerm,
+    string $cell,
+    string $singleCell,
+    string $reversedTerm,
+    string $list,
+    string $partCell,
+  ): void {
+    $this->assertSame(
+      [$cell, $partCell],
+      resolve_request_cells($this->pdo, $column, [
+        $column => $list,
+        'list' => '1',
+        'trim' => '1',
+        'cs' => '1',
+        'ambig' => '0',
+        'regex' => '0'
+      ])
+    );
+  }
+
+  #[DataProvider('wholeCellFixtures')]
+  public function testRegexPipeRemainsAlternationBetweenParts(
+    string $column,
+    string $cellTerm,
+    string $lowercaseTerm,
+    string $cell,
+    string $singleCell,
+    string $reversedTerm,
+    string $list,
+    string $partCell,
+    array $regexParts,
+  ): void {
+    $results = resolve_cells(
+      $this->pdo,
+      $column,
+      [$cellTerm],
+      ['cs' => true, 'ambig' => false, 'regex' => true]
+    );
+
+    $this->assertEqualsCanonicalizing($regexParts, $results);
+    $this->assertNotContains($cell, $results);
   }
 
   public function testResolveCellsRespectsPipeBoundaries(): void
@@ -298,6 +435,24 @@ final class SearchResolveTest extends TestCase
 
     $this->assertStringContainsString('SEARCH', $plan);
     $this->assertStringContainsString('USING INDEX', $plan);
+    $this->assertStringNotContainsString('SCAN', $plan);
+  }
+
+  #[DataProvider('wholeCellFixtures')]
+  public function testCaseInsensitiveWholeCellLookupUsesFrequencySortkeyIndex(
+    string $column,
+    string $cellTerm,
+    string $lowercaseTerm,
+  ): void {
+    $statement = $this->pdo->prepare(
+      "EXPLAIN QUERY PLAN SELECT {$column} FROM {$column}frequency WHERE sortkey = :sortkey",
+    );
+    $statement->execute(['sortkey' => dsb_sortkey($lowercaseTerm)]);
+    $plan = implode("\n", $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
+
+    $this->assertStringContainsString('SEARCH', $plan);
+    $this->assertStringContainsString('USING INDEX', $plan);
+    $this->assertStringContainsString($column . 'frequencysortkeyindex', $plan);
     $this->assertStringNotContainsString('SCAN', $plan);
   }
 
