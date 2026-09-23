@@ -475,15 +475,13 @@
       var yearfrom = document.getElementById('yearminslider').value;
       var yearto = document.getElementById('yearmaxslider').value;
       var query = searchQueryString('lemma', exactitem, exactOptions);
-      // CEILING: lemmatokenperyear.php still takes a raw SQL year clause while urnbylemma.php
-      // takes a `from-to` range; upgrade: give lemmatokenperyear.php the same year whitelist.
       setSrc(
         'traviz',
         'traviz.html?data=lemmatokenperyear.php&' +
           query +
-          '&exact=1&sort&year=BETWEEN ' +
+          '&exact=1&sort&year=' +
           yearfrom +
-          ' AND ' +
+          '-' +
           yearto,
       );
       setSrc(

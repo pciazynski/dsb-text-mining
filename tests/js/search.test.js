@@ -892,6 +892,77 @@ describe('listPlotTraces', () => {
   });
 });
 
+describe('token-per-year Traviz URLs', () => {
+  function openPage(kind) {
+    const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis', kind, 'index.html'), 'utf8');
+    const dom = new JSDOM(html, {
+      runScripts: 'outside-only',
+      url: 'https://example.test/vis/' + kind + '/index.html',
+    });
+
+    for (const script of dom.window.document.querySelectorAll('script[src]')) {
+      const file = path.join(PUBLIC_DIR, 'vis', kind, script.getAttribute('src'));
+      dom.window.eval(fs.readFileSync(file, 'utf8'));
+    }
+    const inlineScripts = dom.window.document.querySelectorAll('script:not([src])');
+    dom.window.eval(inlineScripts[inlineScripts.length - 2].textContent);
+
+    for (const id of ['yearminslider', 'yearmaxslider']) {
+      const slider = dom.window.document.getElementById(id);
+      slider.min = '1800';
+      slider.max = '1900';
+    }
+    return dom;
+  }
+
+  it.each([
+    ['bwlemma', 'lemma', 'lemmatokenperyear.php'],
+    ['bwnorm', 'norm', 'normtokenperyear.php'],
+  ])('%s sends a year range when a term is selected', (kind, termKey, endpoint) => {
+    const dom = openPage(kind);
+    try {
+      const from = dom.window.document.getElementById('yearminslider');
+      const to = dom.window.document.getElementById('yearmaxslider');
+      from.value = '1870';
+      to.value = '1880';
+
+      dom.window.itemClick('DRJEWO');
+
+      const selected = new URL(dom.window.document.getElementById('traviz').src);
+      expect(selected.searchParams.get('data')).toBe(endpoint);
+      expect(selected.searchParams.get(termKey)).toBe('DRJEWO');
+      expect(selected.searchParams.get('year')).toBe('1870-1880');
+    } finally {
+      dom.window.close();
+    }
+  });
+
+  it.each([
+    ['bwlemma', 'lemma', 'lemmatokenperyear.php'],
+    ['bwnorm', 'norm', 'normtokenperyear.php'],
+  ])('%s sends the new year range after a slider change', (kind, termKey, endpoint) => {
+    const dom = openPage(kind);
+    try {
+      const from = dom.window.document.getElementById('yearminslider');
+      const to = dom.window.document.getElementById('yearmaxslider');
+      from.value = '1870';
+      to.value = '1880';
+      dom.window.itemClick('DRJEWO');
+
+      from.value = '1871';
+      to.value = '1879';
+      dom.window.updateTravizYear();
+
+      const updated = new URL(dom.window.document.getElementById('traviz').src);
+      expect(updated.searchParams.get('data')).toBe(endpoint);
+      expect(updated.searchParams.get(termKey)).toBe('DRJEWO');
+      expect(updated.searchParams.get('year')).toBe('1871-1879');
+    } finally {
+      dom.window.close();
+    }
+  });
+});
+
 describe('bwlemma iframe pages', () => {
   const pages = [
     'timeline.html',

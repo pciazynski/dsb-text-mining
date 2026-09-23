@@ -324,7 +324,7 @@ Verified state as of 2026-09-23; each fact below is noted as "Important info" on
 >
 >   Endpoints do `$year = year_clause($_GET['year'] ?? null); if ($year === null) { exit; }` and append `' AND ' . $year['sql']`. It is reused by E0e and E1.
 
-#### E0e — per-year token endpoints and `token2norm.php` *(depends on E0d's `year_clause`)*
+#### E0e — per-year token endpoints and `token2norm.php` *(depends on E0d's `year_clause`)* - DONE
 > **Important info:** `lemmatokenperyear.php`/`normtokenperyear.php` concatenate `year=BETWEEN x AND y` into SQL today (injection via URL). `token2norm.php` concatenates `token`.
 > **TDD Red.** Create `tests/php/TokenperyearEndpointsTest.php` for `lemmatokenperyear.php` (seeds `lemmamapping.db`) and `normtokenperyear.php` (seeds `normmapping.db` — two databases in one `dataDir()`):
 > - `year=1870-1880` restricts to the range, `year=1870` to one year; `year=` + urlencoded `BETWEEN 1 AND 2 OR 1=1` and `> 0 OR 1=1 --` return an empty body. **Missing `year` now returns the unfiltered rows** (today the endpoint requires it — deliberate change per E0d's table).
