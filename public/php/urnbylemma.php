@@ -1,14 +1,80 @@
 <?php
 header('Content-Type: text/plain');
 
+require_once __DIR__ . '/searchfilter.php';
+
+function literal_lemma_matches(string $lemmaCell, string $searchLemma, bool $caseSensitive): bool
+{
+	if (str_contains($searchLemma, '|')) {
+		$candidate = '|' . trim($lemmaCell, '|') . '|';
+		$target = '|' . trim($searchLemma, '|') . '|';
+		return $caseSensitive
+			? $candidate === $target
+			: mb_strtolower($candidate, 'UTF-8') === mb_strtolower($target, 'UTF-8');
+	}
+
+	foreach (explode('|', $lemmaCell) as $lemma) {
+		if ($lemma === '') {
+			continue;
+		}
+
+		$match = $caseSensitive
+			? $searchLemma === $lemma
+			: mb_strtoupper($searchLemma, 'UTF-8') === mb_strtoupper($lemma, 'UTF-8');
+		if ($match) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function exact_cell_lemma_match(string $lemmaCell, string $searchLemma, bool $caseSensitive): bool
+{
+	if (!str_contains($searchLemma, '|')) {
+		return false;
+	}
+
+	$candidate = '|' . trim($lemmaCell, '|') . '|';
+	$target = '|' . trim($searchLemma, '|') . '|';
+	return $caseSensitive
+		? $candidate === $target
+		: mb_strtolower($candidate, 'UTF-8') === mb_strtolower($target, 'UTF-8');
+}
+
+function regex_lemma_matches(string $lemmaCell, string $searchLemma, bool $caseSensitive): bool
+{
+	$pattern = compile_term_pattern($searchLemma, ['regex' => true, 'cs' => $caseSensitive]);
+	if ($pattern === null) {
+		return false;
+	}
+
+	foreach (explode('|', $lemmaCell) as $lemma) {
+		if ($lemma !== '' && preg_match($pattern, $lemma) === 1) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 if (isset($_GET['lemma'])) {
 	$PDO = new PDO('sqlite:../data/lemmamapping.db');
+	$options = search_options($_GET);
+	$lemmas = split_terms((string) ($_GET['lemma'] ?? ''), $options);
 
-	$includeAmbiguous = !isset($_GET['ambig']) || intval($_GET['ambig']) !== 0;
-	$caseSensitive = isset($_GET['cs']) && intval($_GET['cs']) === 1;
-	$useRegex = isset($_GET['regex']) && intval($_GET['regex']) === 1;
+	if ($lemmas === []) {
+		exit;
+	}
 
-	if (isset($_GET['year']) && !preg_match('/^[0-9\s\-]*$/', $_GET['year'])) {
+	$includeAmbiguous = $options['ambig'];
+	$caseSensitive = $options['cs'];
+	$useRegex = $options['regex'];
+
+	$yearClause = array_key_exists('year', $_GET)
+		? year_clause((string) $_GET['year'])
+		: null;
+	if ($yearClause === null && array_key_exists('year', $_GET)) {
 		return;
 	}
 
@@ -21,24 +87,11 @@ if (isset($_GET['lemma'])) {
 		}
 	}
 
-	if (isset($_GET['list']) && intval($_GET['list']) === 1) {
-		$lemmas = preg_split('/[\s,]+/', $_GET['lemma'], -1, PREG_SPLIT_NO_EMPTY);
-	} else {
-		$lemmas = [$_GET['lemma']];
-	}
-
 	$query = 'SELECT urn, date, lemmabag FROM urndatelemmabag WHERE 1=1';
 	$params = [];
-
-	if (isset($_GET['year'])) {
-		$yearParts = explode('-', trim($_GET['year']));
-		if (count($yearParts) === 2) {
-			$query .= ' AND date BETWEEN ? AND ?';
-			$params = array_map('trim', $yearParts);
-		} else {
-			$query .= ' AND date = ?';
-			$params[] = $_GET['year'];
-		}
+	if ($yearClause !== null) {
+		$query .= ' AND ' . $yearClause['sql'];
+		$params = $yearClause['params'];
 	}
 
 	if (isset($_GET['sort'])) {
@@ -53,22 +106,19 @@ if (isset($_GET['lemma'])) {
 		$stmt->execute($params);
 		foreach ($stmt as $row) {
 			$matches = false;
-			foreach (explode('||', trim($row['lemmabag'], '|')) as $lemmaCell) {
-				foreach (explode('|', $lemmaCell) as $lemma) {
-					foreach ($lemmas as $searchLemma) {
-						if ($useRegex) {
-							$modifiers = $caseSensitive ? '' : 'i';
-							$match = preg_match('/' . $searchLemma . '/' . $modifiers, $lemma) === 1;
-						} else {
-							$match = $caseSensitive
-								? $searchLemma === $lemma
-								: strtoupper($searchLemma) === strtoupper($lemma);
-						}
+			foreach (array_filter(explode('||', trim($row['lemmabag'], '|')), static fn(string $lemmaCell): bool => $lemmaCell !== '') as $lemmaCell) {
+				foreach ($lemmas as $searchLemma) {
+					if ($useRegex) {
+						$match = regex_lemma_matches($lemmaCell, $searchLemma, $caseSensitive);
+						$allowed = $match && ($includeAmbiguous || isset($nonAmbigLemmas['|' . trim($lemmaCell, '|') . '|']));
+					} else {
+						$match = literal_lemma_matches($lemmaCell, $searchLemma, $caseSensitive);
+						$allowed = $match && ($includeAmbiguous || isset($nonAmbigLemmas['|' . trim($lemmaCell, '|') . '|']) || exact_cell_lemma_match($lemmaCell, $searchLemma, $caseSensitive));
+					}
 
-						if ($match && ($includeAmbiguous || isset($nonAmbigLemmas['|' . $lemmaCell . '|']))) {
-							$matches = true;
-							break 3;
-						}
+					if ($allowed) {
+						$matches = true;
+						break 2;
 					}
 				}
 			}

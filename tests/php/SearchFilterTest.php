@@ -254,6 +254,33 @@ final class SearchFilterTest extends TestCase
     $this->assertNull(compile_term_pattern('TE(J|N)', ['regex' => false, 'cs' => false]));
   }
 
+  public static function yearClauses(): array
+  {
+    return [
+      'absent parameter' => [null, ['sql' => '1=1', 'params' => []]],
+      'empty parameter' => ['', ['sql' => '1=1', 'params' => []]],
+      'whitespace parameter' => ['   ', ['sql' => '1=1', 'params' => []]],
+      'exact year' => ['1870', ['sql' => 'date = ?', 'params' => ['1870']]],
+      'year range' => ['1870-1880', ['sql' => 'date BETWEEN ? AND ?', 'params' => ['1870', '1880']]],
+      'spaced year range' => [' 1870 - 1880 ', ['sql' => 'date BETWEEN ? AND ?', 'params' => ['1870', '1880']]],
+      'SQL injection' => ['> 0 OR 1=1 --', null],
+      'SQL expression' => ['BETWEEN 1 AND 2', null],
+      'range without end' => ['1870-', null],
+      'range without start' => ['-1880', null],
+      'three-part range' => ['1870-1880-1890', null],
+      'non-year text' => ['abcd', null],
+    ];
+  }
+
+  public function testYearClauseParsesOnlyExactYearsAndRanges(): void
+  {
+    $this->assertTrue(function_exists('year_clause'), 'year_clause() must be defined');
+
+    foreach (self::yearClauses() as [$input, $expected]) {
+      $this->assertSame($expected, year_clause($input));
+    }
+  }
+
   public function testInClauseThreeCellsReturnsPlaceholdersAndOrderedParams(): void
   {
     $this->assertSame(

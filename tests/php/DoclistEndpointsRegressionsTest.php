@@ -57,15 +57,35 @@ final class DoclistEndpointsRegressionsTest extends TestCase
     ]));
   }
 
+  public function testUrnByLemmaBwlemmaExactCellRequestReturnsMatchingDocuments(): void
+  {
+    $response = $this->server->get(
+      '/php/urnbylemma.php?lemma=drjewo&cs=1&regex=0&list=0&trim=1&ambig=0&year=1870-1880',
+    );
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1880', '1880'],
+    ]));
+  }
+
   public function testUrnByLemmaListReturnsDocumentsForEveryTerm(): void
   {
-    $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo%2C%20tej&list=1&sort');
+    $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo%3Btej&list=1&sort');
 
     $this->assertTextResponse($response, $this->urnBody([
       ['urn:doc:1870', '1870'],
       ['urn:doc:1875', '1875'],
       ['urn:doc:1880', '1880'],
       ['urn:doc:1890', '1890'],
+    ]));
+  }
+
+  public function testUrnByLemmaListPreservesInternalSpaces(): void
+  {
+    $response = $this->server->get('/php/urnbylemma.php?lemma=NJEBY%C5%9A%20LI&list=1&cs=1&sort');
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1910', '1910'],
     ]));
   }
 
@@ -78,6 +98,33 @@ final class DoclistEndpointsRegressionsTest extends TestCase
       ['urn:doc:1875', '1875'],
       ['urn:doc:1880', '1880'],
       ['urn:doc:1900', '1900'],
+    ]));
+  }
+
+  public function testUrnByLemmaRegexIsFullyAnchored(): void
+  {
+    $response = $this->server->get('/php/urnbylemma.php?lemma=DR&regex=1');
+
+    $this->assertTextResponse($response, '');
+  }
+
+  public function testUrnByLemmaInvalidRegexesReturnEmptyBody(): void
+  {
+    foreach (['a/i', '('] as $term) {
+      $response = $this->server->get('/php/urnbylemma.php?lemma=' . urlencode($term) . '&regex=1');
+
+      $this->assertTextResponse($response, '');
+    }
+  }
+
+  public function testUrnByLemmaWholeCellTermDoesNotMatchItsIndividualParts(): void
+  {
+    $response = $this->server->get(
+      '/php/urnbylemma.php?lemma=DR%C4%9A%C5%9A%7CDRJEWO&cs=1&regex=0&ambig=0&sort',
+    );
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1875', '1875'],
     ]));
   }
 
@@ -175,6 +222,7 @@ final class DoclistEndpointsRegressionsTest extends TestCase
       '|DRĚŚ|',
       '|TEJ|',
       '|DRJEWOWY|',
+      '|NJEBYŚ LI|',
     ]);
 
     $statement = $pdo->prepare('INSERT INTO urndatelemmabag VALUES (?, ?, ?)');
@@ -185,6 +233,7 @@ final class DoclistEndpointsRegressionsTest extends TestCase
         ['urn:doc:1880', '1880', '|OTHER||drjewo||MORE|'],
         ['urn:doc:1890', '1890', '|OTHER||TEJ||MORE|'],
         ['urn:doc:1900', '1900', '|OTHER||DRJEWOWY||MORE|'],
+        ['urn:doc:1910', '1910', '|OTHER||NJEBYŚ LI||MORE|'],
       ] as $row
     ) {
       $statement->execute($row);

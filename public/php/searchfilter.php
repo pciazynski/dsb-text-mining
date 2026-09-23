@@ -111,6 +111,35 @@ function compile_term_pattern(string $term, array $opts): ?string
   return @preg_match($pattern, '') === false ? null : $pattern;
 }
 
+function year_clause(?string $value): ?array
+{
+  if ($value === null) {
+    return ['sql' => '1=1', 'params' => []];
+  }
+
+  $value = trim($value);
+  if ($value === '') {
+    return ['sql' => '1=1', 'params' => []];
+  }
+
+  if (preg_match('/^\d{4}$/', $value) === 1) {
+    return ['sql' => 'date = ?', 'params' => [$value]];
+  }
+
+  if (preg_match('/^(\d{4})\s*-\s*(\d{4})$/', $value, $matches) === 1) {
+    $start = (int) $matches[1];
+    $end = (int) $matches[2];
+
+    if ($start > $end) {
+      return null;
+    }
+
+    return ['sql' => 'date BETWEEN ? AND ?', 'params' => [$matches[1], $matches[2]]];
+  }
+
+  return null;
+}
+
 /** Whole request path: read the flags, split the term(s) of the $column param, resolve them to cells. */
 function resolve_request_cells(\PDO $pdo, string $column, array $get): array
 {

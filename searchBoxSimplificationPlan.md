@@ -300,7 +300,7 @@ Verified state as of 2026-09-23; each fact below is noted as "Important info" on
 >
 >   The existing lemma-list assertions (`drjewo, bom`) change to `drjewo; bom` — update them. Pass `kind` through `applySearchExample(doc, kind)` and its page callers (`switchSearchOptions()`, `restoreSearchFromLocation()`), so the displayed example actually changes.
 
-#### E0d — `urnbylemma.php` hardening, reusable for `urnbynorm.php` *(depends on E0a, E0f)*
+#### E0d — `urnbylemma.php` hardening, reusable for `urnbynorm.php` *(depends on E0a, E0f)* - DONE
 > **Important info:** `urnbylemma.php` does not use `searchfilter.php` today: its regex is `'/'.$term.'/'` (unanchored, delimiter injection) and lists split on whitespace/comma. The bwlemma UI only calls it with one exact cell + `cs=1&regex=0&list=0&ambig=0`, so this is only reachable by crafted URL.
 > **TDD Red.** In `tests/php/DoclistEndpointsRegressionsTest.php`:
 > - The exact call bwlemma sends (`?lemma=<cell>&cs=1&regex=0&list=0&trim=1&ambig=0&year=1870-1880`) returns the expected matching document rows — pin that final behavior, not byte-for-byte compatibility with the old implementation.
