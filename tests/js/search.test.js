@@ -45,7 +45,7 @@ function loadListPlotTraces() {
   return listPlotTraces;
 }
 
-function runBwlemmaPlotPage(page, search, phpResponses) {
+function runBwlemmaPlotPage(page, search, phpResponses, truncated = false) {
   const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis', 'bwlemma', page), 'utf8');
   const dom = new JSDOM(html, {
     runScripts: 'outside-only',
@@ -58,6 +58,7 @@ function runBwlemmaPlotPage(page, search, phpResponses) {
     (script) => script.textContent,
   );
   const plotCalls = [];
+  const treeCalls = [];
 
   dom.window.Plotly = {
     Icons: { camera: {} },
@@ -67,15 +68,27 @@ function runBwlemmaPlotPage(page, search, phpResponses) {
       return dom.window.document.getElementById('myDiv');
     },
   };
+  dom.window.TRAViz = class {
+    align() {}
+    visualize() {
+      treeCalls.push(true);
+    }
+  };
+
+  dom.window.eval(fs.readFileSync(path.join(PUBLIC_DIR, 'js', 'datahandler.js'), 'utf8'));
 
   externalScripts
-    .filter((source) => source.startsWith('../../js/'))
+    .filter((source) => source.startsWith('../../js/') && source !== '../../js/datahandler.js')
     .forEach((source) => {
       const scriptPath = path.join(PUBLIC_DIR, 'js', path.basename(source));
       dom.window.eval(fs.readFileSync(scriptPath, 'utf8'));
     });
 
   dom.window.readPHP = (url) => {
+    if (truncated) {
+      dom.window.rawFile = { getResponseHeader: () => '1' };
+      return '|DRJEWO|\t1880\t3\n';
+    }
     expect(Object.prototype.hasOwnProperty.call(phpResponses, url)).toBe(true);
     return phpResponses[url];
   };
@@ -84,7 +97,9 @@ function runBwlemmaPlotPage(page, search, phpResponses) {
 
   return {
     close: () => dom.window.close(),
+    document: dom.window.document,
     plotCalls,
+    treeCalls,
   };
 }
 
@@ -98,6 +113,111 @@ const BWLEMMA_SEARCH_HTML = `
   <input id="ambigCheckBox" checked type="checkbox">
   <span id="searchexample"></span>
 `;
+
+describe('showTruncationNotice', () => {
+  it('prepends one text-only notice and does not duplicate it', () => {
+    const dom = withDom({ html: '<body><div id="chart"></div></body>' });
+    const previousMessage = globalThis.lang_error_resultset_too_large;
+    globalThis.lang_error_resultset_too_large = '<strong>translated notice</strong>';
+    try {
+      const { showTruncationNotice } = loadSearch();
+      expect(typeof showTruncationNotice).toBe('function');
+      const xhr = { getResponseHeader: () => '1' };
+
+      expect(showTruncationNotice(dom.document, xhr)).toBe(true);
+      expect(showTruncationNotice(dom.document, xhr)).toBe(true);
+      expect(dom.document.querySelectorAll('body > *')).toHaveLength(2);
+      expect(dom.document.body.firstElementChild.textContent).toBe(
+        globalThis.lang_error_resultset_too_large,
+      );
+      expect(dom.document.body.firstElementChild.querySelector('strong')).toBeNull();
+      expect(dom.document.body.lastElementChild.id).toBe('chart');
+    } finally {
+      if (previousMessage === undefined) {
+        delete globalThis.lang_error_resultset_too_large;
+      } else {
+        globalThis.lang_error_resultset_too_large = previousMessage;
+      }
+      dom.restore();
+    }
+  });
+
+  it.each([null, '0'])('adds nothing when the header is %s', (header) => {
+    const dom = withDom();
+    try {
+      const { showTruncationNotice } = loadSearch();
+      expect(typeof showTruncationNotice).toBe('function');
+
+      expect(showTruncationNotice(dom.document, { getResponseHeader: () => header })).toBe(false);
+      expect(dom.document.querySelectorAll('body > *')).toHaveLength(0);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('readPHPChecked', () => {
+  it('returns the body when the response was not truncated', () => {
+    const dom = withDom();
+    const previousReadPHP = globalThis.readPHP;
+    const previousRawFile = globalThis.rawFile;
+    try {
+      const { readPHPChecked } = loadSearch();
+      expect(typeof readPHPChecked).toBe('function');
+      globalThis.readPHP = (url) => {
+        expect(url).toBe('lemmasumperyear.php?lemma=DRJEWO');
+        globalThis.rawFile = { getResponseHeader: () => null };
+        return '|DRJEWO|\t1880\t3\n';
+      };
+
+      expect(readPHPChecked(dom.document, 'lemmasumperyear.php?lemma=DRJEWO')).toBe(
+        '|DRJEWO|\t1880\t3\n',
+      );
+      expect(dom.document.querySelectorAll('body > *')).toHaveLength(0);
+    } finally {
+      if (previousReadPHP === undefined) delete globalThis.readPHP;
+      else globalThis.readPHP = previousReadPHP;
+      if (previousRawFile === undefined) delete globalThis.rawFile;
+      else globalThis.rawFile = previousRawFile;
+      dom.restore();
+    }
+  });
+
+  it('returns null and shows a notice when the response was truncated', () => {
+    const dom = withDom();
+    const previousReadPHP = globalThis.readPHP;
+    const previousRawFile = globalThis.rawFile;
+    const previousMessage = globalThis.lang_error_resultset_too_large;
+    const languageSource = fs.readFileSync(path.join(PUBLIC_DIR, 'js', 'def_language.js'), 'utf8');
+    globalThis.lang_error_resultset_too_large = new Function(
+      'document',
+      languageSource + '\nreturn lang_error_resultset_too_large;',
+    )(dom.document);
+    try {
+      const { readPHPChecked } = loadSearch();
+      expect(typeof readPHPChecked).toBe('function');
+      globalThis.readPHP = (url) => {
+        expect(url).toBe('lemmasumperyear.php?lemma=DRJEWO');
+        globalThis.rawFile = { getResponseHeader: () => '1' };
+        return '|DRJEWO|\t1880\t3\n';
+      };
+
+      expect(readPHPChecked(dom.document, 'lemmasumperyear.php?lemma=DRJEWO')).toBeNull();
+      expect(dom.document.querySelectorAll('body > *')).toHaveLength(1);
+      expect(dom.document.body.firstElementChild.textContent).toBe(
+        globalThis.lang_error_resultset_too_large,
+      );
+    } finally {
+      if (previousReadPHP === undefined) delete globalThis.readPHP;
+      else globalThis.readPHP = previousReadPHP;
+      if (previousRawFile === undefined) delete globalThis.rawFile;
+      else globalThis.rawFile = previousRawFile;
+      if (previousMessage === undefined) delete globalThis.lang_error_resultset_too_large;
+      else globalThis.lang_error_resultset_too_large = previousMessage;
+      dom.restore();
+    }
+  });
+});
 
 describe('readSearchOptions', () => {
   it('returns the search defaults', () => {
@@ -646,6 +766,38 @@ describe('bwlemma iframe pages', () => {
     'traviz.html',
     'doclist.html',
   ];
+
+  const resolverPages = pages.filter((page) => page !== 'doclist.html');
+
+  it.each(resolverPages)('%s routes every synchronous fetch through readPHPChecked', (page) => {
+    const document = loadPage('vis/bwlemma/' + page);
+    const inlineSource = [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .join('\n');
+
+    expect(inlineSource).toMatch(/\breadPHPChecked\(/);
+    expect(inlineSource).not.toMatch(/\breadPHP\(/);
+  });
+
+  it.each(resolverPages)('%s renders no data when its response was truncated', (page) => {
+    let view;
+    try {
+      expect(() => {
+        view = runBwlemmaPlotPage(
+          page,
+          '?data=lemmasumperyear.php&lemma=DRJEWO&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
+          {},
+          true,
+        );
+      }).not.toThrow();
+      expect(view.plotCalls).toHaveLength(0);
+      expect(view.treeCalls).toHaveLength(0);
+      expect(view.document.querySelectorAll('table')).toHaveLength(0);
+      expect(view.document.getElementById('containerDiv')?.children.length || 0).toBe(0);
+    } finally {
+      view?.close();
+    }
+  });
 
   it.each(pages)('%s loads js/search.js', (page) => {
     const document = loadPage('vis/bwlemma/' + page);

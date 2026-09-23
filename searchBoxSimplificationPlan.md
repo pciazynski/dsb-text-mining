@@ -270,7 +270,7 @@ Verified state as of 2026-09-23; each fact below is noted as "Important info" on
 > Then pin the endpoint: in `tests/php/LemmagroupEndpointTest.php` and `LemmaperyearEndpointsTest.php`, the exact call bwlemma's `itemClick()` sends — `?lemma=DRĚŚ|DRJEWO&cs=1&regex=0&list=0&trim=1&ambig=0&sort` — returns that cell's rows (non-empty body). Tokens never contain `|`, so no token case.
 > Implementation hint: `_resolve_nonambiguous_cells()` already does sortkey seek + optional `cs` filter against a table parameter. For a term containing `|` (after trimming outer pipes), call it against the **cell table** (`lemmafrequency`/`normfrequency`) instead of the part table; `trim($cell,'|') === $term` is then the whole-cell comparison. Split terms into "whole-cell" and "part" groups first, resolve each, concatenate.
 
-#### E0b — truncation signal *(parallel with E0a)*
+#### E0b — truncation signal *(parallel with E0a)* - DONE
 > **Important info:** `X-Dsb-Result-Truncated` is not emitted anywhere yet.
 > **Why:** the resolver silently stops at `SEARCH_RESULT_CAP` (500) cells. A broad regex (`D.*`) or a long list then gives plots and sums that **undercount without telling the user** — wrong numbers in a research tool. The header lets the page say "Resultset too large. Please refine query." (`lang_error_resultset_too_large`, already defined).
 > **TDD Red (PHP).** In `tests/php/LemmagroupEndpointTest.php` and `LemmaperyearEndpointsTest.php`: a request resolving more than the cap (seed >500 parts, `regex=1`, term `.*`) sends `X-Dsb-Result-Truncated: 1`; a normal request does **not** send the header. Emit it once, inside `resolve_request_cells()`, guarded by `headers_sent()`, so every endpoint using it gets it for free.

@@ -176,6 +176,34 @@ final class LemmaperyearEndpointsTest extends TestCase
     ]);
   }
 
+  #[DataProvider('endpoints')]
+  public function testRegexOverResultCapSendsTruncationHeader(string $endpoint, bool $summed): void
+  {
+    $pdo = FixtureDb::open($this->server->dataDir() . '/lemmamapping.db');
+    $insertLemma = $pdo->prepare('INSERT INTO lemmafrequency (lemma, frequency, sortkey) VALUES (:lemma, 1, :sortkey)');
+    for ($index = 0; $index < 501; $index++) {
+      $lemma = sprintf('|ITEM%03d|', $index);
+      $insertLemma->execute(['lemma' => $lemma, 'sortkey' => dsb_sortkey(trim($lemma, '|'))]);
+    }
+
+    $response = $this->server->get('/php/' . $endpoint . '?lemma=.%2A&regex=1');
+
+    $this->assertSame(200, $response['status']);
+    $this->assertContains('X-Dsb-Result-Truncated: 1', $response['headers']);
+  }
+
+  #[DataProvider('endpoints')]
+  public function testNormalRequestDoesNotSendTruncationHeader(string $endpoint, bool $summed): void
+  {
+    $response = $this->server->get('/php/' . $endpoint . '?lemma=drjewo');
+
+    $this->assertSame(200, $response['status']);
+    $this->assertSame([], array_values(array_filter(
+      $response['headers'],
+      static fn(string $header): bool => stripos($header, 'X-Dsb-Result-Truncated:') === 0,
+    )));
+  }
+
   public function testRegexWithAmbigDisabledReturnsMatchingRowsForSummedTimeline(): void
   {
     $response = $this->server->get(

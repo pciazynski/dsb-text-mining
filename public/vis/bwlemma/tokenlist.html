@@ -13,52 +13,56 @@
 
   <body style="text-align: left">
     <script>
-      var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
-      var lemma = getQueryVariable('lemma');
-      var exact = getQueryVariable('exact');
-      if (exact.length > 0) {
-        title = lemma;
-        dataset += '&exact=1';
-      } else {
-        title = '..|' + lemma + '|..';
-      }
-      data_arr = readPHP(dataset).trim().split('\n');
+      (function () {
+        var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
+        var lemma = getQueryVariable('lemma');
+        var exact = getQueryVariable('exact');
+        if (exact.length > 0) {
+          title = lemma;
+          dataset += '&exact=1';
+        } else {
+          title = '..|' + lemma + '|..';
+        }
+        var response = readPHPChecked(document, dataset);
+        if (response === null) return;
+        data_arr = response.trim().split('\n');
 
-      str = "<table style='border-collapse: collapse;text-align:left;'>";
-      str =
-        str +
-        "<tr><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>Tokenliste<br>" +
-        title +
-        "</th><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
-        lang_frequency +
-        '</th>';
-      str = str + '</tr>';
-
-      for (var i = 0; i < data_arr.length; i++) {
-        arr = data_arr[i].split(sep);
-        resstr =
-          '<span style="color:' +
-          getColor(arr[1]) +
-          ';">▮</span>' +
-          arr[1] +
-          '</span><a target="_blank" href="../bwtoken?token=' +
-          arr[1] +
-          '">&#10149;</a>';
+        str = "<table style='border-collapse: collapse;text-align:left;'>";
         str =
           str +
-          "<tr><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
-          resstr +
-          "</td><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
-          arr[2] +
-          '</td>';
+          "<tr><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>Tokenliste<br>" +
+          title +
+          "</th><th style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
+          lang_frequency +
+          '</th>';
         str = str + '</tr>';
-      }
 
-      str = str + '</table>';
-      document.write(str);
-      data_arr = '';
-      str = '';
-      document.title = 'Tokenliste ' + title;
+        for (var i = 0; i < data_arr.length; i++) {
+          arr = data_arr[i].split(sep);
+          resstr =
+            '<span style="color:' +
+            getColor(arr[1]) +
+            ';">▮</span>' +
+            arr[1] +
+            '</span><a target="_blank" href="../bwtoken?token=' +
+            arr[1] +
+            '">&#10149;</a>';
+          str =
+            str +
+            "<tr><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
+            resstr +
+            "</td><td style='border: 2px solid black;padding:5px 5px 5px 5px;'>" +
+            arr[2] +
+            '</td>';
+          str = str + '</tr>';
+        }
+
+        str = str + '</table>';
+        document.write(str);
+        data_arr = '';
+        str = '';
+        document.title = 'Tokenliste ' + title;
+      })();
     </script>
   </body>
 </html>

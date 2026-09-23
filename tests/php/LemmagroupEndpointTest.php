@@ -166,6 +166,32 @@ final class LemmagroupEndpointTest extends TestCase
     );
   }
 
+  public function testRegexOverResultCapSendsTruncationHeader(): void
+  {
+    $pdo = FixtureDb::open($this->server->dataDir() . '/lemmamapping.db');
+    $lemmas = [];
+    for ($index = 0; $index < 501; $index++) {
+      $lemmas[] = sprintf('|ITEM%03d|', $index);
+    }
+    $this->insertLemmaRows($pdo, 'lemmafrequency', $lemmas);
+
+    $response = $this->server->get('/php/lemmagroup.php?lemma=.%2A&regex=1');
+
+    $this->assertSame(200, $response['status']);
+    $this->assertContains('X-Dsb-Result-Truncated: 1', $response['headers']);
+  }
+
+  public function testNormalRequestDoesNotSendTruncationHeader(): void
+  {
+    $response = $this->server->get('/php/lemmagroup.php?lemma=drjewo');
+
+    $this->assertSame(200, $response['status']);
+    $this->assertSame([], array_values(array_filter(
+      $response['headers'],
+      static fn(string $header): bool => stripos($header, 'X-Dsb-Result-Truncated:') === 0,
+    )));
+  }
+
   public function testRegexWithAmbigDisabledReturnsMatchingRowsForTable(): void
   {
     $response = $this->server->get('/php/lemmagroup.php?lemma=te%28j%7Cn%29&regex=1&ambig=0&sort');

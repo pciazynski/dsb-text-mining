@@ -188,6 +188,34 @@ var languageLabel = function (name, fallback) {
   return typeof globalThis !== 'undefined' && globalThis[name] ? globalThis[name] : fallback;
 };
 
+var showTruncationNotice = function (doc, xhr) {
+  if (!xhr || xhr.getResponseHeader('X-Dsb-Result-Truncated') !== '1') {
+    return false;
+  }
+
+  if (doc.querySelector('[data-result-truncated]')) {
+    return true;
+  }
+
+  var notice = doc.createElement('p');
+  notice.dataset.resultTruncated = 'true';
+  notice.textContent = languageLabel(
+    'lang_error_resultset_too_large',
+    'Resultset too large. Please refine query.',
+  );
+  doc.body.insertBefore(notice, doc.body.firstChild);
+  return true;
+};
+
+var readPHPChecked = function (doc, url) {
+  var body = readPHP(url);
+  var xhr = typeof globalThis === 'undefined' ? null : globalThis.rawFile;
+  if (showTruncationNotice(doc, xhr)) {
+    return null;
+  }
+  return body;
+};
+
 var ambigButtonLabel = function (ambig) {
   var searchLabel = languageLabel('lang_searchitem', 'Suche');
   var ambigLabel = languageLabel('lang_ambigsearch', 'Suche inkl Ambig');
@@ -276,5 +304,7 @@ if (typeof module !== 'undefined' && module.exports) {
     searchExample,
     applySearchExample,
     restoreSearchFromLocation,
+    showTruncationNotice,
+    readPHPChecked,
   };
 }
