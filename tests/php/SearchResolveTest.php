@@ -46,6 +46,34 @@ final class SearchResolveTest extends TestCase
       '|TEJ|',
       '|NJEBYŚ LI|',
     ]);
+
+    // Real norm forms from public/data/normmapping.db: "Drjewka"/"drjewka" is a genuine
+    // case-ambiguous pair, "drjewa" (genitive of "drjewo") is ambiguous with "drěła",
+    // and "drjewaŕ" is an unrelated longer word sharing the "drjewa" prefix.
+    $this->pdo->exec('CREATE TABLE normnonambig (norm TEXT, frequency INTEGER, sortkey TEXT)');
+    $this->pdo->exec('CREATE INDEX normnonambigsortkey ON normnonambig(sortkey)');
+    $this->pdo->exec('CREATE TABLE normfrequency (norm TEXT, frequency INTEGER, sortkey TEXT)');
+
+    $this->insertRows('normnonambig', [
+      '|Drjewka|',
+      '|drjewka|',
+      '|drjewa|',
+      '|drěła|',
+      '|tej|',
+      '|ten samy|',
+    ], 'norm');
+    $this->insertRows('normfrequency', [
+      '|Drjewka|drjewka|',
+      '|drjewa|',
+      '|drěła|drjewa|',
+      '|drjewaŕ|',
+      '|tej|',
+      '|ten samy|',
+    ], 'norm');
+
+    $this->pdo->exec('CREATE TABLE tokencount (token TEXT, frequency INTEGER, sortkey TEXT)');
+    $this->pdo->exec('CREATE INDEX tokensortkeyindex ON tokencount(sortkey)');
+    $this->insertRows('tokencount', ['drjewo', 'DRJEWO', 'drjewowy', 'tej'], 'token');
   }
 
   protected function tearDown(): void
@@ -273,15 +301,175 @@ final class SearchResolveTest extends TestCase
     $this->assertStringNotContainsString('SCAN', $plan);
   }
 
-  private function insertRows(string $table, array $values): void
+  public function testResolveCellsNormCaseInsensitiveAmbiguousReturnsEveryMatchingCell(): void
+  {
+    $this->assertSame(
+      ['|drjewa|', '|drěła|drjewa|'],
+      $this->resolveNorm(['drjewa'], ['cs' => false, 'ambig' => true, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsNormCaseInsensitiveNonAmbiguousReturnsOnlyExactCells(): void
+  {
+    $this->assertSame(
+      ['|Drjewka|', '|drjewka|'],
+      $this->resolveNorm(['drjewka'], ['cs' => false, 'ambig' => false, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsNormCaseSensitiveNonAmbiguousReturnsExactCaseOnly(): void
+  {
+    $this->assertSame(
+      ['|drjewka|'],
+      $this->resolveNorm(['drjewka'], ['cs' => true, 'ambig' => false, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsNormCaseSensitiveAmbiguousExpandsOnlyTheExactCasePart(): void
+  {
+    $this->assertSame(
+      ['|Drjewka|drjewka|'],
+      $this->resolveNorm(['Drjewka'], ['cs' => true, 'ambig' => true, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsNormRespectsPipeBoundaries(): void
+  {
+    $this->assertNotContains(
+      '|drjewaŕ|',
+      $this->resolveNorm(['drjewa'], ['cs' => true, 'ambig' => true, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsNormListFindsEveryCaseInsensitiveNonAmbiguousTerm(): void
+  {
+    $options = ['list' => true, 'trim' => true, 'cs' => false, 'ambig' => false, 'regex' => false];
+    $terms = split_terms('drjewka, tej', $options);
+
+    $this->assertSame(
+      ['|Drjewka|', '|drjewka|', '|tej|'],
+      $this->resolveNorm($terms, $options),
+    );
+  }
+
+  public function testResolveCellsNormCaseSensitiveRegexExpandsEveryMatchingPart(): void
+  {
+    $this->assertSame(
+      ['|drjewa|', '|drjewaŕ|', '|drěła|drjewa|', '|Drjewka|drjewka|'],
+      $this->resolveNorm(['drjew.*'], ['cs' => true, 'ambig' => true, 'regex' => true]),
+    );
+  }
+
+  public function testResolveCellsNormSqlInjectionTextReturnsEmptyList(): void
+  {
+    $this->assertSame(
+      [],
+      $this->resolveNorm(['" OR 1=1 -- '], ['cs' => false, 'ambig' => true, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsNormCapsResultsAndReportsTruncation(): void
+  {
+    $extraParts = [];
+    for ($index = 0; $index < 600; $index++) {
+      $extraParts[] = sprintf('|EXTRA%03d|', $index);
+    }
+    $this->insertRows('normfrequency', $extraParts, 'norm');
+
+    $results = $this->resolveNorm(['.*'], ['cs' => true, 'ambig' => true, 'regex' => true]);
+
+    $this->assertLessThanOrEqual(500, count($results));
+    $this->assertTrue(resolve_was_truncated());
+  }
+
+  public function testResolveCellsTokenReturnsBareTokens(): void
+  {
+    $this->assertSame(
+      ['DRJEWO', 'drjewo'],
+      $this->resolveToken(['drjewo'], ['cs' => false, 'ambig' => true, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsTokenCaseSensitiveReturnsOnlyExactToken(): void
+  {
+    $this->assertSame(
+      ['drjewo'],
+      $this->resolveToken(['drjewo'], ['cs' => true, 'ambig' => true, 'regex' => false]),
+    );
+  }
+
+  public function testResolveCellsTokenAmbigTrueAndFalseGiveIdenticalResults(): void
+  {
+    $ambiguous = $this->resolveToken(['drjewo'], ['cs' => false, 'ambig' => true, 'regex' => false]);
+    $nonAmbiguous = $this->resolveToken(['drjewo'], ['cs' => false, 'ambig' => false, 'regex' => false]);
+
+    $this->assertSame($ambiguous, $nonAmbiguous);
+  }
+
+  public function testResolveCellsTokenRegexIsFullyAnchoredOnWholeToken(): void
+  {
+    $this->assertSame(
+      ['drjewo'],
+      $this->resolveToken(['drj.wo'], ['cs' => true, 'ambig' => true, 'regex' => true]),
+    );
+
+    $this->assertSame(
+      [],
+      $this->resolveToken(['drj'], ['cs' => true, 'ambig' => true, 'regex' => true]),
+    );
+  }
+
+  public function testResolveCellsUnsupportedBagColumnThrowsInvalidArgumentException(): void
+  {
+    $this->expectException(\InvalidArgumentException::class);
+
+    resolve_cells($this->pdo, 'lemmabag', ['drjewo'], ['cs' => false, 'ambig' => true, 'regex' => false]);
+  }
+
+  public function testResolveCellsUnsupportedInjectionColumnThrowsInvalidArgumentException(): void
+  {
+    $this->expectException(\InvalidArgumentException::class);
+
+    resolve_cells($this->pdo, 'x; DROP', ['drjewo'], ['cs' => false, 'ambig' => true, 'regex' => false]);
+  }
+
+  public function testTokenAmbigZeroUsesSortkeyIndexForLiteralLookup(): void
   {
     $statement = $this->pdo->prepare(
-      "INSERT INTO {$table} (lemma, frequency, sortkey) VALUES (:lemma, :frequency, :sortkey)",
+      'EXPLAIN QUERY PLAN SELECT token FROM tokencount WHERE sortkey = :sortkey',
+    );
+    $statement->execute(['sortkey' => dsb_sortkey('drjewo')]);
+    $plan = implode("\n", $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
+
+    $this->assertStringContainsString('SEARCH', $plan);
+    $this->assertStringContainsString('USING INDEX', $plan);
+    $this->assertStringNotContainsString('SCAN', $plan);
+  }
+
+  public function testTokenAmbigOneDefaultAlsoUsesSortkeyIndexForLiteralLookup(): void
+  {
+    // ambig=1 is the default; tokens have no ambiguous cells, so the literal
+    // lookup must still go through tokensortkeyindex instead of a full scan.
+    $statement = $this->pdo->prepare(
+      'EXPLAIN QUERY PLAN SELECT token FROM tokencount WHERE sortkey = :sortkey',
+    );
+    $statement->execute(['sortkey' => dsb_sortkey('drjewo')]);
+    $plan = implode("\n", $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
+
+    $this->assertStringContainsString('SEARCH', $plan);
+    $this->assertStringContainsString('USING INDEX', $plan);
+    $this->assertStringNotContainsString('SCAN', $plan);
+  }
+
+  private function insertRows(string $table, array $values, string $column = 'lemma'): void
+  {
+    $statement = $this->pdo->prepare(
+      "INSERT INTO {$table} ({$column}, frequency, sortkey) VALUES (:cell, :frequency, :sortkey)",
     );
 
     foreach ($values as $index => $value) {
       $statement->execute([
-        'lemma' => $value,
+        'cell' => $value,
         'frequency' => count($values) - $index,
         'sortkey' => dsb_sortkey(trim($value, '|')),
       ]);
@@ -293,5 +481,19 @@ final class SearchResolveTest extends TestCase
     $this->assertTrue(function_exists('resolve_cells'), 'resolve_cells() must be defined');
 
     return resolve_cells($this->pdo, 'lemma', $terms, $options);
+  }
+
+  private function resolveNorm(array $terms, array $options): array
+  {
+    $this->assertTrue(function_exists('resolve_cells'), 'resolve_cells() must be defined');
+
+    return resolve_cells($this->pdo, 'norm', $terms, $options);
+  }
+
+  private function resolveToken(array $terms, array $options): array
+  {
+    $this->assertTrue(function_exists('resolve_cells'), 'resolve_cells() must be defined');
+
+    return resolve_cells($this->pdo, 'token', $terms, $options);
   }
 }

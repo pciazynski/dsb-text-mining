@@ -126,21 +126,22 @@ function resolve_request_cells(\PDO $pdo, string $column, array $get): array
 
 function resolve_cells(\PDO $pdo, string $column, array $terms, array $options): array
 {
+  if (!in_array($column, ['lemma', 'norm', 'token'], true)) {
+    throw new \InvalidArgumentException("Unsupported search column: $column");
+  }
+
   $caseSensitive = $options['cs'] ?? false;
   $ambig = $options['ambig'] ?? true;
+  $regex = $options['regex'] ?? false;
+  $table = $column === 'token' ? 'tokencount' : $column . 'frequency';
+  $nonAmbiguousTable = $column === 'token' ? 'tokencount' : $column . 'nonambig';
 
   _search_truncated(false);
 
-  $results = $ambig
-    ? _resolve_ambiguous_cells($pdo, 'lemmafrequency', $column, $terms, $caseSensitive, $options['regex'] ?? false)
-    : _resolve_nonambiguous_cells(
-      $pdo,
-      'lemmanonambig',
-      $column,
-      $terms,
-      $caseSensitive,
-      $options['regex'] ?? false,
-    );
+  $useAmbiguousCells = $column !== 'token' && $ambig;
+  $results = $useAmbiguousCells
+    ? _resolve_ambiguous_cells($pdo, $table, $column, $terms, $caseSensitive, $regex)
+    : _resolve_nonambiguous_cells($pdo, $nonAmbiguousTable, $column, $terms, $caseSensitive, $regex);
 
   return _apply_search_result_cap($results);
 }
