@@ -501,6 +501,41 @@ describe('restoreSearchFromLocation', () => {
       expect(document.querySelector('#searchexample').textContent).toBe('drjewo');
     });
   });
+
+  it('restores a norm list and displays its example', () => {
+    const dom = withDom({ html: BWLEMMA_SEARCH_HTML });
+    try {
+      const { restoreSearchFromLocation } = loadSearch();
+
+      restoreSearchFromLocation(dom.document, '?norm=A;B&list=1', 'norm');
+
+      expect(dom.document.querySelector('#searchinput').value).toBe('A;B');
+      expect(dom.document.querySelector('#listCheckBox').checked).toBe(true);
+      expect(dom.document.querySelector('#searchexample').textContent).toBe('tej; ten');
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('restores legacy word links for tokens without overriding an explicit token', () => {
+    const dom = withDom({ html: BWLEMMA_SEARCH_HTML });
+    try {
+      const { restoreSearchFromLocation } = loadSearch();
+      const input = dom.document.querySelector('#searchinput');
+
+      restoreSearchFromLocation(dom.document, '?word=woni', 'token');
+      expect(input.value).toBe('woni');
+      expect(dom.document.querySelector('#searchexample').textContent).toBe('woni');
+
+      restoreSearchFromLocation(dom.document, '?word=woni&token=druge', 'token');
+      expect(input.value).toBe('druge');
+
+      restoreSearchFromLocation(dom.document, '?word=woni', 'norm');
+      expect(input.value).toBe('');
+    } finally {
+      dom.restore();
+    }
+  });
 });
 
 describe('buildVisUrls', () => {
@@ -552,6 +587,93 @@ describe('buildVisUrls', () => {
       dom.restore();
     }
   });
+
+  it('builds all norm visualization URLs with defaults', () => {
+    const dom = withDom();
+    try {
+      const buildVisUrls = loadBuildVisUrls();
+
+      expect(buildVisUrls('norm', 'DRJEWO', {}, 0)).toEqual({
+        timeline:
+          'timeline.html?data=normsumperyear.php&norm=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=0',
+        group:
+          'normlist.html?data=normgroup.php&norm=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort',
+        tokens:
+          'tokenlist.html?data=normtoken.php&norm=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort',
+      });
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('uses norm counts at focus 3 and the summed-list page in list mode', () => {
+    const dom = withDom();
+    try {
+      const buildVisUrls = loadBuildVisUrls();
+
+      expect(buildVisUrls('norm', 'DRJEWO', {}, 3).timeline).toBe(
+        'timeline.html?data=normcountperyear.php&norm=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=3',
+      );
+      expect(buildVisUrls('norm', 'DRJEWO', { list: true }, 0)).toEqual({
+        timeline:
+          'timelinesumlist.html?data=normsumperyear.php&norm=DRJEWO&cs=0&regex=0&list=1&trim=1&ambig=1&sort&focus=0',
+        group:
+          'normlist.html?data=normgroup.php&norm=DRJEWO&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
+        tokens:
+          'tokenlist.html?data=normtoken.php&norm=DRJEWO&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
+      });
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('builds only a timeline and word info for one concrete token', () => {
+    const dom = withDom();
+    try {
+      const buildVisUrls = loadBuildVisUrls();
+
+      expect(buildVisUrls('token', 'woni', {}, 0)).toEqual({
+        timeline:
+          'timeline.html?data=tokencountperyear.php&token=woni&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=0',
+        wordinfo: 'wordinfo.html?data=token2lemma.php&token=woni',
+      });
+      expect(buildVisUrls('token', 'woni', {}, 3)).toEqual({
+        timeline:
+          'timeline.html?data=tokencountperyear.php&token=woni&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=3',
+        wordinfo: 'wordinfo.html?data=token2lemma.php&token=woni',
+      });
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it.each([
+    [
+      'list',
+      { list: true },
+      'timeline.html?data=tokencountperyear.php&token=woni&cs=0&regex=0&list=1&trim=1&ambig=1&sort&focus=0',
+    ],
+    [
+      'regex',
+      { regex: true },
+      'timeline.html?data=tokencountperyear.php&token=woni&cs=0&regex=1&list=0&trim=1&ambig=1&sort&focus=0',
+    ],
+  ])(
+    'disables token word info for %s searches without changing the timeline page',
+    (_mode, options, timeline) => {
+      const dom = withDom();
+      try {
+        const buildVisUrls = loadBuildVisUrls();
+
+        expect(buildVisUrls('token', 'woni', options, 0)).toEqual({
+          timeline,
+          wordinfo: 'error_token.html',
+        });
+      } finally {
+        dom.restore();
+      }
+    },
+  );
 
   it('keeps the standard endpoints when regex is enabled', () => {
     const dom = withDom();
@@ -677,6 +799,22 @@ describe('listPlotUrlsFromLocation', () => {
       expect(listPlotUrlsFromLocation('data', 'lemma', search)).toEqual([
         'lemmasumperyear.php?lemma=drjewo&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
         'lemmasumperyear.php?lemma=bom&cs=0&regex=0&list=1&trim=1&ambig=1&sort',
+      ]);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('requests a separate norm series for each term in list mode', () => {
+    const dom = withDom();
+    try {
+      const listPlotUrlsFromLocation = loadListPlotUrlsFromLocation();
+
+      expect(
+        listPlotUrlsFromLocation('data', 'norm', '?data=normsumperyear.php&norm=A;B&list=1'),
+      ).toEqual([
+        'normsumperyear.php?norm=A&cs=0&regex=0&list=1&trim=1&ambig=1',
+        'normsumperyear.php?norm=B&cs=0&regex=0&list=1&trim=1&ambig=1',
       ]);
     } finally {
       dom.restore();
@@ -1014,6 +1152,21 @@ describe('splitTerms', () => {
   });
 });
 
+describe('listTermsFromLocation', () => {
+  it('splits terms using the requested field and defaults to lemma', () => {
+    const dom = withDom();
+    try {
+      const { listTermsFromLocation } = loadSearch();
+
+      expect(listTermsFromLocation('?norm=A;B&list=1', 'norm')).toEqual(['A', 'B']);
+      expect(listTermsFromLocation('?lemma=DRJEWO;BOM&list=1')).toEqual(['DRJEWO', 'BOM']);
+      expect(listTermsFromLocation('?word=woni&list=1', 'token')).toEqual([]);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
 describe('searchControlState', () => {
   it('enables controls only for non-regex single-term searches', () => {
     const dom = withDom();
@@ -1168,11 +1321,11 @@ describe('searchExample', () => {
   it.each([
     ['a plain term', { cs: false, regex: false, list: false, trim: false }, 'drjewo'],
     ['a regex', { cs: false, regex: true, list: false, trim: false }, 'te(j|n)'],
-    ['a list', { cs: false, regex: false, list: true, trim: false }, 'drjewo,bom'],
+    ['a list', { cs: false, regex: false, list: true, trim: false }, 'drjewo;bom'],
     [
-      'a list with a space after the comma',
+      'a list with a space after the semicolon',
       { cs: false, regex: false, list: true, trim: true },
-      'drjewo, bom',
+      'drjewo; bom',
     ],
     [
       'a semicolon-separated regex list',
@@ -1199,11 +1352,11 @@ describe('searchExample', () => {
   it.each([
     ['a plain term', { cs: true, regex: false, list: false, trim: false }, 'DRJEWO'],
     ['a regex', { cs: true, regex: true, list: false, trim: false }, 'TE(J|N)'],
-    ['a list', { cs: true, regex: false, list: true, trim: false }, 'DRJEWO,BOM'],
+    ['a list', { cs: true, regex: false, list: true, trim: false }, 'DRJEWO;BOM'],
     [
-      'a list with a space after the comma',
+      'a list with a space after the semicolon',
       { cs: true, regex: false, list: true, trim: true },
-      'DRJEWO, BOM',
+      'DRJEWO; BOM',
     ],
     [
       'a semicolon-separated regex list',
@@ -1223,6 +1376,34 @@ describe('searchExample', () => {
         const { searchExample } = loadSearch();
 
         expect(searchExample({ ...options, ambig: true })).toBe(expected);
+      } finally {
+        dom.restore();
+      }
+    },
+  );
+
+  it.each([
+    ['norm', false, 'Chóśebuz', 'te(j|n)', 'tej; ten', 'te(j|n); Chóśebuz'],
+    ['norm', true, 'Chóśebuz', 'te(j|n)', 'tej; ten', 'te(j|n); Chóśebuz'],
+    ['token', false, 'woni', 'w(o|a)n(a|i)', 'druge; woni', 'w(o|a)n(a|i); druge'],
+    ['token', true, 'woni', 'w(o|a)n(a|i)', 'druge; woni', 'w(o|a)n(a|i); druge'],
+  ])(
+    'shows %s examples when case sensitivity is %s',
+    (kind, cs, literal, regex, list, regexList) => {
+      const dom = withDom();
+      try {
+        const { searchExample } = loadSearch();
+
+        expect(searchExample({ cs, regex: false, list: false }, kind)).toBe(literal);
+        expect(searchExample({ cs, regex: true, list: false }, kind)).toBe(regex);
+        expect(searchExample({ cs, regex: false, list: true }, kind)).toBe(list);
+        expect(searchExample({ cs, regex: true, list: true }, kind)).toBe(regexList);
+        expect(searchExample({ cs, regex: false, list: true, trim: false }, kind)).toBe(
+          list.replace('; ', ';'),
+        );
+        expect(searchExample({ cs, regex: true, list: true, trim: false }, kind)).toBe(
+          regexList.replace('; ', ';'),
+        );
       } finally {
         dom.restore();
       }
@@ -1255,7 +1436,7 @@ describe('applySearchExample', () => {
 
       applySearchExample(dom.document);
 
-      expect(dom.document.getElementById('searchexample').textContent).toBe('drjewo, bom');
+      expect(dom.document.getElementById('searchexample').textContent).toBe('drjewo; bom');
     } finally {
       dom.restore();
     }
@@ -1292,13 +1473,34 @@ describe('applySearchExample', () => {
       expect(example.textContent).toBe('te(j|n);bom');
 
       tick('regexCheckBox', false);
-      expect(example.textContent).toBe('drjewo,bom');
+      expect(example.textContent).toBe('drjewo;bom');
 
       tick('csCheckBox', true);
-      expect(example.textContent).toBe('DRJEWO,BOM');
+      expect(example.textContent).toBe('DRJEWO;BOM');
 
       tick('listCheckBox', false);
       expect(example.textContent).toBe('DRJEWO');
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('updates the displayed example for the selected kind as options change', () => {
+    const dom = withDom({ html: BWLEMMA_SEARCH_HTML });
+    try {
+      const { applySearchExample } = loadSearch();
+      const example = dom.document.getElementById('searchexample');
+      const list = dom.document.getElementById('listCheckBox');
+
+      applySearchExample(dom.document, 'token');
+      expect(example.textContent).toBe('woni');
+
+      list.checked = true;
+      applySearchExample(dom.document, 'token');
+      expect(example.textContent).toBe('druge; woni');
+
+      applySearchExample(dom.document, 'norm');
+      expect(example.textContent).toBe('tej; ten');
     } finally {
       dom.restore();
     }

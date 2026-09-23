@@ -280,7 +280,7 @@ Verified state as of 2026-09-23; each fact below is noted as "Important info" on
 > **Structural test** (`loadPage`, text-based, add to the D4 test): for each of bwlemma's `timeline.html`, `timelinesum.html`, `timelinesumlist.html`, `percenttimeline.html`, `percenttimelinesumlist.html`, `lemmalist.html`, `tokenlist.html`, `traviz.html`, the page source contains `readPHPChecked(` and does **not** contain `readPHP(` (regex `/\breadPHP\(/`) — i.e. every fetch goes through the checked wrapper. Each page treats a `null` return as "render nothing" (`timelinesumlist.html`: skip that series). E1–E4 add their sub-pages to the same list as they migrate (norm, word and variation sub-pages incl. percent, list and tree views). `doclist.html` uses `readPHP_async` and is excluded — its endpoint (`urnbylemma.php`) does not use the resolver.
 > `# CEILING:` note for Green: `header()` inside `resolve_request_cells()` only works because every endpoint resolves before printing; guard with `headers_sent()` and leave the comment there.
 
-#### E0c — `search.js` per-kind config *(parallel with E0a)*
+#### E0c — `search.js` per-kind config *(parallel with E0a)* - DONE
 > **Important info:** `search.js` hardcodes `lemma` in `buildVisUrls()` (endpoints + `lemmalist.html`), `listTermsFromLocation()`, `restoreSearchFromLocation()` and `searchExample()` — generalising these is this step. bwword is deep-linked with `?word=` ([bwword/index.html](public/vis/bwword/index.html#L395)) while its PHP takes `token`. `?word=` links are generated live by `bwword/wordinfo.html`, `lemmavariation/datalist.html` and `normvariation/datalist.html` (the last one has a stray `"` after `word=` — broken today, fixed in E2). Static examples in the current pages (real corpus entries): bwnorm `Chóśebuz` / `te(j|n)` / `tej,ten`; bwword `w(o|a)n(a|i)` / `druge,woni`; normvariation `druge,francojski`.
 > **TDD Red.** In `tests/js/search.test.js`:
 > - `buildVisUrls('norm', 'DRJEWO', defaults, 0)` → `timeline.html?data=normsumperyear.php&norm=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=0`, `group: normlist.html?data=normgroup.php&…&sort`, `tokens: tokenlist.html?data=normtoken.php&…&sort`; `focus: 3` → `normcountperyear.php`; `list:true` → `timelinesumlist.html`. Assert exact strings.
@@ -388,3 +388,8 @@ All PHP steps seed `normmapping.db` in `dataDir()` with the norm twin of the lem
 
 #### F2 — collapse duplicated inline JS
 > **TDD Refactor, only where duplication remains after E.** Move genuinely identical URL building and list operations from `updateTimeline*` / `updateTree*` / `switchPrefixsearch` / `addToList` / `addLemmaToList` / `addNormToList` / `addWordToList` into existing `search.js` helpers, leaving thin delegations where that preserves behavior. Keep page-specific actions local: word-info and regression controls, autocomplete endpoint/cutoff settings, year-filtered traviz/doclist, and variation tree controls need not become one generic handler. **Out of scope:** `vis/lemmaeval`, `vis/normeval`, `vis/profile` keep their own autocomplete wiring and inputs — they are not part of the unified search box. Before removing a body, pin any untested interactions it owns (search, suggestion toggle, list/regex, clicked item, year range); then run `npm test` and the affected PHP tests. Do not add a new abstraction solely to make every wrapper one line.
+
+### Phase G - manual verification and bug fixing
+#### G1 - Manually check if everything works as expected
+#### G2 - Fix bugs if necessary
+

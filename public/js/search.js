@@ -66,13 +66,34 @@ var buildVisUrls = function (kind, term, options, focus) {
 
   var searchOptions = Object.assign({}, searchDefaults, options || {});
   var query = searchQueryString(kind, term, searchOptions);
-  var timelineData = focus === 3 ? 'lemmacountperyear.php' : 'lemmasumperyear.php';
+
+  if (kind === 'token') {
+    return {
+      timeline: 'timeline.html?data=tokencountperyear.php&' + query + '&sort&focus=' + focus,
+      wordinfo:
+        searchOptions.regex || searchOptions.list
+          ? 'error_token.html'
+          : 'wordinfo.html?data=token2lemma.php&token=' + encodeURIComponent(term),
+    };
+  }
+
+  var timelineData =
+    kind === 'norm'
+      ? focus === 3
+        ? 'normcountperyear.php'
+        : 'normsumperyear.php'
+      : focus === 3
+        ? 'lemmacountperyear.php'
+        : 'lemmasumperyear.php';
   var timelinePage = searchOptions.list ? 'timelinesumlist.html' : 'timeline.html';
+  var groupPage = kind === 'norm' ? 'normlist.html' : 'lemmalist.html';
+  var groupData = kind === 'norm' ? 'normgroup.php' : 'lemmagroup.php';
+  var tokenData = kind === 'norm' ? 'normtoken.php' : 'lemmatoken.php';
 
   return {
     timeline: timelinePage + '?data=' + timelineData + '&' + query + '&sort&focus=' + focus,
-    group: 'lemmalist.html?data=lemmagroup.php&' + query + '&sort',
-    tokens: 'tokenlist.html?data=lemmatoken.php&' + query + '&sort',
+    group: groupPage + '?data=' + groupData + '&' + query + '&sort',
+    tokens: 'tokenlist.html?data=' + tokenData + '&' + query + '&sort',
   };
 };
 
@@ -100,7 +121,7 @@ var listPlotUrlsFromLocation = function (dataKey, termKey, search) {
     return null;
   }
 
-  return listTermsFromLocation(search).map(function (item) {
+  return listTermsFromLocation(search, termKey).map(function (item) {
     var itemSearch = new URLSearchParams(search || '');
     itemSearch.set(termKey, item);
     return phpUrlFromLocation(dataKey, termKey, '?' + itemSearch.toString());
@@ -157,9 +178,10 @@ var splitTerms = function (raw, opts) {
     });
 };
 
-var listTermsFromLocation = function (search) {
+var listTermsFromLocation = function (search, termKey) {
+  termKey = termKey || 'lemma';
   var params = new URLSearchParams(search || '');
-  var term = params.get('lemma');
+  var term = params.get(termKey);
   if (term === null) {
     return [];
   }
@@ -233,43 +255,68 @@ var applyAmbigButtonLabel = function (doc) {
   button.textContent = ambigButtonLabel(checked);
 };
 
-var searchExample = function (options) {
+var searchExample = function (options, kind) {
   var resolved = Object.assign({}, searchDefaults, options || {});
-  var literal = resolved.cs ? 'DRJEWO' : 'drjewo';
-  var regex = resolved.cs ? 'TE(J|N)' : 'te(j|n)';
-  var listItem = resolved.cs ? 'BOM' : 'bom';
+  var examples = {
+    lemma: {
+      literal: resolved.cs ? 'DRJEWO' : 'drjewo',
+      regex: resolved.cs ? 'TE(J|N)' : 'te(j|n)',
+      listItem: resolved.cs ? 'BOM' : 'bom',
+    },
+    norm: {
+      literal: 'Chóśebuz',
+      regex: 'te(j|n)',
+      listLiteral: 'tej',
+      listItem: 'ten',
+      regexListItem: 'Chóśebuz',
+    },
+    token: {
+      literal: 'woni',
+      regex: 'w(o|a)n(a|i)',
+      listLiteral: 'druge',
+      listItem: 'woni',
+      regexListItem: 'druge',
+    },
+  };
+  var example = examples[kind] || examples.lemma;
+  var separator = resolved.trim ? '; ' : ';';
 
   if (resolved.regex && resolved.list) {
-    return regex + (resolved.trim ? '; ' : ';') + listItem;
+    return example.regex + separator + (example.regexListItem || example.listItem);
   }
   if (resolved.regex) {
-    return regex;
+    return example.regex;
   }
   if (resolved.list) {
-    return literal + (resolved.trim ? ', ' : ',') + listItem;
+    return (example.listLiteral || example.literal) + separator + example.listItem;
   }
-  return literal;
+  return example.literal;
 };
 
-var applySearchExample = function (doc) {
+var applySearchExample = function (doc, kind) {
   var example = doc && doc.getElementById ? doc.getElementById('searchexample') : null;
   if (!example) {
     return;
   }
 
-  example.textContent = searchExample(searchOptionsFromForm(doc));
+  example.textContent = searchExample(searchOptionsFromForm(doc), kind);
 };
 
-var restoreSearchFromLocation = function (doc, search) {
+var restoreSearchFromLocation = function (doc, search, kind) {
+  kind = kind || 'lemma';
   var params = new URLSearchParams(search || '');
   var searchInput = doc.getElementById('searchinput');
+  var term = params.get(kind);
+  if (term === null && kind === 'token') {
+    term = params.get('word');
+  }
   if (searchInput) {
-    searchInput.value = params.get('lemma') || '';
+    searchInput.value = term || '';
   }
 
-  if (!params.has('lemma')) {
+  if (term === null) {
     applySearchControlState(doc, searchOptionsFromForm(doc));
-    applySearchExample(doc);
+    applySearchExample(doc, kind);
     return;
   }
 
@@ -282,7 +329,7 @@ var restoreSearchFromLocation = function (doc, search) {
   });
 
   applySearchControlState(doc, options);
-  applySearchExample(doc);
+  applySearchExample(doc, kind);
 };
 
 // Test hook only. Browsers load this file via <script src>, where `module` is undefined.
