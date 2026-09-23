@@ -239,79 +239,157 @@ Each of C1–C5 is independent of the others and can run in parallel. All are HT
 - weird, less used switches to the right (case senstive, leerzeichen) - DONE
 - examples write dynamically - DONE
 
-### Phase E — mirror to the other 4 vis *(depends on C + D; E1–E4 mutually parallel)*
 
-#### E1 — bwnorm
-> **TDD Red.** Mirror Phase C and Phase D for bwnorm. Create `tests/php/NormSearchEndpointsTest.php` covering `normgroup.php`, `normsumperyear.php`, `normcountperyear.php`, `normtoken.php`, `urnbynorm.php` and `prefixnormsearch.php` with the same flag matrix and the same injection assertions as C1–C5, using `normmapping.db` with `normfrequency`/`normnonambig`/`tokennormtypesubtypedatefrequency`.
-> Create `tests/js/bwnorm_index_html.test.js` mirroring D2 (ids `searchinput`, five checkboxes, `prefixsearchCheckBox` unchecked, `js/search.js` loaded) and add `kind: 'norm'` cases to the `buildVisUrls` tests from D3, asserting the exact URLs with `norm=` and the `norm*` endpoints.
+### Phase E — mirror to the other 4 vis *(depends on C + D; E0 blocks E1–E4; E1–E4 mutually parallel after E0)*
 
-#### E2 — bwword
-> **TDD Red.** Mirror for bwword. Create `tests/php/WordSearchEndpointsTest.php` covering `tokencountperyear.php` and `prefixsearch.php` against `bagofwords.db` (`tokencount(token, frequency, sortkey)` + `tokendatecount`).
-> Differences to pin explicitly:
-> - There is **no ambiguity concept** for word forms: `?token=X&ambig=0` and `&ambig=1` return identical bodies, and the resolver goes `tokencount` → `token IN (...)` on `tokendatecount` with no pipes and no expansion step.
-> - `cs=0` is index-backed via `tokensortkeyindex` (assert with `EXPLAIN QUERY PLAN`); today `prefixsearch.php` does a case-**sensitive** `LIKE` with no sortkey filter at all, so `?word=w&cs=0` finding `Woda` is a new behaviour to pin.
-> - `?token=a,b&list=1&trim=1` returns both (today the comma OR-chain is concatenated).
-> - Injection payloads on `token`, `word` and `sortby` return empty bodies.
-> Create `tests/js/bwword_index_html.test.js` mirroring D2 but asserting `#ambigCheckBox` is **absent** from the bwword markup, and add `kind: 'word'` cases to `buildVisUrls`.
+**Verified state before E (2026-09-23)** — read this before starting any step:
+- `resolve_cells()` in `searchfilter.php` hardcodes `lemmafrequency`/`lemmanonambig`; `search.js` hardcodes `lemma` in `buildVisUrls()` (endpoints + `lemmalist.html`), `listTermsFromLocation()`, `restoreSearchFromLocation()` and `searchExample()`. Generalising these is E0.
+- `*nonambig` is a misleading name: `mapping_etl.py` inserts **every distinct part** split from all cells, with frequencies including ambiguous occurrences. Suggesting from it loses no lemma/norm.
+- No page sends `&ambig` to a prefix endpoint (profile's `ambigprefixsearchCheckBox` is commented out; `switchAmbigPrefixsearch()` is dead code).
+- `prefixnormsearch.php`'s `cutoff` means "one suggestion per prefix group" (`GROUP BY SUBSTRING(norm,1,strlen+cutoff)`), unlike `prefixlemmasearch.php`'s length cap. normvariation depends on it (`cutoff=2`).
+- `normtokenregex.php` (linked by normvariation) does not exist — its regex tree is broken today.
+- `lemmatree_dagre.html`/`normtree_dagre.html` decide the root node via `dataset.includes('regex.php')` and `lemma.includes(',')`.
+- `phpUrlFromLocation()` forwards only the five flags + `sort`; `inclusive`/`weight` are frontend-only (the backend ignores `inclusive`, pinned in C3).
+- `lemmatokenperyear.php`/`normtokenperyear.php` concatenate `year=BETWEEN x AND y` into SQL (injection via URL). `token2norm.php` concatenates `token`.
+- `urnbylemma.php` does not use `searchfilter.php`: its regex is `'/'.$term.'/'` (unanchored, delimiter injection) and lists split on whitespace/comma. The bwlemma UI only calls it with one exact cell + `cs=1&regex=0&list=0&ambig=0`, so this is only reachable by crafted URL.
+- `X-Dsb-Result-Truncated` is not emitted anywhere yet.
+- **Bug (reproduced in UI and with a fixture): clicking an ambiguous cell finds nothing.** `lemmalist.html` strips the outer pipes (`|DRĚŚ|DRJEWO|` → `DRĚŚ|DRJEWO`) and `itemClick()` sends it with `exactOptions` (`cs=1&ambig=0`). The resolver compares the term against single **parts** (`lemmanonambig` holds `|DRĚŚ|` and `|DRJEWO|` separately), so `resolve_request_cells()` returns `[]` for both `ambig=0` and `ambig=1`. Timeline, token list, traviz and doclist stay empty. The legacy `exact=1` meant two different things — "exclude ambiguous cells" *and* "this string is one whole cell" — and only the first survived. Fixed in E0f; `|` is not a valid character inside a lemma/norm, so a term containing `|` is unambiguously a whole cell. normvariation `normclick()` and lemmavariation `lemmaclick()` have the same bug.
+- `lemmafrequency`/`normfrequency` have a `sortkey` index (`lemmafrequencysortkeyindex`, `normfrequencysortkeyindex`) and `dsb_sortkey('DRĚŚ|DRJEWO') === dsb_sortkey('drěś|drjewo')`, so a whole-cell lookup by sortkey is index-backed in both `cs` modes.
+- bwword is deep-linked with `?word=` ([bwword/index.html](public/vis/bwword/index.html#L395)) while its PHP takes `token`. `?word=` links are generated live by `bwword/wordinfo.html`, `lemmavariation/datalist.html` and `normvariation/datalist.html` (the last one has a stray `"` after `word=` — broken today).
+- Static examples in the current pages (real corpus entries): bwnorm `Chóśebuz` / `te(j|n)` / `tej,ten`; bwword `w(o|a)n(a|i)` / `druge,woni`; normvariation `druge,francojski`.
+- `in_clause()` whitelists `lemma, norm, token, lemmabag, normbag`; the resolver whitelist (E0a) is intentionally narrower (`lemma, norm, token`). Do not unify them.
 
-#### E3 — lemmavariation
-> **TDD Red.** Mirror for lemmavariation, whose main endpoint is `lemmatoken.php` (already covered in C3) called with `&inclusive` and `&weight`.
-> Create `tests/js/lemmavariation_index_html.test.js` mirroring D2, and add a `buildTreeUrls(kind, term, opts, weight)` function to `public/js/search.js` with tests pinning: the three tree iframes (`lemmatree_dagre.html`, `sunburst.html`, `traviz.html`) all get `data=lemmatoken.php` plus the five flags plus `&sort&inclusive`, `weight:true` appends `&weight`, `regex:true` does not switch to `lemmatokenregex.php`, and the `addToList` button now joins with `;` instead of `,` (test a pure `appendToList(existing, item)` helper).
-> Also pin that `updateTreeFromRegex`/`updateTreeFromList` no longer exist as separate paths — one `buildTreeUrls` call covers all flag combinations.
+**Acceptance after all of E:** temporary incompatibility between E steps is acceptable. Once E1–E4 are complete, verify each vis's literal, list, regex, suggestion, clicked-node, year-filtered and deep-link workflows end to end. Keep the explicitly tested `exact=1` alias and injection protections; do not require every old unflagged URL to return an identical body.
 
-#### E4 — normvariation
-> **TDD Red.** Mirror E3 for normvariation: `tests/js/normvariation_index_html.test.js` plus `kind: 'norm'` cases for `buildTreeUrls` against `normtoken.php` and the `norm*` tree pages. Note normvariation's autocomplete currently passes `&cutoff=2` — pin that `cutoff` is still forwarded and still int-cast.
+#### E0a — resolver by column
+> **TDD Red.** Extend `tests/php/SearchResolveTest.php`. Add a norm fixture (`normfrequency`, `normnonambig`, same rows as the lemma fixture, column `norm`) and pin that `resolve_cells($pdo, 'norm', ...)` gives the same results as the lemma cases (cs / ambig / list / regex / cap / injection) reading the norm tables. Existing lemma tests stay green unchanged.
+> Add a token fixture (`tokencount(token, frequency, sortkey)`, bare values, **no pipes**) and pin: `resolve_cells($pdo, 'token', ...)` returns bare tokens; `ambig=0` and `ambig=1` give identical results; **both** values of `ambig` use `tokensortkeyindex` for a `cs=0` literal lookup (`EXPLAIN QUERY PLAN` → `SEARCH … USING INDEX`), including the default `ambig=1`; regex is fully anchored on the whole token.
+> An unsupported column (e.g. `lemmabag`, `x; DROP`) throws `InvalidArgumentException`. This whitelist is **narrower** than `in_clause()`'s on purpose (`lemmabag`/`normbag` are bag columns, never resolved) — do not merge the two lists.
+> Implementation hint: a whitelist map column → `[ambigTable, partTable]`: `lemma` → `lemmafrequency`/`lemmanonambig`, `norm` → `normfrequency`/`normnonambig`, `token` → `tokencount`/`tokencount`. Tokens have no ambiguous cells: route literal tokens through the indexed part lookup regardless of `ambig`, rather than the default full-table ambiguous scan.
+
+#### E0f — whole-cell terms (clicked items) *(depends on E0a)*
+> **Why:** see the bug in *Verified state*. A clicked list entry arrives as `DRĚŚ|DRJEWO` and must resolve to exactly the cell `|DRĚŚ|DRJEWO|`.
+> **TDD Red.** Extend `tests/php/SearchResolveTest.php` (lemma fixture; also run the same cases against the norm fixture from E0a). Rule: when `regex=false` and a term contains `|`, it is a **whole cell**; `ambig` is ignored for that term.
+> Behaviour to pin:
+> - `cs=true`, term `DRĚŚ|DRJEWO` → `['|DRĚŚ|DRJEWO|']`, for **both** `ambig=true` and `ambig=false` (assert both).
+> - `cs=false`, term `drěś|drjewo` → `['|DRĚŚ|DRJEWO|']`.
+> - `cs=true`, term `drěś|drjewo` → `[]` (case must match).
+> - Term `DRJEWO|DRĚŚ` (parts in the other order) → `[]` — the cell is matched verbatim, not as a set.
+> - Term `|DRJEWO|` (pipes not stripped by a caller) → `['|DRJEWO|']` — outer pipes are trimmed before matching, so a single-part cell still works.
+> - Mixed list `list=true`, raw `drjewo;DRĚŚ|DRJEWO`, `cs=true, ambig=false` → `['|DRĚŚ|DRJEWO|','|drjewo|']` — whole-cell and part terms coexist in one request.
+> - `regex=true`, term `DRĚŚ|DRJEWO` is **not** a whole cell: `|` stays regex alternation, so with `cs=true, ambig=false` the result contains the part cells `|DRĚŚ|` and `|DRJEWO|` (from `lemmanonambig`) and does **not** contain `|DRĚŚ|DRJEWO|`. Use `assertEqualsCanonicalizing`, not an ordered assertion.
+> - `EXPLAIN QUERY PLAN` for the `cs=false` whole-cell lookup shows `SEARCH … USING INDEX` on `lemmafrequency` (`lemmafrequencysortkeyindex` in the fixture), never `SCAN`.
+> Then pin the endpoint: in `tests/php/LemmagroupEndpointTest.php` and `LemmaperyearEndpointsTest.php`, the exact call bwlemma's `itemClick()` sends — `?lemma=DRĚŚ|DRJEWO&cs=1&regex=0&list=0&trim=1&ambig=0&sort` — returns that cell's rows (non-empty body). Tokens never contain `|`, so no token case.
+> Implementation hint: `_resolve_nonambiguous_cells()` already does sortkey seek + optional `cs` filter against a table parameter. For a term containing `|` (after trimming outer pipes), call it against the **cell table** (`lemmafrequency`/`normfrequency`) instead of the part table; `trim($cell,'|') === $term` is then the whole-cell comparison. Split terms into "whole-cell" and "part" groups first, resolve each, concatenate.
+
+#### E0b — truncation signal *(parallel with E0a)*
+> **Why:** the resolver silently stops at `SEARCH_RESULT_CAP` (500) cells. A broad regex (`D.*`) or a long list then gives plots and sums that **undercount without telling the user** — wrong numbers in a research tool. The header lets the page say "Resultset too large. Please refine query." (`lang_error_resultset_too_large`, already defined).
+> **TDD Red (PHP).** In `tests/php/LemmagroupEndpointTest.php` and `LemmaperyearEndpointsTest.php`: a request resolving more than the cap (seed >500 parts, `regex=1`, term `.*`) sends `X-Dsb-Result-Truncated: 1`; a normal request does **not** send the header. Emit it once, inside `resolve_request_cells()`, guarded by `headers_sent()`, so every endpoint using it gets it for free.
+> **TDD Red (JS).** In `tests/js/search.test.js`, two functions exported from `search.js`:
+> - `showTruncationNotice(doc, xhr)` — given a fake `{getResponseHeader: name => '1'}` it prepends to `doc.body` one element whose `textContent` is `lang_error_resultset_too_large` (never `innerHTML`) and returns `true`; given an xhr whose header is `null` or `'0'` it adds nothing and returns `false`; calling it twice adds only one notice (assert `doc.querySelectorAll(...)` length is 1).
+> - `readPHPChecked(doc, url)` — calls the global `readPHP(url)` (stub it in the test with a `globalThis.readPHP` that sets `globalThis.rawFile = {getResponseHeader: ...}` and returns a body), then inspects the global `rawFile` (that's where `datahandler.js`'s synchronous `readPHP()` leaves its `XMLHttpRequest`). Returns the body when the header is absent; when the header is `'1'` it calls `showTruncationNotice` and returns `null`. Pin both branches.
+> **Structural test** (`loadPage`, text-based, add to the D4 test): for each of bwlemma's `timeline.html`, `timelinesum.html`, `timelinesumlist.html`, `percenttimeline.html`, `percenttimelinesumlist.html`, `lemmalist.html`, `tokenlist.html`, `traviz.html`, the page source contains `readPHPChecked(` and does **not** contain `readPHP(` (regex `/\breadPHP\(/`) — i.e. every fetch goes through the checked wrapper. Each page treats a `null` return as "render nothing" (`timelinesumlist.html`: skip that series). E1–E4 add their sub-pages to the same list as they migrate (norm, word and variation sub-pages incl. percent, list and tree views). `doclist.html` uses `readPHP_async` and is excluded — its endpoint (`urnbylemma.php`) does not use the resolver.
+> `# CEILING:` note for Green: `header()` inside `resolve_request_cells()` only works because every endpoint resolves before printing; guard with `headers_sent()` and leave the comment there.
+
+#### E0c — `search.js` per-kind config *(parallel with E0a)*
+> **TDD Red.** In `tests/js/search.test.js`:
+> - `buildVisUrls('norm', 'DRJEWO', defaults, 0)` → `timeline.html?data=normsumperyear.php&norm=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=0`, `group: normlist.html?data=normgroup.php&…&sort`, `tokens: tokenlist.html?data=normtoken.php&…&sort`; `focus: 3` → `normcountperyear.php`; `list:true` → `timelinesumlist.html`. Assert exact strings.
+> - `buildVisUrls('token', 'woni', defaults, 0)` returns exactly two keys: `timeline: 'timeline.html?data=tokencountperyear.php&token=woni&cs=0&regex=0&list=0&trim=1&ambig=1&sort&focus=0'` and `wordinfo: 'wordinfo.html?data=token2lemma.php&token=woni'`. With `list:true` or `regex:true`, `wordinfo` is `'error_token.html'` (word-info only makes sense for one concrete token); `timeline` keeps `timeline.html` (bwword has no `timelinesumlist.html`). `focus` is ignored for tokens except being forwarded. `linreg_chart.html` is a toggle on the same iframe in `bwword/index.html`, not a separate URL — leave it to the page. Assert exact strings.
+> - All existing `buildVisUrls('lemma', …)` tests stay green unchanged.
+> - `listTermsFromLocation(search, field)` and `restoreSearchFromLocation(doc, search, field)` read `field` (default `'lemma'`, so bwlemma callers don't change): `?norm=A;B&list=1` gives `['A','B']` for `'norm'`.
+> - **Legacy alias for bwword:** `restoreSearchFromLocation(doc, '?word=woni', 'token')` fills `#searchinput` with `woni` (falls back to `word` when `token` is absent; `token` wins when both are present). Only for `field === 'token'`.
+> - `listPlotUrlsFromLocation('data', 'norm', '?data=normsumperyear.php&norm=A;B&list=1')` returns two norm-series URLs, not `[]`: pass its `termKey` into `listTermsFromLocation()`. Existing lemma-series URLs stay unchanged; bwnorm's list plot uses the new URLs.
+> - `searchExample(options, kind)` — pin the exact strings below (`kind` defaults to `'lemma'`). Lists always use `;` in examples (comma is still accepted as input when `regex` is off). `trim:false` drops the space after `;`. Lemmas are stored uppercase, so only the lemma examples change with `cs`; norm and token examples are **identical for `cs` on and off**.
+>
+>   | kind | literal | regex | list | regex+list |
+>   |---|---|---|---|---|
+>   | `lemma`, cs off | `drjewo` | `te(j\|n)` | `drjewo; bom` | `te(j\|n); bom` |
+>   | `lemma`, cs on | `DRJEWO` | `TE(J\|N)` | `DRJEWO; BOM` | `TE(J\|N); BOM` |
+>   | `norm` | `Chóśebuz` | `te(j\|n)` | `tej; ten` | `te(j\|n); Chóśebuz` |
+>   | `token` | `woni` | `w(o\|a)n(a\|i)` | `druge; woni` | `w(o\|a)n(a\|i); druge` |
+>
+>   The existing lemma-list assertions (`drjewo, bom`) change to `drjewo; bom` — update them. Pass `kind` through `applySearchExample(doc, kind)` and its page callers (`switchSearchOptions()`, `restoreSearchFromLocation()`), so the displayed example actually changes.
+
+#### E0d — `urnbylemma.php` hardening, reusable for `urnbynorm.php` *(depends on E0a, E0f)*
+> **TDD Red.** In `tests/php/DoclistEndpointsRegressionsTest.php`:
+> - The exact call bwlemma sends (`?lemma=<cell>&cs=1&regex=0&list=0&trim=1&ambig=0&year=1870-1880`) returns the expected matching document rows — pin that final behavior, not byte-for-byte compatibility with the old implementation.
+> - `?lemma=a/i&regex=1` and `?lemma=(&regex=1` return an empty body and no PHP warning.
+> - `regex=1` is fully anchored like the resolver: `DR` does not match `DRJEWO`, `DR.*` does.
+> - `list=1` splits via `split_terms()`: `NJEBYŚ LI` stays one term; `drjewo;tej` finds both.
+> - Whole-cell term (E0f rule, same as the resolver): `?lemma=DRĚŚ|DRJEWO&cs=1&regex=0&ambig=0` matches documents whose `lemmabag` contains the cell `|DRĚŚ|DRJEWO|`, and **not** documents that only contain `|DRJEWO|`. Today the bag is exploded on `||` into cells and each cell on `|` into parts; compare the whole cell when the term contains `|`.
+> Implementation: replace only the inline `preg_match` with `compile_term_pattern()` and the inline split with `split_terms()`; add the whole-cell branch; do not restructure the rest.
+> Move the year parsing into `year_clause(?string $year): ?array` in `searchfilter.php`, pinned in `SearchFilterTest.php` with `assertSame` on the whole array. **Semantics: unparsable → `null` → the endpoint prints an empty body (a wrong filter must never show an unfiltered result — accuracy over friendliness). Missing or empty → no filter.**
+>
+>   | input | result |
+>   |---|---|
+>   | `null` (param absent) | `['sql' => '1=1', 'params' => []]` |
+>   | `''`, `'   '` | `['sql' => '1=1', 'params' => []]` |
+>   | `'1870'` | `['sql' => 'date = ?', 'params' => ['1870']]` |
+>   | `'1870-1880'` | `['sql' => 'date BETWEEN ? AND ?', 'params' => ['1870', '1880']]` |
+>   | `' 1870 - 1880 '` | same as `'1870-1880'` |
+>   | `'> 0 OR 1=1 --'` | `null` |
+>   | `'BETWEEN 1 AND 2'` | `null` |
+>   | `'1870-'`, `'-1880'`, `'1870-1880-1890'`, `'abcd'` | `null` |
+>
+>   Endpoints do `$year = year_clause($_GET['year'] ?? null); if ($year === null) { exit; }` and append `' AND ' . $year['sql']`. It is reused by E0e and E1.
+
+#### E0e — per-year token endpoints and `token2norm.php` *(depends on E0d's `year_clause`)*
+> **TDD Red.** Create `tests/php/TokenperyearEndpointsTest.php` for `lemmatokenperyear.php` (seeds `lemmamapping.db`) and `normtokenperyear.php` (seeds `normmapping.db` — two databases in one `dataDir()`):
+> - `year=1870-1880` restricts to the range, `year=1870` to one year; `year=` + urlencoded `BETWEEN 1 AND 2 OR 1=1` and `> 0 OR 1=1 --` return an empty body. **Missing `year` now returns the unfiltered rows** (today the endpoint requires it — deliberate change per E0d's table).
+> - Term matching goes through `resolve_request_cells()` (flag matrix + legacy `exact=1` + injection payload on the term, as C1), including the E0f whole-cell call bwlemma's `updateTravizYear()` sends: `?lemma=DRĚŚ|DRJEWO&cs=1&regex=0&list=0&trim=1&ambig=0&sort&year=1870-1880`.
+> - Update `updateTravizYear()` in `bwlemma/index.html` to send `&year=<from>-<to>` and delete its `CEILING` comment; pin the new URL in `search.test.js` if it's built there, otherwise with a `loadPage` text check. `bwnorm/index.html` also sends `year=BETWEEN ...` in `updateTravizYear()` **and** `itemClick()`: E1 must update both to the validated range format. Until E1, the bwnorm traviz may temporarily stop working; verify it again at the end of E.
+> Add to the same file: `token2norm.php?token=<existing>` returns the same body as before; `?token=` + urlencoded `x" OR "1"="1` returns an empty body.
+
+#### E1 — bwnorm *(depends on E0; E1a–E1d mutually parallel)*
+
+All PHP steps seed `normmapping.db` in `dataDir()` with the norm twin of the lemma fixture (`tokennormtypesubtypedatefrequency`, `normfrequency`, `normnonambig`, `normtokenfrequency`, `urndatenormbag`; column `norm`). Each prompt is literally "mirror test X with `lemma` → `norm`"; `normtokenperyear.php` is already covered by E0e.
+
+##### E1a — `normgroup.php`, `normsumperyear.php`, `normcountperyear.php`, `normtoken.php`
+> **TDD Red.** Create `tests/php/NormSearchEndpointsTest.php` mirroring `LemmagroupEndpointTest.php` (for `normgroup.php`), `LemmaperyearEndpointsTest.php` (for `normsumperyear.php`/`normcountperyear.php`) and the flag-matrix part of `LemmatokenEndpointTest.php` (for `normtoken.php`), with `lemma` → `norm` everywhere: default cs-insensitive + ambiguous body, `ambig=0`, `cs=1`, `list=1` with `drjewo; tej`, `regex=1`, legacy `exact=1`, missing param → empty body, injection payload → empty body, the E0f whole-cell call (`?norm=DRĚŚ|DRJEWO&cs=1&ambig=0`) → that cell's rows, `X-Dsb-Result-Truncated: 1` on an over-cap regex (E0b). Green: each endpoint gets the same `resolve_request_cells($pdo, 'norm', $_GET)` + `in_clause('norm', …)` shape as its lemma twin.
+
+##### E1b — `urnbynorm.php`
+> **TDD Red.** Create `tests/php/UrnbynormEndpointTest.php` mirroring the `urnbylemma.php` half of `DoclistEndpointsRegressionsTest.php` incl. E0d's additions: the exact call bwnorm sends (`?norm=<cell>&cs=1&regex=0&list=0&trim=1&ambig=0&year=1870-1880`), the E0f whole-cell case, the `year_clause` table (range, single year, missing → unfiltered, garbage → empty body), `regex=1` anchored, `list=1` via `split_terms()`, injection on `norm` and `year` → empty body. Green: copy `urnbylemma.php`'s post-E0d structure over `normbag`.
+
+##### E1c — `prefixnormsearch.php`
+> **TDD Red.** Create `tests/php/PrefixnormsearchEndpointTest.php` mirroring `PrefixlemmasearchEndpointTest.php` (`lemma` → `norm`, tables `normnonambig`/`normfrequency`, indexes `normnonambigsortkey`/`normnonambignorm`): case-insensitive prefix default, `cs=1`, Sorbian prefix, suggestions only from `normnonambig`, `&ambig` ignored (profile's checkbox is commented out), whitelisted `sortby`, int `limit`, `SEARCH` never `SCAN` for both sort orders.
+> **Deliberate changes to state in the test:** (1) with no `sortby`, the order is now `frequency DESC` (today: unordered); (2) `cutoff` keeps its **grouping** meaning, not the lemma length cap — normvariation's autocomplete sends `cutoff=2&limit=20`: at most one suggestion per distinct prefix of length (typed length + `cutoff`) of the pipe-prefixed value. Fixture: `|Chóśebuz|`, `|Chóśebuski|`, `|Chóśebuzar|`, typed `Chó`, `cutoff=2` → prefixes of 6 chars of `|Chóśe…` → all three share `|Chóśe` → exactly one suggestion; typed `Chóśebu`, `cutoff=2` → three. Count **characters** (`SUBSTR` on the UTF-8 string in SQLite counts characters; do not pass a PHP `strlen`) — today `strlen('ě')` = 2 over-counts. Non-numeric `cutoff` is ignored (no 500). `GROUP BY` loses the `LIMIT` early stop — Green marks it `# CEILING:`.
+
+##### E1d — bwnorm frontend
+> **TDD Red (JS).** Create `tests/js/bwnorm_index_html.test.js` mirroring the **current** `bwlemma_index_html.test.js` (single `#searchinput`, five checkboxes with the same defaults, `#prefixsearchCheckBox` unchecked, `#searchexample`, `#ambigSearchButton`, `switchSearchOptions()` wiring, `js/search.js` after `datahandler.js` and `def_language.js`). Extend the D4 structural test and the E0b `readPHPChecked` text check to the bwnorm sub-pages (`timeline`, `timelinesum`, `timelinesumlist`, `percenttimeline`, `percenttimelinesumlist`, `normlist`, `tokenlist`, `traviz`; `doclist` loads `search.js` only): each fetches via `phpUrlFromLocation('data', 'norm', …)`. `timelinesumlist.html` uses the norm-series URLs from E0c; `traviz`/`doclist` get `searchQueryString('norm', exactitem, exactOptions)` + `&year=<from>-<to>` in both `updateTravizYear()` and `itemClick()` (replacing `year=BETWEEN …`), same as bwlemma. `callNormtree()` opens `../normvariation?norm=…`. Keep `normlist.html` passing the clicked cell with outer pipes stripped — E0f makes that work.
+
+#### E2 — bwword *(depends on E0)*
+> **TDD Red (PHP).** Create `tests/php/WordSearchEndpointsTest.php` for `tokencountperyear.php` and `prefixsearch.php` against `bagofwords.db` (`tokencount(token, frequency, sortkey)`, `tokendatecount`):
+> - No ambiguity: `ambig=0` and `ambig=1` return identical bodies.
+> - `tokencountperyear.php?token=woda&cs=0` returns rows for both `woda` and `Woda` (fixture has both spellings) — **new behaviour**, today the `LIKE` is case-sensitive. `cs=1` returns only `woda`. `EXPLAIN QUERY PLAN` on the fixture: the `cs=0` literal lookup uses `tokensortkeyindex`.
+> - `?token=druge;woni&list=1&trim=1` returns both; `?token=druge,woni&list=1` also (comma legacy); `regex=1` with `w(o|a)n(a|i)` returns `woni`/`wona`-style fixture rows and nothing else (anchored).
+> - `prefixsearch.php`: `?word=wo` (default `cs=0`) returns `woda`, `Woda`, `woni` in `frequency DESC` order; `?word=wo&cs=1` excludes `Woda`; `sortby=alphabet` now orders by dsb `sortkey` (**deliberate change** — today it is Unicode `token` order); `sortby` whitelisted (`frequency; DROP TABLE tokencount --` → normal body, table intact on a second request); `limit` int. `cutoff` today builds `SUBSTRING(word, …)` on a nonexistent column — no bwword caller sends it, so **ignore it** (numeric or garbage) and pin that both `?word=wo&cutoff=2` and `?word=wo&cutoff=x` return normal suggestions, not a 500.
+> - Injection payloads on `token`, `word`, `sortby` → empty/normal bodies with tables intact.
+> - Once E3/E4 are complete, clicked tokens in both variation views reach `tokencountperyear.php` and show the expected rows; byte-for-byte compatibility with old `?token=X&sort` responses is not required.
+> - `token2lemma.php` is already parameterised — untouched.
+> **TDD Red (JS).** Create `tests/js/bwword_index_html.test.js` mirroring E1d's markup test, but `#ambigCheckBox` and the ambig label on `#ambigSearchButton` are **absent**; `#searchinput` replaces `#wordinput`, `#regexsearch`, `#wordlist`. The bwword sub-pages (`timeline`, `percenttimeline`, `linreg_chart`) load `search.js`, use `phpUrlFromLocation('data', 'token', …)` and `readPHPChecked` (add to the E0b text check). `index.html` calls `restoreSearchFromLocation(document, window.location.search, 'token')` — the `?word=` alias from E0c keeps the live cross-links from `wordinfo.html`, `lemmavariation/datalist.html` and `normvariation/datalist.html` working; fix the stray `"` in `normvariation/datalist.html`'s `href=../bwword/?word="` while there (pin with a `loadPage` text check that the file contains `?word=' +` and not `?word="'`). `updateTimeline()` sets the two iframes from `buildVisUrls('token', …)` (E0c) — `wordinfo` gets `error_token.html` on list/regex searches; the `switchlinreg` button is disabled when `list` or `regex` is on (pin via `searchControlState` — add a `linreg` key that equals `autocomplete`).
+
+#### E3 — lemmavariation *(depends on E0)*
+> **TDD Red.** Create `tests/js/lemmavariation_index_html.test.js` mirroring E1's markup test (ids, defaults, `search.js` order). In `search.test.js` add `buildTreeUrls(kind, term, opts, weight)`:
+> - `kind:'lemma'` returns `{tree, sunburst, traviz}` for `lemmatree_dagre.html`, `sunburst.html`, `traviz.html`, each `?data=lemmatoken.php&<flags>&sort&inclusive`; `weight:true` appends `&weight`. Assert exact strings.
+> - `regex:true` keeps `data=lemmatoken.php` (never `lemmatokenregex.php`).
+> - `appendToList(existing, item)`: `('', 'A')` → `'A'`, `('A', 'B')` → `'A;B'`, trims, does not add a duplicate.
+> Tree sub-pages (`lemmatree_dagre.html`, `sunburst.html`, `traviz.html`) load `search.js`, fetch via `phpUrlFromLocation('data', 'lemma', …)` + `readPHPChecked` (add to the E0b text check) and re-append `&inclusive`/`&weight` themselves. The root-node decision uses a new pure `treeHasRoot(search)` exported from `search.js` — `true` when `inclusive` is present, `regex=1` or `list=1`; `false` for `'?data=lemmatoken.php&lemma=DRJEWO'` — pinned for all four cases, replacing `dataset.includes('regex.php')`/`lemma.includes(',')`.
+> Clicked-node paths: `lemmaclick(cell)` sends `searchQueryString('lemma', cell, exactOptions)` (same `exactOptions` as bwlemma) to `lemmatimeline.html?data=lemmacountperyear.php&…&sort&focus=3` — the cell may be ambiguous (`DRĚŚ|DRJEWO`), which E0f makes work; `tokenclick(token)` sends `searchQueryString('token', token, exactOptions)` to `timeline.html?data=tokencountperyear.php&…&sort` and `datalist.html?data=token2lemma.php&token=…`. Pin these two URL shapes in `search.test.js` as `buildClickUrls(kind, item)` if you extract them, otherwise with a `loadPage` text check.
+> `index.html` restores with `restoreSearchFromLocation(document, window.location.search, 'lemma')`; the old `curlemma.includes(',')` branch goes away (a legacy `?lemma=A,B` deep link restores as a single literal, per D5). `updateTree`/`updateTreeFromList`/`updateTreeFromRegex` collapse into one `buildTreeUrls` call.
+
+#### E4 — normvariation *(depends on E0; parallel with E3)*
+> **TDD Red.** Create `tests/js/normvariation_index_html.test.js` mirroring E3's markup test. `buildTreeUrls('norm', …)` returns only `{tree, traviz}` (`normtree_dagre.html`, `traviz.html` — there is **no sunburst**) with `data=normtoken.php`. `regex:true` produces a working URL — today it points at the non-existent `normtokenregex.php`.
+> `normtree_dagre.html` and `traviz.html` get the same `phpUrlFromLocation` + `treeHasRoot` + `readPHPChecked` change as E3.
+> Clicked-node path `normclick(item)`: items starting with `|` are norm cells → strip outer pipes and send `searchQueryString('norm', cell, exactOptions)` to `normtimeline.html?data=normcountperyear.php&…&sort&focus=3` (ambiguous cells work via E0f); other items are tokens → `tokentimeline.html?data=tokencountperyear.php&` + `searchQueryString('token', item, exactOptions)` + `&sort&focus=3` and `datalist.html?data=token2norm.php&token=…`. Pin both shapes as in E3.
+> The autocomplete call keeps `prefixnormsearch.php?cutoff=2&limit=20&norm=` (its `cutoff` semantics are pinned in E1c). `token2norm.php` is covered by E0e. The hard-coded example link `?norm=druge,francojski` becomes `?norm=druge;francojski&list=1`.
 
 ---
 
 ### Phase F — cleanup *(TDD **Refactor**, not Red; depends on E)*
 
 #### F1 — delete the dead regex endpoints
-> **TDD Refactor.** With `&regex=1` now handled by the main endpoints, delete `lemmaregexsearch.php`, `lemmaregexgroup.php`, `lemmaregex2token.php`, `lemmatokenregex.php`, `normregexsearch.php`, `normregexgroup.php`, `normregex2token.php` and `regexsearch.php`, plus the six copies of `_sqliteRegexp()` they contain (the one surviving copy lives in `searchfilter.php`).
-> Grep `vis` and `tests` for every reference first; the full suite (`composer test` and `npm test`) must stay green with no test changes. If any reference survives, stop and report instead of deleting.
+> **TDD Refactor.** With `&regex=1` handled by the main endpoints, delete all **8** files: `lemmaregexsearch.php`, `lemmaregexgroup.php`, `lemmaregex2token.php`, `lemmatokenregex.php`, `normregexsearch.php`, `normregexgroup.php`, `normregex2token.php`, `regexsearch.php` — together with their **8** copies of `_sqliteRegexp()`. None survives: `searchfilter.php` matches with `preg_match` in PHP and registers no SQLite function.
+> First grep `public/vis`, `public/js` and `tests` for `regex[a-z0-9]*\.php` and `regex.php`. After E the only acceptable hits are none — in particular the `dataset.includes('regex.php')` checks in `lemmatree_dagre.html`/`normtree_dagre.html` must already be replaced by `treeHasRoot()` (E3/E4). If any reference survives, stop and report instead of deleting. `composer test` and `npm test` stay green with no test changes.
 
 #### F2 — collapse duplicated inline JS
-> **TDD Refactor.** With all five vis driven by `public/js/search.js`, remove the now-duplicated inline `updateTimeline*` / `updateTree*` / `switchPrefixsearch` / `addToList` bodies from the five `index.html` files, leaving thin one-line delegations. No test changes; `npm test` stays green.
-
----
-
-### Relevant files
-
-**New**
-- `public/php/searchfilter.php` — `search_options()`, `split_terms()`, `compile_term_pattern()`, `resolve_cells()`, `in_clause()`, the single surviving `_sqliteRegexp()`, `SEARCH_RESULT_CAP`
-- `public/js/search.js` — `readSearchOptions()`, `searchQueryString()`, `splitTerms()`, `searchControlState()`, `applySearchControlState()`, `buildVisUrls()`, `buildTreeUrls()`, `phpUrlFromLocation()`, `restoreSearchFromLocation()`, `appendToList()` + test-hook footer
-
-**Modified — PHP** (all lose their concatenated SQL): `lemmagroup.php`, `normgroup.php`, `lemmasumperyear.php`, `normsumperyear.php`, `lemmacountperyear.php`, `normcountperyear.php`, `lemmatoken.php`, `normtoken.php`, `lemmatokenperyear.php`, `normtokenperyear.php`, `urnbylemma.php`, `urnbynorm.php`, `tokencountperyear.php`, `token2norm.php`, `metadata.php`, `prefixlemmasearch.php`, `prefixnormsearch.php`, `prefixsearch.php`
-
-**Modified — JS/HTML**: the 5 `public/vis/*/index.html` plus their iframe sub-pages; `def_language.js` (5 new `lang_*` labels); `my_language.js` (template entries)
-
-**Reuse, don't reinvent**: `dsb_sortkey()` in `dsb_collation.php`; `DevServer.php`; `helpers.js` (`withDom`, `loadScript`, `loadPage`, `knownBug`); `getQueryVariable()` in `datahandler.js`; the existing `resultsetmax` / `lang_error_resultset_too_large` mechanism
-
----
-
-### Verification
-
-1. `composer test` and `npm test` green after every Green step.
-2. After C5 and E2, the `EXPLAIN QUERY PLAN` assertions prove the default (`cs=0`, non-regex) path is a `SEARCH … USING INDEX`, never a `SCAN` — the no-degradation guarantee.
-3. Manual on the running server at `127.0.0.1:8000/vis/bwlemma/`: `drjewo, tej` with list+trim on shows **both** series; `DRJEWO` with ambig off shows only `|DRJEWO|`; ticking regex greys out both the suggestions and the alphabet checkbox.
-4. Deep link `?lemma=DRJEWO&regex=1&list=1&cs=1&ambig=0&trim=1&headerconf=111111` restores the exact form state and results.
-5. Grep the modified endpoints for `. $_GET` — the only remaining occurrences should be int casts and whitelisted identifiers.
-6. Spot-check timing on the real `lemmamapping.db` before/after for `DRJEWO` (ambig on) and for `DR.*O` (regex) — the regex case should improve by orders of magnitude.
-
----
-
-### Decisions taken
-
-- **Two-phase resolve (Option A)** with the caveat table above; cap N=500 cells + `X-Dsb-Result-Truncated: 1` header.
-- **Defaults**: API/deep-link `cs` OFF; the initial frontend `cs` checkbox ON; `ambig` ON, `trim` ON (your correction), `regex` OFF, `list` OFF, alphabetical suggestion sorting OFF.
-- **Delimiter**: `;` primary, `,` still accepted for legacy links; splitting only happens when `list=1`, so a regex may contain commas freely.
-- **Legacy `exact`** accepted as an alias for `!ambig` everywhere; explicit `ambig` wins.
-- **Autocomplete** always suggests non-ambiguous forms and follows the `cs` checkbox — both paths index-backed, so typing stays fast.
-- **`regex=0` means no `preg_match` anywhere** — pinned by an explicit test in A3 and B2.
-- **Excluded**: `lemmaprofile.php`/`normprofile.php`/`wordprofile.php` (single-item detail pages, not the search box), `psedcytassearch.php`, `token2lemma.php` (already parameterised), the ETL, and any change to the DB schema.
-
-### Further considerations
-
-1. **Truncation UX.** The cap is currently silent apart from a response header. Do you want a visible "too many matches, narrow your search" message (an extra step reusing `lang_error_resultset_too_large`), or is silent capping acceptable for now?
-2. **`cs` and the autocomplete request rate.** Suggestions fire on every keystroke through a *synchronous* `XMLHttpRequest` (`readPHP`). That's pre-existing, but if typing feels sluggish after the change it's the cause, not the new SQL. Want a small debounce step added, or leave it out of scope?
-3. **`prefixsearch.php` becoming case-insensitive by default** is a visible behaviour change for bwword users who currently rely on case-sensitive prefix matching. The `cs` checkbox gives case-sensitive matching back — flagging it so it doesn't surprise your stakeholder.
+> **TDD Refactor, only where duplication remains after E.** Move genuinely identical URL building and list operations from `updateTimeline*` / `updateTree*` / `switchPrefixsearch` / `addToList` / `addLemmaToList` / `addNormToList` / `addWordToList` into existing `search.js` helpers, leaving thin delegations where that preserves behavior. Keep page-specific actions local: word-info and regression controls, autocomplete endpoint/cutoff settings, year-filtered traviz/doclist, and variation tree controls need not become one generic handler. **Out of scope:** `vis/lemmaeval`, `vis/normeval`, `vis/profile` keep their own autocomplete wiring and inputs — they are not part of the unified search box. Before removing a body, pin any untested interactions it owns (search, suggestion toggle, list/regex, clicked item, year range); then run `npm test` and the affected PHP tests. Do not add a new abstraction solely to make every wrapper one line.
