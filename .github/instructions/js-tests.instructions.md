@@ -37,6 +37,8 @@ if (typeof module !== 'undefined' && module.exports) {
 - One observable behavior per test; Arrange-Act-Assert with blank lines; happy path first, then edge cases.
 - Tests are order-independent (own DOM, reloaded scripts) and must fail via assertion, never a load/`require` error. Run new tests before finishing.
 - Assert exact results where cheap (full strings and `toEqual` on arrays/objects), not just `includes` or partial truthiness.
+- Always write human-readable tests. Avoid dense string literals with e.g. `\n` or `\t`; use helper functions, arrays, template literals or simillar thechniques to make assertion/expectations/fixtures easily parsable and understandable by human eye. If fixtures are not provided in the prompt, prefer to use real examples to build them. If unsure, check parallel tests or fetch the actual data from `public/data`.
+- When modifying user interface texts, do not hardcode them in one specific human langauge but remember to test against variables from `public/js/def_language.js`
 
 ## HTML tests
 
