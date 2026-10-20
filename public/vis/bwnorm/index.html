@@ -7,6 +7,7 @@
   <script src="../../js/datahandler.js"></script>
   <script src="../../js/gui.js"></script>
   <script src="../../js/autocomplete.js"></script>
+  <script src="../../js/search.js"></script>
   <link rel="stylesheet" href="../../digilabstyles.css" />
 </head>
 
@@ -48,10 +49,12 @@
     <tr>
       <td></td>
       <td>
-        <input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()" />
-        <script>
-          document.write(lang_prefixsearchalphabet_dsb);
-        </script>
+        <label
+          ><input id="prefixsearchCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+          <script>
+            document.write(lang_prefixsearchalphabet_dsb);
+          </script></label
+        >
       </td>
     </tr>
     <tr>
@@ -64,7 +67,7 @@
         <div class="autocomplete">
           <input
             style="width: 60%"
-            id="norm"
+            id="searchinput"
             type="text"
             onkeydown="
               if (event.key === 'Enter') {
@@ -72,32 +75,31 @@
               }
             "
           />
-          <button onclick="updateTimeline()">
+          <button id="ambigSearchButton" onclick="updateTimeline()">
             <script>
               document.write(lang_ambigsearch);
             </script>
           </button>
         </div>
         <script>
-          autocomplete('norm', 'prefixnormsearch.php?limit=30&sortby=alphabet&norm=', '');
+          autocomplete(
+            'searchinput',
+            'prefixnormsearch.php?limit=30&sortby=frequency&cs=0&norm=',
+            '',
+            true,
+          );
         </script>
       </td>
       <td>
         <script>
           document.write(lang_example);
         </script>
-        Chóśebuz
+        <span id="searchexample"></span>
       </td>
       <td style="text-align: left">
         <script>
           document.write(lang_redirect);
         </script>
-        <button onclick="addToList()">
-          &#10149;
-          <script>
-            document.write(lang_list);
-          </script>
-        </button>
         <button onclick="callNormtree()">
           &#10149;
           <script>
@@ -108,67 +110,45 @@
       </td>
     </tr>
     <tr>
-      <td style="text-align: center">Regex</td>
-      <td>
-        <div>
-          <input
-            style="width: 70%"
-            id="regexsearch"
-            type="text"
-            placeholder="^ und $ werden angefügt"
-            onchange=""
-            onkeydown="
-              if (event.key === 'Enter') {
-                updateTimelineRegex();
-              }
-            "
-          />
-          <button onclick="updateTimelineRegex()">
+      <td></td>
+      <td style="padding: 0">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5em">
+          <label
+            ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
             <script>
-              document.write(lang_enter);
-            </script>
-          </button>
+              document.write(lang_search_regex);
+            </script></label
+          >
+          <label
+            ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_list);
+            </script></label
+          >
+          <label
+            ><input id="ambigCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_ambig);
+            </script></label
+          >
         </div>
-      </td>
-      <td style="text-align: center">
-        <script>
-          document.write(lang_example);
-        </script>
-        te(j|n)
       </td>
       <td></td>
-    </tr>
-    <tr>
-      <td style="text-align: center">
-        <script>
-          document.write(lang_list);
-        </script>
-      </td>
-      <td>
-        <div>
-          <input
-            style="width: 70%"
-            id="normlist"
-            type="text"
-            onchange=""
-            onkeydown="
-              if (event.key === 'Enter') {
-                updateTimelineList();
-              }
-            "
-          />
-          <button onclick="updateTimelineList()">
+      <td style="text-align: left">
+        <div style="display: flex; gap: 0.5em; white-space: nowrap">
+          <label
+            ><input id="csCheckBox" type="checkbox" onchange="switchSearchOptions()" />
             <script>
-              document.write(lang_enter);
-            </script>
-          </button>
+              document.write(lang_search_casesensitive);
+            </script></label
+          >
+          <label
+            ><input id="trimCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_trim);
+            </script></label
+          >
         </div>
-      </td>
-      <td style="text-align: center">
-        <script>
-          document.write(lang_example);
-        </script>
-        tej,ten
       </td>
     </tr>
   </table>
@@ -434,14 +414,25 @@
       }
     };
 
+    var switchSearchOptions = function () {
+      var options = searchOptionsFromForm(document);
+      applySearchControlState(document, options);
+      applyAmbigButtonLabel(document);
+      applySearchExample(document, 'norm');
+      switchPrefixsearch();
+    };
+
     var switchPrefixsearch = function () {
-      tmp = document.getElementById('prefixsearchCheckBox').checked;
-      if (tmp) {
-        tmp = 'alphabet';
-      } else {
-        tmp = 'frequency';
-      }
-      autocomplete('norm', 'prefixnormsearch.php?limit=30&sortby=' + tmp + '&norm=', '');
+      var sortby = document.getElementById('prefixsearchCheckBox').checked
+        ? 'alphabet'
+        : 'frequency';
+      var caseSensitive = document.getElementById('csCheckBox').checked ? '1' : '0';
+      autocomplete(
+        'searchinput',
+        'prefixnormsearch.php?limit=30&sortby=' + sortby + '&cs=' + caseSensitive + '&norm=',
+        '',
+        searchControlState(searchOptionsFromForm(document)).autocomplete,
+      );
     };
 
     var switchpercenttimeline = function (elid) {
@@ -464,198 +455,127 @@
       }
     };
 
-    var addToList = function () {
-      tmp = document.getElementById('norm').value.trim();
-      tmp2 = document.getElementById('normlist').value.trim();
-      str = '';
-      if (tmp.length > 0) {
-        if (tmp2.length > 0) {
-          str = ',';
-        }
-        str = tmp2 + str + tmp;
-        document.getElementById('normlist').value = str;
-        updateTimelineList();
-      }
-    };
-
-    var updateTimelineList = function () {
-      curitem = document.getElementById('normlist').value.trim();
-      if (curitem.length > 0) {
-        loading('timeline');
-        loading('normgroup');
-        loading('tokengroup');
-        if (focus == 3) {
-          funcall = 'normcountperyear';
-        } else {
-          funcall = 'normsumperyear';
-        }
-        document.getElementById('timeline').src =
-          'timelinesumlist.html?data=' + funcall + '.php&norm=' + curitem + '&sort&focus=' + focus;
-        document.getElementById('normgroup').src =
-          'normlist.html?data=normgroup.php&norm=' + curitem + '&sort';
-        document.getElementById('tokengroup').src =
-          'tokenlist.html?data=normtoken.php&norm=' + curitem + '&sort';
-        document.getElementById('focusbutton0').style.boxShadow = 'none';
-        document.getElementById('focusbutton3').style.boxShadow = 'none';
-        document.title = lang_normify + ' ' + curitem;
-        document.getElementById('traviz').src = 'error_docref.html';
-        document.getElementById('docref').src = 'error_docref.html';
-        document.getElementById('switchtimelinesumbutton').disabled = true;
-        document.getElementById('switchpercenttimelinebutton').disabled = true;
-      }
-    };
-
     var updateYearlabel = function () {
       tmp = parseInt(document.getElementById('yearminslider').value);
       document.getElementById('yearlabel').innerHTML = tmp;
     };
 
     var updateTravizYear = function () {
-      if (exactitem.trim().length > 0) {
-        loading('traviz');
-        url = document.getElementById('traviz').src.split('&year')[0];
-        yearfrom = document.getElementById('yearminslider').value;
-        yearto = document.getElementById('yearmaxslider').value;
-        year = yearfrom + '-' + yearto;
-        document.getElementById('traviz').src =
-          'traviz.html?data=normtokenperyear.php&norm=' + exactitem + '&exact=1&sort&year=' + year;
-        document.getElementById('docref').src =
-          'doclist.html?data=urnbynorm.php&norm=' + exactitem + '&year=' + year;
+      if (exactitem.trim().length === 0) {
+        return;
       }
+      loading('traviz');
+      loading('docref');
+      var yearfrom = document.getElementById('yearminslider').value;
+      var yearto = document.getElementById('yearmaxslider').value;
+      var query = searchQueryString('norm', exactitem, exactOptions);
+      setSrc(
+        'traviz',
+        'traviz.html?data=normtokenperyear.php&' +
+          query +
+          '&exact=1&sort&year=' +
+          yearfrom +
+          '-' +
+          yearto,
+      );
+      setSrc(
+        'docref',
+        'doclist.html?data=urnbynorm.php&' + query + '&year=' + yearfrom + '-' + yearto,
+      );
     };
 
     var callDolnoserbski = function () {
-      curitem = document.getElementById('norm').value.trim();
-      if (curitem.length > 0) {
-        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + curitem, '_blank');
+      var curterm = document.getElementById('searchinput').value.trim();
+      if (curterm.length > 0) {
+        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + curterm, '_blank');
       }
     };
 
     var callNormtree = function () {
-      curitem = document.getElementById('norm').value.trim();
-      if (curitem.length > 0) {
-        window.open('../normvariation?norm=' + curitem, '_blank');
+      var curterm = document.getElementById('searchinput').value.trim();
+      if (curterm.length > 0) {
+        window.open(
+          '../normvariation?norm=' + encodeURIComponent(curterm) + '&headerconf=' + headerconf,
+          '_blank',
+        );
       }
     };
 
-    var updateFocus = function (newfocus) {
-      if (curitem.length > 0) {
-        focus = newfocus;
-        sourcearr = document.getElementById('timeline').src.split('&focus=');
-        source = sourcearr[0] + sourcearr[1].slice(1) + '&focus=' + focus;
-        if (source.includes('timelinesumlist')) {
-          source = source.replaceAll('timelinesumlist', 'timeline');
-        }
-        if (focus == 3) {
-          document.getElementById('focusbutton0').style.boxShadow = 'none';
-          document.getElementById('focusbutton3').style.boxShadow = '-7px 0px 3px 6px white';
-          source = source.replace('normsumperyear', 'normcountperyear');
-        } else {
-          document.getElementById('focusbutton3').style.boxShadow = 'none';
-          document.getElementById('focusbutton0').style.boxShadow = '7px 0px 3px 6px white';
-          source = source.replace('normcountperyear', 'normsumperyear');
-        }
-        loading('timeline');
-        document.getElementById('timeline').src = source;
-        document.title = lang_normify + ' ' + curitem;
-        document.getElementById('docref').src = 'error_docref.html';
-        document.getElementById('switchtimelinesumbutton').disabled = false;
-        document.getElementById('switchpercenttimelinebutton').disabled = false;
-      }
+    var exactOptions = { cs: true, regex: false, list: false, trim: true, ambig: false };
+
+    var setSrc = function (elid, url) {
+      document.getElementById(elid).src = url;
     };
 
-    var updateTimelineRegex = function () {
-      curitem = document.getElementById('regexsearch').value.trim();
-      if (curitem.length > 0) {
-        loading('timeline');
-        loading('normgroup');
-        loading('tokengroup');
-        document.getElementById('timeline').src =
-          'timeline.html?data=normregexsearch.php&norm=' +
-          encodeURIComponent(curitem) +
-          '&sort&focus=' +
-          focus;
-        document.getElementById('normgroup').src =
-          'normlist.html?data=normregexgroup.php&norm=' + encodeURIComponent(curitem) + '&sort';
-        document.getElementById('tokengroup').src =
-          'tokenlist.html?data=normregex2token.php&norm=' + encodeURIComponent(curitem) + '&sort';
-        document.getElementById('docref').src = 'error_docref.html';
-        document.getElementById('traviz').src = 'error_docref.html';
-        document.title = lang_normify + ' ' + curitem;
-        document.getElementById('switchtimelinesumbutton').disabled = false;
-        document.getElementById('switchpercenttimelinebutton').disabled = false;
-      }
+    var highlightFocus = function (activefocus) {
+      document.getElementById('focusbutton0').style.boxShadow =
+        activefocus === 0 ? '7px 0px 3px 6px white' : 'none';
+      document.getElementById('focusbutton3').style.boxShadow =
+        activefocus === 3 ? '-7px 0px 3px 6px white' : 'none';
     };
 
     var updateTimeline = function () {
-      curitem = document.getElementById('norm').value.trim();
-      if (curitem.length > 0) {
-        loading('timeline');
-        loading('normgroup');
-        loading('tokengroup');
-        if (focus == 3) {
-          funcall = 'normcountperyear';
-        } else {
-          funcall = 'normsumperyear';
-        }
-        document.getElementById('timeline').src =
-          'timeline.html?data=' + funcall + '.php&norm=' + curitem + '&sort&focus=' + focus;
-        document.getElementById('normgroup').src =
-          'normlist.html?data=normgroup.php&norm=' + curitem + '&sort';
-        document.getElementById('tokengroup').src =
-          'tokenlist.html?data=normtoken.php&norm=' + curitem + '&sort';
-        document.getElementById('docref').src = 'error_docref.html';
-        document.getElementById('traviz').src = 'error_docref.html';
-        document.getElementById('switchtimelinesumbutton').disabled = false;
-        document.getElementById('switchpercenttimelinebutton').disabled = false;
-        document.title = lang_normify + ' ' + curitem;
+      var options = searchOptionsFromForm(document);
+      var urls = buildVisUrls('norm', document.getElementById('searchinput').value, options, focus);
+      if (!urls) {
+        return;
       }
+      loading('timeline');
+      loading('normgroup');
+      loading('tokengroup');
+      curitem = document.getElementById('searchinput').value.trim();
+      exactitem = '';
+      setSrc('timeline', urls.timeline);
+      setSrc('normgroup', urls.group);
+      setSrc('tokengroup', urls.tokens);
+      setSrc('traviz', 'error_docref.html');
+      setSrc('docref', 'error_docref.html');
+      document.title = lang_normify + ' ' + curitem;
+      highlightFocus(options.list ? -1 : focus);
+      document.getElementById('switchtimelinesumbutton').disabled = options.list;
+      document.getElementById('switchpercenttimelinebutton').disabled = options.list;
     };
 
     var itemClick = function (item) {
+      var urls = buildVisUrls('norm', item, exactOptions, focus);
+      if (!urls) {
+        return;
+      }
       loading('timeline');
       loading('tokengroup');
-      loading('traviz');
       exactitem = item;
-      if (focus == 3) {
-        funcall = 'normcountperyear';
-      } else {
-        funcall = 'normsumperyear';
-      }
-      document.getElementById('traviz').src =
-        'traviz.html?data=normtoken.php&norm=' + exactitem + '&sort&exact=1';
-      document.getElementById('timeline').src =
-        'timeline.html?data=' + funcall + '.php&norm=' + exactitem + '&exact=1&focus=' + focus;
-      document.getElementById('tokengroup').src =
-        'tokenlist.html?data=normtoken.php&norm=' + exactitem + '&sort&exact=1';
-      url = document.getElementById('traviz').src.split('&year')[0];
-      yearfrom = document.getElementById('yearminslider').value;
-      yearto = document.getElementById('yearmaxslider').value;
-      year = yearfrom + '-' + yearto;
-      document.getElementById('traviz').src =
-        'traviz.html?data=normtokenperyear.php&norm=' + exactitem + '&exact=1&sort&year=' + year;
-      document.getElementById('docref').src =
-        'doclist.html?data=urnbynorm.php&norm=' + exactitem + '&year=' + year;
+      setSrc('timeline', urls.timeline);
+      setSrc('tokengroup', urls.tokens);
+      updateTravizYear();
+      document.title = lang_normify + ' ' + exactitem;
+      highlightFocus(focus);
       document.getElementById('switchtimelinesumbutton').disabled = false;
       document.getElementById('switchpercenttimelinebutton').disabled = false;
-      document.title = lang_normify + ' ' + exactitem;
+    };
+
+    var updateFocus = function (newfocus) {
+      focus = newfocus;
+      if (exactitem.length > 0) {
+        itemClick(exactitem);
+      } else if (curitem.length > 0) {
+        updateTimeline();
+      }
     };
 
     var focus = 0;
-    document.getElementById('focusbutton0').style.boxShadow = '7px 0px 3px 6px white';
-    curitem = getQueryVariable('norm');
+    var curitem = '';
     exactitem = '';
-    if (curitem.length > 0) {
-      document.getElementById('norm').value = curitem;
+    highlightFocus(focus);
+    restoreSearchFromLocation(document, window.location.search, 'norm');
+    if (document.getElementById('searchinput').value.trim().length > 0) {
       updateTimeline();
-      document.getElementById('norm').scrollIntoView();
+      document.getElementById('searchinput').scrollIntoView();
     } else {
-      document.getElementById('timeline').src = 'error_token.html';
-      document.getElementById('normgroup').src = 'error_token.html';
-      document.getElementById('tokengroup').src = 'error_token.html';
+      document.title = lang_normify;
+      setSrc('timeline', 'error_token.html');
+      setSrc('normgroup', 'error_token.html');
+      setSrc('tokengroup', 'error_token.html');
     }
-
-    document.title = lang_normify + ' ' + curitem;
   </script>
   <br /><br />
   <script>

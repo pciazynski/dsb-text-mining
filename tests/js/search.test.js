@@ -46,10 +46,14 @@ function loadListPlotTraces() {
 }
 
 function runBwlemmaPlotPage(page, search, phpResponses, truncated = false) {
-  const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis', 'bwlemma', page), 'utf8');
+  return runPlotPage('bwlemma', page, search, phpResponses, truncated);
+}
+
+function runPlotPage(kind, page, search, phpResponses, truncated = false) {
+  const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis', kind, page), 'utf8');
   const dom = new JSDOM(html, {
     runScripts: 'outside-only',
-    url: 'https://example.test/vis/bwlemma/' + page + search,
+    url: 'https://example.test/vis/' + kind + '/' + page + search,
   });
   const externalScripts = [...dom.window.document.querySelectorAll('script[src]')].map((script) =>
     script.getAttribute('src'),
@@ -961,6 +965,44 @@ describe('token-per-year Traviz URLs', () => {
       dom.window.close();
     }
   });
+
+  it.each([
+    ['bwlemma', 'lemma', 'DRĚŚ|DRJEWO', 'lemmatokenperyear.php', 'urnbylemma.php'],
+    ['bwnorm', 'norm', 'Chóta|chyta', 'normtokenperyear.php', 'urnbynorm.php'],
+  ])(
+    '%s sends the clicked cell with exact search flags to traviz and doclist',
+    (kind, termKey, cell, travizEndpoint, doclistEndpoint) => {
+      const dom = openPage(kind);
+      try {
+        dom.window.document.getElementById('yearminslider').value = '1870';
+        dom.window.document.getElementById('yearmaxslider').value = '1880';
+        const exactFlags = { cs: '1', regex: '0', list: '0', trim: '1', ambig: '0' };
+
+        for (const act of [() => dom.window.itemClick(cell), () => dom.window.updateTravizYear()]) {
+          act();
+
+          const traviz = new URL(dom.window.document.getElementById('traviz').src);
+          const doclist = new URL(dom.window.document.getElementById('docref').src);
+          expect(traviz.pathname).toBe('/vis/' + kind + '/traviz.html');
+          expect(Object.fromEntries(traviz.searchParams)).toMatchObject({
+            data: travizEndpoint,
+            [termKey]: cell,
+            ...exactFlags,
+            year: '1870-1880',
+          });
+          expect(doclist.pathname).toBe('/vis/' + kind + '/doclist.html');
+          expect(Object.fromEntries(doclist.searchParams)).toEqual({
+            data: doclistEndpoint,
+            [termKey]: cell,
+            ...exactFlags,
+            year: '1870-1880',
+          });
+        }
+      } finally {
+        dom.window.close();
+      }
+    },
+  );
 });
 
 describe('bwlemma iframe pages', () => {
@@ -1099,6 +1141,83 @@ describe('bwlemma iframe pages', () => {
       }
     },
   );
+});
+
+describe('bwnorm iframe pages', () => {
+  const pages = [
+    'timeline.html',
+    'timelinesum.html',
+    'timelinesumlist.html',
+    'percenttimeline.html',
+    'percenttimelinesumlist.html',
+    'normlist.html',
+    'tokenlist.html',
+    'traviz.html',
+    'doclist.html',
+  ];
+
+  const resolverPages = pages.filter((page) => page !== 'doclist.html');
+
+  function inlineSourceOf(page) {
+    const document = loadPage('vis/bwnorm/' + page);
+    return [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .join('\n');
+  }
+
+  it.each(resolverPages)('%s routes every synchronous fetch through readPHPChecked', (page) => {
+    const inlineSource = inlineSourceOf(page);
+
+    expect(inlineSource).toMatch(/\breadPHPChecked\(/);
+    expect(inlineSource).not.toMatch(/\breadPHP\(/);
+  });
+
+  it.each(pages)('%s loads js/search.js', (page) => {
+    const document = loadPage('vis/bwnorm/' + page);
+    const sources = [...document.querySelectorAll('script[src]')].map((script) =>
+      script.getAttribute('src'),
+    );
+
+    expect(sources).toContain('../../js/search.js');
+  });
+
+  it.each(pages)('%s forwards search flags to its PHP request', (page) => {
+    expect(inlineSourceOf(page)).toMatch(
+      /\b(?:phpUrlFromLocation|listPlotUrlsFromLocation)\(\s*['"]data['"]\s*,\s*['"]norm['"]\s*,\s*(?:window\.)?location\.search\s*\)/,
+    );
+  });
+
+  it.each(['timelinesumlist.html', 'percenttimelinesumlist.html'])(
+    '%s builds each plotted series with the norm list search options',
+    (page) => {
+      expect(inlineSourceOf(page)).toMatch(
+        /listPlotUrlsFromLocation\(\s*['"]data['"]\s*,\s*['"]norm['"]\s*,\s*(?:window\.)?location\.search\s*\)/,
+      );
+    },
+  );
+
+  it('normlist passes the clicked norm cell without its outer pipes', () => {
+    const search = '?data=normgroup.php&norm=Ch%C3%B3ta&cs=0&regex=0&list=0&trim=1&ambig=1&sort';
+    const page = runPlotPage('bwnorm', 'normlist.html', search, {
+      'normgroup.php?norm=Ch%C3%B3ta&cs=0&regex=0&list=0&trim=1&ambig=1&sort': [
+        '|Chóta|chyta|\t120',
+        '|Chóta|\t95',
+        '',
+      ].join('\n'),
+    });
+    try {
+      const clickHandlers = [...page.document.querySelectorAll('span[onclick]')].map((span) =>
+        span.getAttribute('onclick'),
+      );
+
+      expect(clickHandlers).toEqual([
+        "parent.itemClick('Chóta|chyta')",
+        "parent.itemClick('Chóta')",
+      ]);
+    } finally {
+      page.close();
+    }
+  });
 });
 
 // PHP twin: tests/php/SearchFilterTest.php. Keep these splitTerms cases in sync.
