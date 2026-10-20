@@ -10,7 +10,7 @@ this project and current production behavior as observed on
 - TSI/CTS services provides passages of corpus data and some statistical analysis like frequencies of words, which DTS can consume.
 - This project of this repo here (DTS - dsb-text-mining) access remote TSI in order to fetch those data and in order to to further staistical analysis and load the data for later presentation.
 - If configured diffferently this project here (DTS) can access different remote instance of TSI.
-- TSI provides all the data, but it cannot be 100% trusted.
+- TSI provides all the data, but it cannot be 100% trusted, at least for now.
 - If really needed for resolving some deep issue or to understand TSI better, the code of TSI can be accessed here: https://github.com/pciazynski/text-service-infrastructure
 - If you need info about the corpus itself look at `docs/data-lower-sorbian-corpus.md`
 

@@ -34,6 +34,7 @@ applyTo: 'tests/php/**'
 - Tests are order-independent: seed your own fixture DB in `setUp()` (`DevServer` is shared, its data dir is not).
 - Tests must fail via assertion, never a fatal/include error. Run new tests before finishing.
 - `assertSame` over `assertEquals`; assert exact full bodies and row counts, not membership.
+- Always write human-readable tests. E.g. avoid dense string literals with e.g. `\n` or `\t`; use helper functions, arrays, template literals or similar techniques to make assertion/expectations/fixtures easily parsable and understandable by human eye. If fixtures are not provided in the prompt, prefer to use real examples to build them. If unsure, check parallel tests or fetch the actual data from `public/data`.
 
 ## Test doubles
 

@@ -516,7 +516,7 @@
         url = document.getElementById('traviz').src.split('&year')[0];
         yearfrom = document.getElementById('yearminslider').value;
         yearto = document.getElementById('yearmaxslider').value;
-        year = 'BETWEEN ' + yearfrom + ' AND ' + yearto;
+        year = yearfrom + '-' + yearto;
         document.getElementById('traviz').src =
           'traviz.html?data=normtokenperyear.php&norm=' + exactitem + '&exact=1&sort&year=' + year;
         document.getElementById('docref').src =
@@ -631,7 +631,7 @@
       url = document.getElementById('traviz').src.split('&year')[0];
       yearfrom = document.getElementById('yearminslider').value;
       yearto = document.getElementById('yearmaxslider').value;
-      year = 'BETWEEN ' + yearfrom + ' AND ' + yearto;
+      year = yearfrom + '-' + yearto;
       document.getElementById('traviz').src =
         'traviz.html?data=normtokenperyear.php&norm=' + exactitem + '&exact=1&sort&year=' + year;
       document.getElementById('docref').src =

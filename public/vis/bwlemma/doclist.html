@@ -6,19 +6,19 @@
     <script src="../../js/my_language.js"></script>
     <script src="../../js/datahandler.js"></script>
     <script src="../../js/config.js"></script>
+    <script src="../../js/search.js"></script>
     <link rel="stylesheet" href="../../digilabstyles.css" />
   </head>
 
   <body style="text-align: left">
     <script type="module">
-      var dataset = getQueryVariable('data');
+      var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
       var lemma = getQueryVariable('lemma');
       var year = getQueryVariable('year');
       var textapi = getQueryVariable('textapi').toLowerCase();
       if (textapi !== 'dts') {
         textapi = 'cts';
       }
-      dataset = dataset + '?lemma=' + lemma + '&sort';
       var diagramtitle = lang_docreferences + ' ' + lemma;
 
       if (year.length > 0) {

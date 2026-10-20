@@ -1,19 +1,29 @@
 <?php
 header('Content-Type: text/plain');
 
-if (isset($_GET['norm']) and isset($_GET['year'])) {
-	$query = 'SELECT norm,token, SUM(frequency) as sumfreq FROM tokennormtypesubtypedatefrequency WHERE date ' . $_GET['year'];
-	(isset($_GET['exact']) and $_GET['exact'] == 1) ? $query .= ' AND norm = "|' . $_GET['norm'] . '|"' : $query .= ' AND norm LIKE "%|' . str_replace(',', '|%" OR norm LIKE "%|', $_GET['norm']) . '|%"';
-	$query .= ' GROUP BY norm,token';
-	(isset($_GET['sort'])) ? $query .= ' ORDER BY sumfreq DESC, token' : NULL;
+require_once __DIR__ . '/dsb_collation.php';
+require_once __DIR__ . '/searchfilter.php';
 
-	$tab = "\t";
-	$nl = "\n";
-	$res = "";
+$pdo = new PDO('sqlite:../data/normmapping.db');
+$cells = resolve_request_cells($pdo, 'norm', $_GET);
+$year = year_clause(isset($_GET['year']) ? (string) $_GET['year'] : null);
 
-	$PDO = new PDO('sqlite:../data/normmapping.db');
-	foreach ($PDO->query($query . ';') as $row) {
-		$res .= $row['norm'] . $tab . $row['token'] . $tab . $row['sumfreq'] . $nl;
-	}
-	print($res);
+if ($cells === [] || $year === null) {
+	exit;
 }
+
+$cellClause = in_clause('norm', $cells);
+$query = 'SELECT norm, token, SUM(frequency) AS sumfreq FROM tokennormtypesubtypedatefrequency WHERE '
+	. $cellClause['sql'] . ' AND ' . $year['sql'] . ' GROUP BY norm, token';
+if (array_key_exists('sort', $_GET)) {
+	$query .= ' ORDER BY sumfreq DESC, token';
+}
+
+$statement = $pdo->prepare($query);
+$statement->execute([...$cellClause['params'], ...$year['params']]);
+
+$res = '';
+foreach ($statement as $row) {
+	$res .= $row['norm'] . "\t" . $row['token'] . "\t" . $row['sumfreq'] . "\n";
+}
+print($res);

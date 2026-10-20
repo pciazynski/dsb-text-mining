@@ -62,6 +62,11 @@ var lang_worddistribution = 'Wortverteilung';
 var lang_distribution = 'Verteilung';
 var lang_tokensearch = 'Wortsuche</br>(untokenisiert)';
 var lang_searchitem = 'Suche';
+var lang_search_casesensitive = 'Groß-/Kleinschreibung beachten';
+var lang_search_regex = 'Regulärer Ausdruck';
+var lang_search_list = 'Liste';
+var lang_search_trim = 'Leerzeichen entfernen';
+var lang_search_ambig = 'Ambige Treffer einschließen';
 var lang_list = 'Liste';
 var lang_example = 'Beispiel';
 var lang_piechart = 'Kreisdia';
@@ -103,3 +108,8 @@ var lang_switchtokentypesum = 'Summe Token | Type';
 var lang_tokentyperatio = 'Type/Token Ratio';
 var lang_switchprintonline = 'Print | Online';
 var lang_typorec = 'Typo-Erkennung';
+
+// Test hook only. Browsers load this file via <script src>, where `module` is undefined.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { lang_searchitem, lang_ambigsearch };
+}

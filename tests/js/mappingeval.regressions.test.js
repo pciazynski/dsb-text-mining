@@ -1,50 +1,48 @@
-const assert = require('node:assert/strict');
-
 const { knownBug, loadPage } = require('./helpers');
 
 const EVALUATIONS = ['lemmaeval', 'normeval'];
 
 for (const evaluation of EVALUATIONS) {
-  knownBug(
-    evaluation + ' zero-one graph labels both uniqueness metrics',
-    'the graph and hover text expose only an ambiguous single uniqueness metric',
-    () => {
-      const page = loadPage('vis/' + evaluation + '/zeroone.html');
-      const source = page.documentElement.textContent;
+  describe(evaluation, () => {
+    knownBug(
+      'labels both uniqueness metrics in the zero-one graph',
+      'the graph and hover text expose only an ambiguous single uniqueness metric',
+      () => {
+        const page = loadPage('vis/' + evaluation + '/zeroone.html');
+        const source = page.documentElement.textContent;
 
-      assert.ok(
-        (source.match(/mapping-record uniqueness/gi) || []).length >= 2,
-        'graph and hover text must name mapping-record uniqueness',
-      );
-      assert.ok(
-        (source.match(/occurrence-weighted uniqueness/gi) || []).length >= 2,
-        'graph and hover text must name occurrence-weighted uniqueness',
-      );
-    },
-  );
+        expect((source.match(/mapping-record uniqueness/gi) || []).length).toBeGreaterThanOrEqual(
+          2,
+        );
+        expect(
+          (source.match(/occurrence-weighted uniqueness/gi) || []).length,
+        ).toBeGreaterThanOrEqual(2);
+      },
+    );
 
-  knownBug(
-    evaluation + ' basics summarizes both uniqueness metrics',
-    'the basics view calculates summary statistics for only one uniqueness ratio',
-    () => {
-      const page = loadPage('vis/' + evaluation + '/basics.html');
-      const source = page.documentElement.textContent;
+    knownBug(
+      'summarizes both uniqueness metrics in basics',
+      'the basics view calculates summary statistics for only one uniqueness ratio',
+      () => {
+        const page = loadPage('vis/' + evaluation + '/basics.html');
+        const source = page.documentElement.textContent;
 
-      assert.match(source, /mapping-record uniqueness/i);
-      assert.match(source, /occurrence-weighted uniqueness/i);
-    },
-  );
+        expect(source).toMatch(/mapping-record uniqueness/i);
+        expect(source).toMatch(/occurrence-weighted uniqueness/i);
+      },
+    );
 
-  knownBug(
-    evaluation + ' pie chart names target categories',
-    'the pie chart uses ambiguous abbreviated category labels',
-    () => {
-      const page = loadPage('vis/' + evaluation + '/piechart.html');
-      const source = page.documentElement.textContent;
+    knownBug(
+      'names target categories in the pie chart',
+      'the pie chart uses ambiguous abbreviated category labels',
+      () => {
+        const page = loadPage('vis/' + evaluation + '/piechart.html');
+        const source = page.documentElement.textContent;
 
-      assert.match(source, /unique target/i);
-      assert.match(source, /ambiguous target/i);
-      assert.match(source, /mixed target/i);
-    },
-  );
+        expect(source).toMatch(/unique target/i);
+        expect(source).toMatch(/ambiguous target/i);
+        expect(source).toMatch(/mixed target/i);
+      },
+    );
+  });
 }
