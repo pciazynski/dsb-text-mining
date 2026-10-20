@@ -3,6 +3,7 @@
 <head>
   <script src="../../vendor/plotly.min.js"></script>
   <script src="../../js/datahandler.js"></script>
+  <script src="../../js/search.js"></script>
   <script src="../../js/config.js"></script>
 </head>
 
@@ -48,10 +49,10 @@
       }
       R2 = SQE / SQT;
     };
-    data = getQueryVariable('data');
+    var data = phpUrlFromLocation('data', 'token', window.location.search);
     var token = getQueryVariable('token');
-    dataset = data + '?token=' + token + '&sort';
-    dataset = readPHP(dataset).split('\n');
+    var response = readPHPChecked(document, data);
+    dataset = response === null ? [] : response.split('\n');
     var vorhersage = getQueryVariable('vorhersage');
 
     x1 = [];

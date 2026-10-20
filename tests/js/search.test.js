@@ -1220,6 +1220,39 @@ describe('bwnorm iframe pages', () => {
   });
 });
 
+describe('bwword iframe pages', () => {
+  const pages = ['timeline.html', 'percenttimeline.html', 'linreg_chart.html'];
+
+  function inlineSourceOf(page) {
+    const document = loadPage('vis/bwword/' + page);
+    return [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .join('\n');
+  }
+
+  it.each(pages)('%s routes synchronous reads through readPHPChecked', (page) => {
+    const inlineSource = inlineSourceOf(page);
+
+    expect(inlineSource).toMatch(/\breadPHPChecked\(/);
+    expect(inlineSource).not.toMatch(/\breadPHP\(/);
+  });
+
+  it.each(pages)('%s loads js/search.js', (page) => {
+    const document = loadPage('vis/bwword/' + page);
+    const sources = [...document.querySelectorAll('script[src]')].map((script) =>
+      script.getAttribute('src'),
+    );
+
+    expect(sources).toContain('../../js/search.js');
+  });
+
+  it.each(pages)('%s builds its PHP request from the token search location', (page) => {
+    expect(inlineSourceOf(page)).toMatch(
+      /phpUrlFromLocation\(\s*['"]data['"]\s*,\s*['"]token['"]\s*,\s*(?:window\.)?location\.search\s*\)/,
+    );
+  });
+});
+
 // PHP twin: tests/php/SearchFilterTest.php. Keep these splitTerms cases in sync.
 describe('splitTerms', () => {
   it('preserves the whole string when list is off', () => {
@@ -1367,18 +1400,22 @@ describe('searchControlState', () => {
       expect(searchControlState({ regex: false, list: false })).toEqual({
         autocomplete: true,
         alphabetSort: true,
+        linreg: true,
       });
       expect(searchControlState({ regex: true, list: false })).toEqual({
         autocomplete: false,
         alphabetSort: false,
+        linreg: false,
       });
       expect(searchControlState({ regex: false, list: true })).toEqual({
         autocomplete: false,
         alphabetSort: false,
+        linreg: false,
       });
       expect(searchControlState({ regex: true, list: true })).toEqual({
         autocomplete: false,
         alphabetSort: false,
+        linreg: false,
       });
       expect(
         searchControlState({
@@ -1388,7 +1425,7 @@ describe('searchControlState', () => {
           trim: false,
           ambig: false,
         }),
-      ).toEqual({ autocomplete: true, alphabetSort: true });
+      ).toEqual({ autocomplete: true, alphabetSort: true, linreg: true });
     } finally {
       dom.restore();
     }

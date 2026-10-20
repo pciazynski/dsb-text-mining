@@ -191,7 +191,7 @@ var listTermsFromLocation = function (search, termKey) {
 
 var searchControlState = function (options) {
   var enabled = !options.regex && !options.list;
-  return { autocomplete: enabled, alphabetSort: enabled };
+  return { autocomplete: enabled, alphabetSort: enabled, linreg: enabled };
 };
 
 var applySearchControlState = function (doc, options) {
