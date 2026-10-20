@@ -70,7 +70,11 @@
           </button>
         </div>
         <script>
-          autocomplete('searchinput', 'prefixsearch.php?limit=30&sortby=alphabet&word=', 'updateTimeline');
+          autocomplete(
+            'searchinput',
+            'prefixsearch.php?limit=30&sortby=alphabet&word=',
+            'updateTimeline',
+          );
         </script>
       </td>
     </tr>
@@ -175,8 +179,8 @@
 
 <div class = "explain">
 	<p>
-		Verwendungszeitraum von Wortformen sortiert nach Häufigkeitsrang. Per Linksklick öffnet sich ein Popup-Fenster mit der kommaseparierten Wortliste. 
-		Ein Pfeil markiert die früheste (kaḿeńzu⇒) oder späteste (⇒ṅemėrniki) Verwendung des Wortes. Kein Pfeil bedeutet, dass die Verwendung im selben Jahr startete und endete. 
+		Verwendungszeitraum von Wortformen sortiert nach Häufigkeitsrang. Per Linksklick öffnet sich ein Popup-Fenster mit der kommaseparierten Wortliste.
+		Ein Pfeil markiert die früheste (kaḿeńzu⇒) oder späteste (⇒ṅemėrniki) Verwendung des Wortes. Kein Pfeil bedeutet, dass die Verwendung im selben Jahr startete und endete.
 	</p>
 </div>
 
@@ -210,7 +214,11 @@
 
   <script>
     var switchPrefixsearch = function () {
-      autocomplete('searchinput', 'prefixsearch.php?limit=30&sortby=alphabet&word=', 'updateTimeline');
+      autocomplete(
+        'searchinput',
+        'prefixsearch.php?limit=30&sortby=alphabet&word=',
+        'updateTimeline',
+      );
     };
 
     var threeD = function (iframeid) {
