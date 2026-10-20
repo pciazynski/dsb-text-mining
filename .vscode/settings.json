@@ -20,6 +20,10 @@
     "/^php -r '\\$pdo=new PDO\\(\"sqlite:public/data/normmapping\\.db\"\\); foreach \\(\\[\"SELECT name, sql FROM sqlite_master WHERE type = \\\\\"table\\\\\" AND name LIKE \\\\\"%norm%\\\\\"\", \"SELECT token, norm, date, frequency FROM tokennormtypesubtypedatefrequency WHERE token LIKE \\\\\"%rewj%\\\\\" OR norm LIKE \\\\\"%rewj%\\\\\" LIMIT 30\", \"SELECT token, norm, date, frequency FROM tokennormtypesubtypedatefrequency WHERE token LIKE \\\\\"%rew%\\\\\" OR norm LIKE \\\\\"%rew%\\\\\" LIMIT 30\"\\] as \\$sql\\) \\{ echo \"---\\\\n\"; foreach \\(\\$pdo->query\\(\\$sql\\) as \\$row\\) echo implode\\(\"\\\\t\", array_map\\(static fn\\(\\$value\\) => \\(string\\) \\$value, \\$row\\)\\), \"\\\\n\"; \\}'$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^python -c 'import sqlite3; c=sqlite3\\.connect\\(\"public/data/normmapping\\.db\"\\); print\\(c\\.execute\\(\"SELECT name, sql FROM sqlite_master WHERE type IN \\(\\\\\"table\\\\\",\\\\\"index\\\\\"\\) AND name LIKE \\\\\"norm%\\\\\" ORDER BY type,name\"\\)\\.fetchall\\(\\)\\); print\\(c\\.execute\\(\"SELECT norm, frequency FROM normnonambig WHERE norm LIKE \\\\\"\\|Ch%\\\\\" ORDER BY frequency DESC LIMIT 20\"\\)\\.fetchall\\(\\)\\); print\\(c\\.execute\\(\"SELECT norm, frequency FROM normnonambig WHERE norm LIKE \\\\\"\\|ch%\\\\\" ORDER BY frequency DESC LIMIT 20\"\\)\\.fetchall\\(\\)\\)'$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }
