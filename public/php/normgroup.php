@@ -1,20 +1,27 @@
 <?php
 header('Content-Type: text/plain');
 
+require_once __DIR__ . '/dsb_collation.php';
+require_once __DIR__ . '/searchfilter.php';
+
 $PDO = new PDO('sqlite:../data/normmapping.db');
-$query = 'SELECT norm, SUM(frequency) as sumfreq FROM tokennormtypesubtypedatefrequency';
+$cells = resolve_request_cells($PDO, 'norm', $_GET);
+if ($cells === []) {
+	exit;
+}
 
-(isset($_GET['norm'])) ? $query .= ' WHERE norm LIKE "%|' . str_replace(",", '|%" OR norm LIKE "%|', $_GET['norm']) . '|%"' : NULL;
+$clause = in_clause('norm', $cells);
+$query = 'SELECT norm, SUM(frequency) as sumfreq FROM tokennormtypesubtypedatefrequency WHERE '
+	. $clause['sql'] . ' GROUP BY norm';
+if (array_key_exists('sort', $_GET)) {
+	$query .= ' ORDER BY sumfreq DESC';
+}
 
-$query .= ' GROUP BY norm ';
+$statement = $PDO->prepare($query);
+$statement->execute($clause['params']);
 
-(isset($_GET['sort'])) ? $query .= ' ORDER BY sumfreq DESC' : NULL;
-
-$tab = "\t";
-$nl = "\n";
 $res = '';
-
-foreach ($PDO->query($query . ';') as $row) {
-	$res .= $row['norm'] . $tab . $row['sumfreq'] . $nl;
+foreach ($statement as $row) {
+	$res .= $row['norm'] . "\t" . $row['sumfreq'] . "\n";
 }
 print($res);

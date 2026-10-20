@@ -16,6 +16,10 @@
     "/^node --test tests/js/search\\.test\\.js$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^php -r '\\$pdo=new PDO\\(\"sqlite:public/data/normmapping\\.db\"\\); foreach \\(\\[\"SELECT name, sql FROM sqlite_master WHERE type = \\\\\"table\\\\\" AND name LIKE \\\\\"%norm%\\\\\"\", \"SELECT token, norm, date, frequency FROM tokennormtypesubtypedatefrequency WHERE token LIKE \\\\\"%rewj%\\\\\" OR norm LIKE \\\\\"%rewj%\\\\\" LIMIT 30\", \"SELECT token, norm, date, frequency FROM tokennormtypesubtypedatefrequency WHERE token LIKE \\\\\"%rew%\\\\\" OR norm LIKE \\\\\"%rew%\\\\\" LIMIT 30\"\\] as \\$sql\\) \\{ echo \"---\\\\n\"; foreach \\(\\$pdo->query\\(\\$sql\\) as \\$row\\) echo implode\\(\"\\\\t\", array_map\\(static fn\\(\\$value\\) => \\(string\\) \\$value, \\$row\\)\\), \"\\\\n\"; \\}'$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }
