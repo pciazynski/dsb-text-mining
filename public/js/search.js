@@ -105,12 +105,16 @@ var buildTreeUrls = function (kind, term, options, weight) {
   var searchOptions = Object.assign({}, searchDefaults, options || {});
   var query = searchQueryString(kind, term, searchOptions);
   var suffix = '&sort&inclusive' + (weight ? '&weight' : '');
-
-  return {
-    tree: 'lemmatree_dagre.html?data=lemmatoken.php&' + query + suffix,
-    sunburst: 'sunburst.html?data=lemmatoken.php&' + query + suffix,
-    traviz: 'traviz.html?data=lemmatoken.php&' + query + suffix,
+  var dataParam = '?data=' + kind + 'token.php&' + query + suffix;
+  var urls = {
+    tree: (kind === 'norm' ? 'normtree_dagre.html' : 'lemmatree_dagre.html') + dataParam,
+    traviz: 'traviz.html' + dataParam,
   };
+
+  if (kind === 'lemma') {
+    urls.sunburst = 'sunburst.html' + dataParam;
+  }
+  return urls;
 };
 
 var phpUrlFromLocation = function (dataKey, termKey, search) {

@@ -4,15 +4,15 @@
   <script src="../../vendor/plotly.min.js"></script>
   <script src="../../js/datahandler.js"></script>
   <script src="../../js/config.js"></script>
+  <script src="../../js/search.js"></script>
 </head>
 
 <body>
   <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
   <script>
     diagramtitle = '';
-    var dataset = getQueryVariable('data');
+    var dataset = phpUrlFromLocation('data', 'norm', window.location.search);
     var norm = getQueryVariable('norm');
-    var exact = getQueryVariable('exact');
     var focus = getQueryVariable('focus');
     var jitter = getQueryVariable('jitter');
     if (jitter.length == 0) {
@@ -25,19 +25,14 @@
     } else {
       focus = parseInt(focus);
     }
-    dataset = dataset + '?norm=' + norm + '&sort';
     if (focus == 3) {
       diagramtitle = 'Token von Normierung ';
     } else {
       diagramtitle = 'Normierung ';
     }
-    if (exact == 1) {
-      diagramtitle += 'exakt ';
-      dataset += '&exact';
-    } else {
-      diagramtitle += 'inklusive ';
-    }
-    data_arr = readPHP(dataset).split('\n');
+    diagramtitle += readSearchOptions(window.location.search).ambig ? 'inklusive ' : 'exakt ';
+    var response = dataset === null ? null : readPHPChecked(document, dataset);
+    data_arr = response === null ? [] : response.split('\n');
     maxval = 0;
     minval = 10000000;
 

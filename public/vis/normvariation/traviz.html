@@ -3,49 +3,48 @@
   <head>
     <script src="../../vendor/traviz_slim/traviz-min.js"></script>
     <link rel="stylesheet" type="text/css" href="../../vendor/traviz_slim/traviz.css" />
-    >
     <script src="../../js/datahandler.js"></script>
     <script src="../../js/config.js"></script>
+    <script src="../../js/search.js"></script>
   </head>
   <body>
     <div id="containerDiv"></div>
     <script type="text/javascript">
-      var dataset = getQueryVariable('data');
-      var norm = getQueryVariable('norm');
-      dataset = dataset + '?norm=' + norm;
+      (function () {
+        var dataset = phpUrlFromLocation('data', 'norm', window.location.search);
+        if (dataset === null) return;
+        var norm = getQueryVariable('norm');
+        var response = readPHPChecked(document, dataset);
+        if (response === null) return;
+        var trimmed = response.trim();
+        var data_arr = trimmed ? trimmed.split('\n') : [];
+        var travdata = [];
+        var colors = [];
 
-      if (getQueryVariable('inclusive').length > 0) {
-        dataset += '&inclusive';
-      }
-      if (getQueryVariable('sort').length > 0) {
-        dataset += '&sort';
-      }
+        for (var i = 0; i < data_arr.length; i++) {
+          var linearr = data_arr[i].split(sep);
+          colors.push(getColor(linearr[1]));
+          travdata.push({
+            edition: linearr[0] + ':' + linearr[1],
+            text: linearr[1].split('').join(' '),
+          });
+        }
 
-      data_arr = readPHP(dataset).trim().split('\n');
-      travdata = [];
-      colors = [];
-
-      for (var i = 0; i < data_arr.length; i++) {
-        linearr = data_arr[i].split(sep);
-        colors.push(getColor(linearr[1]));
-        travdata.push({
-          edition: linearr[0] + ':' + linearr[1],
-          text: linearr[1].split('').join(' '),
-        });
-      }
-
-      var traviz = new TRAViz('containerDiv', {
-        colors: colors,
-        lineBreaks: false,
-        normalize: false,
-        fontSizeMin: 10, // minimum font size
-        fontSizeMax: 50, // maximum font size
-        fontSizeIncrease: 0.5,
-        connectionType: 'all',
-      });
-      traviz.align(travdata);
-      traviz.visualize();
-      document.title = 'Text Variant Graph ' + norm;
+        if (travdata.length > 0) {
+          var traviz = new TRAViz('containerDiv', {
+            colors: colors,
+            lineBreaks: false,
+            normalize: false,
+            fontSizeMin: 10, // minimum font size
+            fontSizeMax: 50, // maximum font size
+            fontSizeIncrease: 0.5,
+            connectionType: 'all',
+          });
+          traviz.align(travdata);
+          traviz.visualize();
+        }
+        document.title = 'Text Variant Graph ' + norm;
+      })();
     </script>
   </body>
 </html>
