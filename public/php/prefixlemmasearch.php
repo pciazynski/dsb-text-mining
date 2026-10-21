@@ -10,7 +10,7 @@
 header('Content-Type: text/plain');
 require_once __DIR__ . '/dsb_collation.php';
 
-if (!isset($_GET['lemma']) || $_GET['lemma'] === '') {
+if (!isset($_GET['lemma']) || !is_string($_GET['lemma']) || $_GET['lemma'] === '') {
 	return;
 }
 
@@ -24,17 +24,11 @@ $caseSensitive = ($_GET['cs'] ?? '0') === '1';
 $column = $caseSensitive ? 'lemma' : 'sortkey';
 // Both columns are ordered prefixes, so "prefix <= value < prefix\xFF" is a range scan.
 $prefix = $caseSensitive ? '|' . $lemma : dsb_sortkey($lemma);
-$cutoff = isset($_GET['cutoff']) && ctype_digit($_GET['cutoff'])
-	? (int) $_GET['cutoff']
-	: null;
 
 // No DISTINCT: lemmanonambig holds one row per lemma, and deduplicating would cost
 // a temp B-tree over the whole prefix range instead of stopping at LIMIT.
 $query = "SELECT lemma FROM lemmanonambig
 	WHERE {$column} >= :lower AND {$column} < :upper";
-if ($cutoff !== null) {
-	$query .= ' AND length(lemma) <= :maximumLength';
-}
 $query .= " ORDER BY {$sortby} LIMIT :limit";
 
 $pdo = new PDO('sqlite:../data/lemmamapping.db');
@@ -42,10 +36,6 @@ $statement = $pdo->prepare($query);
 $statement->bindValue(':lower', $prefix, PDO::PARAM_STR);
 $statement->bindValue(':upper', $prefix . "\xFF", PDO::PARAM_STR);
 $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-if ($cutoff !== null) {
-	// length() counts the two "|" delimiters, hence the + 2.
-	$statement->bindValue(':maximumLength', mb_strlen($lemma, 'UTF-8') + $cutoff + 2, PDO::PARAM_INT);
-}
 $statement->execute();
 
 $lemmas = array();

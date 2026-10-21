@@ -178,11 +178,13 @@ final class PrefixlemmasearchEndpointTest extends TestCase
     $this->assertSuggestions($expected, $nonnumeric);
   }
 
-  public function testCutoffGroupsByCharactersAfterAMultibytePrefix(): void
+  public function testCutoffIsIgnored(): void
   {
-    $response = $this->server->get('/php/prefixlemmasearch.php?lemma=dr%C4%9B&cutoff=1');
+    $withoutCutoff = $this->server->get('/php/prefixlemmasearch.php?lemma=dr%C4%9B');
+    $withCutoff = $this->server->get('/php/prefixlemmasearch.php?lemma=dr%C4%9B&cutoff=1');
 
-    $this->assertSuggestions(['DRĚŚ'], $response);
+    $this->assertGreaterThan(1, count($this->suggestions($withoutCutoff['body'])));
+    $this->assertSame($withoutCutoff['body'], $withCutoff['body']);
   }
 
   public function testNoMatchesReturnsEmptyBodyWithoutNewline(): void
@@ -202,6 +204,14 @@ final class PrefixlemmasearchEndpointTest extends TestCase
     $this->assertSuggestions([], $missing);
     $this->assertSame(200, $empty['status']);
     $this->assertSuggestions([], $empty);
+  }
+
+  public function testArrayLemmaParameterReturnsEmptyBody(): void
+  {
+    $response = $this->server->get('/php/prefixlemmasearch.php?lemma%5B%5D=drjewo');
+
+    $this->assertSame(200, $response['status']);
+    $this->assertSame('', $response['body']);
   }
 
   private function createFixture(\PDO $pdo): void
