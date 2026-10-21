@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-21
+- Search input field UI was simplified for Timeline, Variation and Evaluation (Wortform).
+- Now there's just one input field instead of three (previously regexp and list was separately).
+- There's possibility to change the behavior of the search using checkboxes
+- It is possible to use regexp and list together
+
 ## 2026-08-04
 
 - Made lemma and normalization data processing more reliable and auditable.
