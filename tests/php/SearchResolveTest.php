@@ -421,7 +421,7 @@ final class SearchResolveTest extends TestCase
     $results = $this->resolve(['.*'], ['cs' => true, 'ambig' => true, 'regex' => true]);
     $truncationStatus = 'resolve_was_truncated';
 
-    $this->assertLessThanOrEqual(500, count($results));
+    $this->assertSame([], $results);
     $this->assertTrue($truncationStatus());
   }
 
@@ -538,7 +538,7 @@ final class SearchResolveTest extends TestCase
 
     $results = $this->resolveNorm(['.*'], ['cs' => true, 'ambig' => true, 'regex' => true]);
 
-    $this->assertLessThanOrEqual(500, count($results));
+    $this->assertSame([], $results);
     $this->assertTrue(resolve_was_truncated());
   }
 

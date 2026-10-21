@@ -190,6 +190,7 @@ final class LemmaperyearEndpointsTest extends TestCase
 
     $this->assertSame(200, $response['status']);
     $this->assertContains('X-Dsb-Result-Truncated: 1', $response['headers']);
+    $this->assertSame('', $response['body']);
   }
 
   #[DataProvider('endpoints')]

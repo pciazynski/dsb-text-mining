@@ -418,7 +418,7 @@ function _apply_search_result_cap(array $results): array
   _search_truncated(true);
   header('X-Dsb-Result-Truncated: 1');
 
-  return array_slice($results, 0, SEARCH_RESULT_CAP);
+  return [];
 }
 
 function _compare_cell_matches(array $left, array $right): int

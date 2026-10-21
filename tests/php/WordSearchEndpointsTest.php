@@ -110,6 +110,19 @@ final class WordSearchEndpointsTest extends TestCase
     $this->assertResponse($response, [['wona', 1870, 102], ['woni', 1900, 284]]);
   }
 
+  public function testTokenRegexOverResultCapReturnsEmptyBodyWithTruncationHeader(): void
+  {
+    for ($index = 0; $index < 501; $index++) {
+      $this->insertToken(sprintf('item%03d', $index), 1, 1900, 1);
+    }
+
+    $response = $this->request('tokencountperyear.php', ['token' => '.*', 'regex' => 1]);
+
+    $this->assertSame(200, $response['status']);
+    $this->assertContains('X-Dsb-Result-Truncated: 1', $response['headers']);
+    $this->assertSame('', $response['body']);
+  }
+
   public function testPrefixDefaultsToCaseInsensitiveFrequencyDescending(): void
   {
     $default = $this->request('prefixsearch.php', ['word' => 'wo']);
