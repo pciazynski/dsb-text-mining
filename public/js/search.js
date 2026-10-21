@@ -59,6 +59,30 @@ var searchQueryString = function (key, value, options) {
   return query;
 };
 
+var dolnoserbskiUrl = function (term) {
+  var value = String(term).trim();
+  if (value === '') {
+    return null;
+  }
+  return 'https://dolnoserbski.de/ortografija/slownik?wuraz=' + encodeURIComponent(value);
+};
+
+var variationUrl = function (kind, term, options, headerconf) {
+  if (String(term).trim() === '') {
+    return null;
+  }
+
+  var searchOptions = Object.assign({}, searchDefaults, options || {});
+  return (
+    '../' +
+    kind +
+    'variation?' +
+    searchQueryString(kind, term, searchOptions) +
+    '&headerconf=' +
+    encodeURIComponent(headerconf)
+  );
+};
+
 var buildVisUrls = function (kind, term, options, focus) {
   if (String(term).trim() === '') {
     return null;
@@ -390,6 +414,8 @@ if (typeof module !== 'undefined' && module.exports) {
     readSearchOptions,
     searchOptionsFromForm,
     searchQueryString,
+    dolnoserbskiUrl,
+    variationUrl,
     buildVisUrls,
     buildTreeUrls,
     phpUrlFromLocation,

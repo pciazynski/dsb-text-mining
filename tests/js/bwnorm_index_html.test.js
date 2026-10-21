@@ -11,6 +11,20 @@ function inlineSourceOf(document) {
 }
 
 describe('vis/bwnorm/index.html', () => {
+  it('opens dolnoserbski.de through the shared URL builder', () => {
+    const source = inlineSourceOf(loadPage('vis/bwnorm/index.html'));
+
+    expect(source).toContain('dolnoserbskiUrl(');
+    expect(source).not.toContain("slownik?wuraz=' +");
+  });
+
+  it('sends the current search options to the norm variation page', () => {
+    const source = inlineSourceOf(loadPage('vis/bwnorm/index.html'));
+
+    expect(source).toContain("variationUrl('norm'");
+    expect(source).not.toContain("'../normvariation?norm=' +");
+  });
+
   it('has one search text input and removes the legacy search inputs', () => {
     const document = loadPage('vis/bwnorm/index.html');
 

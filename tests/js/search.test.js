@@ -118,6 +118,120 @@ const BWLEMMA_SEARCH_HTML = `
   <span id="searchexample"></span>
 `;
 
+describe('dolnoserbskiUrl', () => {
+  it('builds the dictionary URL for a trimmed term', () => {
+    const dom = withDom();
+    try {
+      const { dolnoserbskiUrl } = loadSearch();
+
+      expect(dolnoserbskiUrl('  drjewo ')).toBe(
+        'https://dolnoserbski.de/ortografija/slownik?wuraz=drjewo',
+      );
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('percent-encodes reserved characters', () => {
+    const dom = withDom();
+    try {
+      const { dolnoserbskiUrl } = loadSearch();
+
+      expect(dolnoserbskiUrl('a+b')).toMatch(/wuraz=a%2Bb$/);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('percent-encodes Sorbian letters', () => {
+    const dom = withDom();
+    try {
+      const { dolnoserbskiUrl } = loadSearch();
+
+      expect(dolnoserbskiUrl('Chóśebuz').endsWith('wuraz=' + encodeURIComponent('Chóśebuz'))).toBe(
+        true,
+      );
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('returns null for a blank term', () => {
+    const dom = withDom();
+    try {
+      const { dolnoserbskiUrl } = loadSearch();
+
+      expect(dolnoserbskiUrl('   ')).toBeNull();
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('variationUrl', () => {
+  it('targets the lemma variation page with all search options', () => {
+    const dom = withDom();
+    try {
+      const { variationUrl, searchQueryString, readSearchOptions } = loadSearch();
+      const expected =
+        '../lemmavariation?' +
+        searchQueryString('lemma', 'drjewo', readSearchOptions('')) +
+        '&headerconf=111111';
+
+      expect(variationUrl('lemma', 'drjewo', {}, '111111')).toBe(expected);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('targets the norm variation page', () => {
+    const dom = withDom();
+    try {
+      const { variationUrl } = loadSearch();
+
+      expect(variationUrl('norm', 'drjewo', {}, '111111')).toMatch(/^\.\.\/normvariation\?norm=/);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('keeps the regex flag and encodes the pattern', () => {
+    const dom = withDom();
+    try {
+      const { variationUrl } = loadSearch();
+
+      const url = variationUrl('lemma', 'te(j|n)+', { regex: true }, '111111');
+
+      expect(url).toContain('regex=1');
+      expect(url).toContain('te(j%7Cn)%2B');
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('keeps the list flag', () => {
+    const dom = withDom();
+    try {
+      const { variationUrl } = loadSearch();
+
+      expect(variationUrl('norm', 'tej; ten', { list: true }, '111111')).toContain('list=1');
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('returns null for a blank term', () => {
+    const dom = withDom();
+    try {
+      const { variationUrl } = loadSearch();
+
+      expect(variationUrl('lemma', '   ', {}, '111111')).toBeNull();
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
 describe('showTruncationNotice', () => {
   it('prepends one text-only notice and does not duplicate it', () => {
     const dom = withDom({ html: '<body><div id="chart"></div></body>' });

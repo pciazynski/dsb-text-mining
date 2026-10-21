@@ -3,7 +3,27 @@ const path = require('node:path');
 
 const { PUBLIC_DIR, loadPage } = require('./helpers');
 
+function inlineSourceOf(document) {
+  return [...document.querySelectorAll('script:not([src])')]
+    .map((script) => script.textContent)
+    .join('\n');
+}
+
 describe('vis/bwlemma/index.html', () => {
+  it('opens dolnoserbski.de through the shared URL builder', () => {
+    const source = inlineSourceOf(loadPage('vis/bwlemma/index.html'));
+
+    expect(source).toContain('dolnoserbskiUrl(');
+    expect(source).not.toContain("slownik?wuraz=' +");
+  });
+
+  it('sends the current search options to the lemma variation page', () => {
+    const source = inlineSourceOf(loadPage('vis/bwlemma/index.html'));
+
+    expect(source).toContain("variationUrl('lemma'");
+    expect(source).not.toContain("'../lemmavariation?lemma=' +");
+  });
+
   it('has one search text input and removes the legacy search inputs', () => {
     const document = loadPage('vis/bwlemma/index.html');
 

@@ -491,16 +491,17 @@
     };
 
     var callDolnoserbski = function () {
-      var curterm = document.getElementById('searchinput').value.trim();
-      if (curterm.length > 0) {
-        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + curterm, '_blank');
+      var url = dolnoserbskiUrl(document.getElementById('searchinput').value);
+      if (url) {
+        window.open(url, '_blank');
       }
     };
 
     var callLemmatree = function () {
       var curterm = document.getElementById('searchinput').value.trim();
-      if (curterm.length > 0) {
-        window.open('../lemmavariation?lemma=' + curterm + '&headerconf=' + headerconf, '_blank');
+      var url = variationUrl('lemma', curterm, searchOptionsFromForm(document), headerconf);
+      if (url) {
+        window.open(url, '_blank');
       }
     };
 

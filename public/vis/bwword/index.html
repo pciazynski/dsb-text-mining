@@ -309,9 +309,9 @@
     };
 
     var callDolnoserbski = function () {
-      var term = document.getElementById('searchinput').value.trim();
-      if (term.length > 0) {
-        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + term, '_blank');
+      var url = dolnoserbskiUrl(document.getElementById('searchinput').value);
+      if (url) {
+        window.open(url, '_blank');
       }
     };
 

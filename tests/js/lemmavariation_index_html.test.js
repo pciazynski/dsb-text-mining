@@ -10,6 +10,13 @@ function inlineSourceOf(document) {
 }
 
 describe('vis/lemmavariation/index.html', () => {
+  it('opens dolnoserbski.de through the shared URL builder', () => {
+    const source = inlineSourceOf(loadPage('vis/lemmavariation/index.html'));
+
+    expect(source).toContain('dolnoserbskiUrl(');
+    expect(source).not.toContain("slownik?wuraz=' +");
+  });
+
   it('has one search text input and removes the legacy search inputs', () => {
     const document = loadPage('vis/lemmavariation/index.html');
 

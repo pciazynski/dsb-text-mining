@@ -10,6 +10,13 @@ function inlineSourceOf(document) {
 }
 
 describe('vis/bwword/index.html', () => {
+  it('opens dolnoserbski.de through the shared URL builder', () => {
+    const source = inlineSourceOf(loadPage('vis/bwword/index.html'));
+
+    expect(source).toContain('dolnoserbskiUrl(');
+    expect(source).not.toContain("slownik?wuraz=' +");
+  });
+
   it('uses one search input and removes legacy inputs and ambiguity controls', () => {
     const document = loadPage('vis/bwword/index.html');
     const textInputs = [...document.querySelectorAll('input[type="text"]')];
