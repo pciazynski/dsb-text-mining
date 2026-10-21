@@ -6,6 +6,7 @@
   <script src="../../vendor/cytoscape-dagre.min.js"></script>
   <script src="../../js/datahandler.js"></script>
   <script src="../../js/config.js"></script>
+  <script src="../../js/search.js"></script>
 </head>
 
 <style>
@@ -22,173 +23,168 @@
   <div id="cy"></div>
 
   <script>
-    nodes = [];
-    edges = [];
-    var dataset = getQueryVariable('data');
-    var lemma = getQueryVariable('lemma');
-    dataset = dataset + '?lemma=' + lemma;
-    if (getQueryVariable('inclusive').length > 0) {
-      dataset += '&inclusive';
-    }
-    if (getQueryVariable('weight').length > 0) {
-      weight = true;
-    } else {
-      weight = false;
-    }
+    (function () {
+      var dataset = phpUrlFromLocation('data', 'lemma', window.location.search);
+      if (dataset === null) return;
+      var lemma = getQueryVariable('lemma');
+      if (getQueryVariable('inclusive').length > 0) {
+        dataset += '&inclusive';
+      }
+      var weight = getQueryVariable('weight').length > 0;
+      if (weight) {
+        dataset += '&weight';
+      }
+      var rootel = treeHasRoot(window.location.search);
 
-    if (
-      getQueryVariable('inclusive').length > 0 ||
-      lemma.includes(',') ||
-      dataset.includes('regex.php')
-    ) {
-      rootel = true;
-    } else {
-      rootel = false;
-    }
-    network = readPHP(dataset).split('\n');
-    lay = 'dagre';
-    if (rootel) {
-      nodes[lemma] = 0;
-    }
-    for (key in network) {
-      tmp = network[key].split(sep);
-      if (tmp.length >= 2) {
-        if (nodes[tmp[0]] == null) {
-          nodes[tmp[0]] = 0;
+      var response = readPHPChecked(document, dataset);
+      if (response === null) return;
+      var network = response.split('\n');
+      var nodes = [];
+      var edges = [];
+      var lay = 'dagre';
+      if (rootel) {
+        nodes[lemma] = 0;
+      }
+      for (var key in network) {
+        var tmp = network[key].split(sep);
+        if (tmp.length >= 2) {
+          if (nodes[tmp[0]] == null) {
+            nodes[tmp[0]] = 0;
+            if (rootel) {
+              edges[lemma + sep + tmp[0]] = 1;
+            }
+          }
+          nodes[tmp[1]] = tmp[2];
+          edges[tmp[0] + sep + tmp[1]] = 1;
+          nodes[tmp[0]] = nodes[tmp[0]] + parseInt(tmp[2]);
           if (rootel) {
-            edges[lemma + sep + tmp[0]] = 1;
+            nodes[lemma] = nodes[lemma] + parseInt(tmp[2]);
           }
         }
-        nodes[tmp[1]] = tmp[2];
-        edges[tmp[0] + sep + tmp[1]] = 1;
-        nodes[tmp[0]] = nodes[tmp[0]] + parseInt(tmp[2]);
-        if (rootel) {
-          nodes[lemma] = nodes[lemma] + parseInt(tmp[2]);
+      }
+
+      var cy = cytoscape({
+        container: document.getElementById('cy'),
+        style: [
+          {
+            selector: 'node',
+            css: {
+              label: 'data(id)',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'text-wrap': 'wrap',
+              height: 'data(height)',
+              'font-size': defNodeFont,
+              width: 'data(width)',
+              'background-color': 'data(color)',
+              borderColor: 'darkgray',
+              borderWidth: '1',
+              shape: 'circle',
+            },
+          },
+          {
+            selector: 'node.highlight',
+            style: {
+              label: 'data(id)',
+              'text-valign': 'center',
+              color: 'white',
+              'text-outline-color': 'red',
+              'text-outline-width': 2,
+            },
+          },
+          {
+            selector: 'edge',
+            css: {
+              'curve-style': 'bezier',
+              'control-point-step-size': '40',
+              width: '1',
+              'line-color': 'gray',
+              'target-arrow-shape': 'triangle',
+              'target-arrow-color': 'black',
+            },
+          },
+        ],
+      });
+
+      for (var key in nodes) {
+        if (key.length > 0) {
+          if (weight) {
+            size = Math.min(100, Math.log(parseInt(nodes[key])) + 10);
+          } else {
+            size = 19;
+          }
+          if (key == lemma) {
+            color = 'gray';
+          } else {
+            color = 'red';
+          }
+          cy.add({
+            data: { id: key, color: getColor(key), width: size, height: size },
+          });
         }
       }
-    }
 
-    var cy = cytoscape({
-      container: document.getElementById('cy'),
-      style: [
-        {
-          selector: 'node',
-          css: {
-            label: 'data(id)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'text-wrap': 'wrap',
-            height: 'data(height)',
-            'font-size': defNodeFont,
-            width: 'data(width)',
-            'background-color': 'data(color)',
-            borderColor: 'darkgray',
-            borderWidth: '1',
-            shape: 'circle',
-          },
-        },
-        {
-          selector: 'node.highlight',
-          style: {
-            label: 'data(id)',
-            'text-valign': 'center',
-            color: 'white',
-            'text-outline-color': 'red',
-            'text-outline-width': 2,
-          },
-        },
-        {
-          selector: 'edge',
-          css: {
-            'curve-style': 'bezier',
-            'control-point-step-size': '40',
-            width: '1',
-            'line-color': 'gray',
-            'target-arrow-shape': 'triangle',
-            'target-arrow-color': 'black',
-          },
-        },
-      ],
-    });
-
-    for (var key in nodes) {
-      if (key.length > 0) {
-        if (weight) {
-          size = Math.min(100, Math.log(parseInt(nodes[key])) + 10);
-        } else {
-          size = 19;
+      for (var key in edges)
+        if (key.length > 0) {
+          tmp = key.split(sep);
+          cy.add({
+            data: {
+              source: tmp[0],
+              weight: 1,
+              target: tmp[1],
+            },
+          });
         }
-        if (key == lemma) {
-          color = 'gray';
-        } else {
-          color = 'red';
+
+      cy.layout({
+        name: lay,
+        minNodeSpacing: 1,
+      }).run();
+
+      var labeltmp = '';
+      cy.on('mouseover', 'node', function (event) {
+        node = event.target;
+        labeltmp = node.style('label');
+        node.style('text-background-color', 'white');
+        node.style('text-background-opacity', '0.9');
+        node.style('label', labeltmp + ':' + nodes[labeltmp]);
+      });
+
+      cy.on('mouseout', 'node', function (event) {
+        node = event.target;
+        node.style('label', labeltmp);
+        node.style('text-background-opacity', '0.0');
+        labeltmp = '';
+      });
+
+      var tappedBefore;
+      var tappedTimeout;
+      cy.on('tap', function (event) {
+        var tappedNow = event.target;
+        if (tappedTimeout && tappedBefore) {
+          clearTimeout(tappedTimeout);
         }
-        cy.add({
-          data: { id: key, color: getColor(key), width: size, height: size },
-        });
-      }
-    }
-
-    for (var key in edges)
-      if (key.length > 0) {
-        tmp = key.split(sep);
-        cy.add({
-          data: {
-            source: tmp[0],
-            weight: 1,
-            target: tmp[1],
-          },
-        });
-      }
-
-    cy.layout({
-      name: lay,
-      minNodeSpacing: 1,
-    }).run();
-
-    var labeltmp = '';
-    cy.on('mouseover', 'node', function (event) {
-      node = event.target;
-      labeltmp = node.style('label');
-      node.style('text-background-color', 'white');
-      node.style('text-background-opacity', '0.9');
-      node.style('label', labeltmp + ':' + nodes[labeltmp]);
-    });
-
-    cy.on('mouseout', 'node', function (event) {
-      node = event.target;
-      node.style('label', labeltmp);
-      node.style('text-background-opacity', '0.0');
-      labeltmp = '';
-    });
-
-    var tappedBefore;
-    var tappedTimeout;
-    cy.on('tap', function (event) {
-      var tappedNow = event.target;
-      if (tappedTimeout && tappedBefore) {
-        clearTimeout(tappedTimeout);
-      }
-      if (tappedBefore === tappedNow) {
-        tappedBefore = null;
-        cy.fit();
-      } else {
-        tappedTimeout = setTimeout(function () {
+        if (tappedBefore === tappedNow) {
           tappedBefore = null;
-        }, 300);
-        tappedBefore = tappedNow;
-        if (tappedNow !== cy) {
-          cy.fit(event.target.neighborhood(), 100);
-          if (!event.target.id().includes('Input:')) {
-            elemen = event.target.id();
-            if (elemen.includes('|')) {
-              parent.lemmaclick(elemen.slice(1, -1));
-            } else {
-              parent.tokenclick(elemen);
+          cy.fit();
+        } else {
+          tappedTimeout = setTimeout(function () {
+            tappedBefore = null;
+          }, 300);
+          tappedBefore = tappedNow;
+          if (tappedNow !== cy) {
+            cy.fit(event.target.neighborhood(), 100);
+            if (!event.target.id().includes('Input:')) {
+              elemen = event.target.id();
+              if (elemen.includes('|')) {
+                parent.lemmaclick(elemen.slice(1, -1));
+              } else {
+                parent.tokenclick(elemen);
+              }
             }
           }
         }
-      }
-    });
+      });
+    })();
   </script>
 </body>

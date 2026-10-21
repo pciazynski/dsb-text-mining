@@ -5,6 +5,7 @@
   <script src="../../js/def_language.js"></script>
   <script src="../../js/my_language.js"></script>
   <script src="../../js/datahandler.js"></script>
+  <script src="../../js/search.js"></script>
   <script src="../../js/gui.js"></script>
   <script src="../../js/autocomplete.js"></script>
   <link rel="stylesheet" href="../../digilabstyles.css" />
@@ -53,11 +54,14 @@
     <tr>
       <td></td>
       <td>
-        <input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()" />
-        <script>
-          document.write(lang_prefixsearchalphabet);
-        </script>
+        <label
+          ><input id="prefixsearchCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+          <script>
+            document.write(lang_prefixsearchalphabet);
+          </script></label
+        >
       </td>
+      <td></td>
     </tr>
     <tr>
       <td style="text-align: right">
@@ -68,8 +72,8 @@
       <td>
         <div class="autocomplete">
           <input
-            style="width: 70%"
-            id="norm"
+            style="width: 60%"
+            id="searchinput"
             type="text"
             onkeydown="
               if (event.key === 'Enter') {
@@ -77,60 +81,67 @@
               }
             "
           />
-          <button onclick="updateTree()">
+          <button id="ambigSearchButton" onclick="updateTree()">
             <script>
-              document.write(lang_enter);
+              document.write(lang_ambigsearch);
             </script>
           </button>
         </div>
         <script>
-          autocomplete('norm', 'prefixnormsearch.php?&cutoff=2&limit=20&norm=', '');
+          autocomplete('searchinput', 'prefixnormsearch.php?cutoff=2&limit=20&norm=', '');
         </script>
       </td>
       <td>
         <script>
-          document.write(lang_redirect);
+          document.write(lang_example);
         </script>
-        <button onclick="addNormToList()">
-          &#10149;
-          <script>
-            document.write(lang_list);
-          </script>
-        </button>
+        <span id="searchexample"></span>
+        <br />
+        <a href="?norm=druge;francojski&amp;list=1">druge;francojski</a>
+        <br />
         <button onclick="callDolnoserbski()">&#10149;dolnoserbski.de</button>
       </td>
     </tr>
     <tr>
-      <td style="text-align: right">
-        <script>
-          document.write(lang_list);
-        </script>
+      <td></td>
+      <td style="padding: 0">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5em">
+          <label
+            ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_regex);
+            </script></label
+          >
+          <label
+            ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_list);
+            </script></label
+          >
+          <label
+            ><input id="ambigCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_ambig);
+            </script></label
+          >
+        </div>
       </td>
-      <td>
-        <input
-          style="width: 70%"
-          id="normlist"
-          type="text"
-          onchange=""
-          onkeydown="
-            if (event.key === 'Enter') {
-              updateTreeFromList();
-            }
-          "
-        />
-        <button onclick="updateTreeFromList()">
-          <script>
-            document.write(lang_enter);
-          </script>
-        </button>
-      </td>
-      <td>
-        <a href="?norm=druge,francojski"
-          ><script>
-            document.write(lang_example);
-          </script>
-          druge,francojski</a
-        >
+      <td></td>
+      <td style="text-align: left">
+        <div style="display: flex; gap: 0.5em; white-space: nowrap">
+          <label
+            ><input id="csCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_casesensitive);
+            </script></label
+          >
+          <label
+            ><input id="trimCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_trim);
+            </script></label
+          >
+        </div>
       </td>
     </tr>
   </table>
@@ -266,36 +277,64 @@
 
   <br /><br />
   <script>
+    var switchSearchOptions = function () {
+      var options = searchOptionsFromForm(document);
+      applySearchControlState(document, options);
+      applyAmbigButtonLabel(document);
+      applySearchExample(document, 'norm');
+      switchPrefixsearch();
+    };
+
     var switchPrefixsearch = function () {
-      tmp = document.getElementById('prefixsearchCheckBox').checked;
-      if (tmp) {
-        tmp = 'alphabet';
-      } else {
-        tmp = 'frequency';
-      }
-      autocomplete('norm', 'prefixnormsearch.php?limit=30&sortby=' + tmp + '&norm=', '');
+      var sortby = document.getElementById('prefixsearchCheckBox').checked
+        ? 'alphabet'
+        : 'frequency';
+      var caseSensitive = document.getElementById('csCheckBox').checked ? '1' : '0';
+      autocomplete(
+        'searchinput',
+        'prefixnormsearch.php?cutoff=2&limit=20&sortby=' +
+          sortby +
+          '&cs=' +
+          caseSensitive +
+          '&norm=',
+        '',
+        searchControlState(searchOptionsFromForm(document)).autocomplete,
+      );
+    };
+
+    var exactOptions = { cs: true, regex: false, list: false, trim: true, ambig: false };
+
+    var setSrc = function (elid, url) {
+      document.getElementById(elid).src = url;
     };
 
     var normclick = function (tmp) {
       loading('timeline');
       if (tmp.length > 0) {
         if (tmp.startsWith('|')) {
-          tmp = tmp.substring(1, tmp.length - 1);
-          funcall = 'normtimeline.html?data=normcountperyear.php&norm=' + tmp;
-          document.getElementById('tokeninfo').src = 'error_token.html';
+          setSrc(
+            'timeline',
+            'normtimeline.html?data=normcountperyear.php&' +
+              searchQueryString('norm', tmp.slice(1, -1), exactOptions) +
+              '&sort&focus=3',
+          );
+          setSrc('tokeninfo', 'error_token.html');
         } else {
-          funcall = 'tokentimeline.html?data=tokencountperyear.php&token=' + tmp;
-          document.getElementById('tokeninfo').src =
-            'datalist.html?data=token2norm.php&token=' + tmp;
+          setSrc(
+            'timeline',
+            'tokentimeline.html?data=tokencountperyear.php&' +
+              searchQueryString('token', tmp, exactOptions) +
+              '&sort&focus=3',
+          );
+          setSrc('tokeninfo', 'datalist.html?data=token2norm.php&token=' + encodeURIComponent(tmp));
         }
-        document.getElementById('timeline').src = funcall + '&sort&focus=3&exact=1';
       }
     };
 
     var callDolnoserbski = function () {
-      curnorm = document.getElementById('norm').value.trim();
-      if (curnorm.length > 0) {
-        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + curnorm, '_blank');
+      var url = dolnoserbskiUrl(document.getElementById('searchinput').value);
+      if (url) {
+        window.open(url, '_blank');
       }
     };
 
@@ -309,93 +348,34 @@
       }
     };
 
-    var updateTreeFromRegex = function () {
-      curnorm = document.getElementById('normregex').value.trim();
-      if (curnorm.length > 0) {
-        loading('tree');
-        if (document.getElementById('weight').checked) {
-          weight = '&weight';
-        } else {
-          weight = '';
-        }
-        document.getElementById('tree').src =
-          'normtree_dagre.html?data=normtokenregex.php&sort&norm=' +
-          encodeURIComponent(curnorm) +
-          weight;
-        document.getElementById('traviz').src =
-          'traviz.html?data=normtokenregex.php&sort&norm=' + encodeURIComponent(curnorm) + weight;
-        document.getElementById('tokeninfo').src = 'error_token.html';
-        document.getElementById('timeline').src = 'error_token.html';
-      }
-    };
-
-    var updateTreeFromList = function () {
-      curnorm = document.getElementById('normlist').value.trim();
-      if (curnorm.length > 0) {
-        loading('tree');
-        if (document.getElementById('weight').checked) {
-          weight = '&weight';
-        } else {
-          weight = '';
-        }
-        document.getElementById('tree').src =
-          'normtree_dagre.html?data=normtoken.php&sort&inclusive&norm=' + curnorm + weight;
-        document.getElementById('traviz').src =
-          'traviz.html?data=normtoken.php&sort&inclusive&norm=' + curnorm + weight;
-        document.getElementById('tokeninfo').src = 'error_token.html';
-        document.getElementById('timeline').src = 'error_token.html';
-      }
-    };
-
     var updateTree = function () {
-      curnorm = document.getElementById('norm').value.trim();
-      if (curnorm.length > 0) {
-        loading('tree');
-        if (document.getElementById('weight').checked) {
-          weight = '&weight';
-        } else {
-          weight = '';
-        }
-        document.getElementById('tree').src =
-          'normtree_dagre.html?data=normtoken.php&sort&inclusive&norm=' + curnorm + weight;
-        document.getElementById('traviz').src =
-          'traviz.html?data=normtoken.php&sort&inclusive&norm=' + curnorm + weight;
-        document.getElementById('tokeninfo').src = 'error_token.html';
-        document.getElementById('timeline').src = 'error_token.html';
+      var term = document.getElementById('searchinput').value;
+      var urls = buildTreeUrls(
+        'norm',
+        term,
+        searchOptionsFromForm(document),
+        document.getElementById('weight').checked,
+      );
+      if (!urls) {
+        return;
       }
-    };
-
-    var addNormToList = function () {
       loading('tree');
-      tmp = document.getElementById('norm').value.trim();
-      tmp2 = document.getElementById('normlist').value.trim();
-      str = '';
-      if (tmp.length > 0) {
-        if (tmp2.length > 0) {
-          str = ',';
-        }
-        str = tmp2 + str + tmp;
-        document.getElementById('normlist').value = str;
-        document.getElementById('tree').src =
-          'normtree_dagre.html?data=normtoken.php&norm=' + curnorm;
-      }
+      setSrc('tree', urls.tree);
+      setSrc('traviz', urls.traviz);
+      setSrc('tokeninfo', 'error_token.html');
+      setSrc('timeline', 'error_token.html');
     };
 
-    curnorm = getQueryVariable('norm');
-    if (curnorm.length > 0) {
-      if (curnorm.includes(',')) {
-        document.getElementById('normlist').value = curnorm;
-        updateTreeFromList();
-      } else {
-        document.getElementById('norm').value = curnorm;
-        updateTree();
-      }
-      document.getElementById('norm').scrollIntoView();
+    restoreSearchFromLocation(document, window.location.search, 'norm');
+    switchSearchOptions();
+    if (document.getElementById('searchinput').value.trim().length > 0) {
+      updateTree();
+      document.getElementById('searchinput').scrollIntoView();
     } else {
-      document.getElementById('tree').src = 'error_token.html';
+      setSrc('tree', 'error_token.html');
     }
-    document.getElementById('tokeninfo').src = 'error_token.html';
-    document.getElementById('timeline').src = 'error_token.html';
+    setSrc('tokeninfo', 'error_token.html');
+    setSrc('timeline', 'error_token.html');
     document.title = lang_variation + ' ' + lang_normify;
   </script>
   <br /><br />

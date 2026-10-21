@@ -5,6 +5,7 @@
   <script src="../../js/def_language.js"></script>
   <script src="../../js/my_language.js"></script>
   <script src="../../js/datahandler.js"></script>
+  <script src="../../js/search.js"></script>
   <script src="../../js/gui.js"></script>
   <script src="../../js/autocomplete.js"></script>
   <link rel="stylesheet" href="../../digilabstyles.css" />
@@ -47,10 +48,12 @@
     <tr>
       <td></td>
       <td>
-        <input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()" />
-        <script>
-          document.write(lang_prefixsearchalphabet_unicode);
-        </script>
+        <label
+          ><input id="prefixsearchCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+          <script>
+            document.write(lang_prefixsearchalphabet);
+          </script></label
+        >
       </td>
     </tr>
     <tr>
@@ -63,7 +66,7 @@
         <div class="autocomplete">
           <input
             style="width: 70%"
-            id="wordinput"
+            id="searchinput"
             type="text"
             onkeydown="
               if (event.key === 'Enter') {
@@ -79,84 +82,53 @@
         </div>
         <script>
           autocomplete(
-            'wordinput',
-            'prefixsearch.php?limit=30&sortby=alphabet&word=',
-            'updateTimeline',
+            'searchinput',
+            'prefixsearch.php?limit=30&sortby=frequency&cs=0&word=',
+            '',
+            searchControlState(searchOptionsFromForm(document)).autocomplete,
           );
         </script>
       </td>
+      <td>
+        <script>
+          document.write(lang_example);
+        </script>
+        <span id="searchexample"></span>
+      </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td style="padding: 0">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5em">
+          <label
+            ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_regex);
+            </script></label
+          >
+          <label
+            ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_list);
+            </script></label
+          >
+        </div>
+      </td>
       <td style="text-align: left">
-        <script>
-          document.write(lang_redirect);
-        </script>
-        <button onclick="addWordToList()">
-          &#10149;
-          <script>
-            document.write(lang_list);
-          </script>
-        </button>
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Regex ^...$</td>
-      <td>
-        <div>
-          <input
-            style="width: 70%"
-            id="regexsearch"
-            type="text"
-            onchange=""
-            onkeydown="
-              if (event.key === 'Enter') {
-                updateTimelineRegex();
-              }
-            "
-          />
-          <button onclick="updateTimelineRegex()">
+        <div style="display: flex; gap: 0.5em; white-space: nowrap">
+          <label
+            ><input id="csCheckBox" type="checkbox" onchange="switchSearchOptions()" />
             <script>
-              document.write(lang_enter);
-            </script>
-          </button>
-        </div>
-      </td>
-      <td style="text-align: center">
-        <script>
-          document.write(lang_example);
-        </script>
-        w(o|a)n(a|i)
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">
-        <script>
-          document.write(lang_list);
-        </script>
-      </td>
-      <td>
-        <div>
-          <input
-            style="width: 70%"
-            id="wordlist"
-            type="text"
-            onchange=""
-            onkeydown="
-              if (event.key === 'Enter') {
-                updateTimelineWordList();
-              }
-            "
-          />
-          <button onclick="updateTimelineWordList()">
+              document.write(lang_search_casesensitive);
+            </script></label
+          >
+          <label
+            ><input id="trimCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
             <script>
-              document.write(lang_enter);
-            </script>
-          </button>
+              document.write(lang_search_trim);
+            </script></label
+          >
         </div>
-      </td>
-      <td style="text-align: center">
-        <script>
-          document.write(lang_example);
-        </script>
-        druge,woni
       </td>
     </tr>
   </table>
@@ -260,8 +232,8 @@
 
 <div class = "explain">
 	<p>
-		Verwendungszeitraum von Wortformen sortiert nach Häufigkeitsrang. Per Linksklick öffnet sich ein Popup-Fenster mit der kommaseparierten Wortliste. 
-		Ein Pfeil markiert die früheste (kaḿeńzu⇒) oder späteste (⇒ṅemėrniki) Verwendung des Wortes. Kein Pfeil bedeutet, dass die Verwendung im selben Jahr startete und endete. 
+		Verwendungszeitraum von Wortformen sortiert nach Häufigkeitsrang. Per Linksklick öffnet sich ein Popup-Fenster mit der kommaseparierten Wortliste.
+		Ein Pfeil markiert die früheste (kaḿeńzu⇒) oder späteste (⇒ṅemėrniki) Verwendung des Wortes. Kein Pfeil bedeutet, dass die Verwendung im selben Jahr startete und endete.
 	</p>
 </div>
 
@@ -294,14 +266,24 @@
   <br /><br />
 
   <script>
+    var switchSearchOptions = function () {
+      var options = searchOptionsFromForm(document);
+      applySearchControlState(document, options);
+      applySearchExample(document, 'token');
+      switchPrefixsearch();
+    };
+
     var switchPrefixsearch = function () {
-      tmp = document.getElementById('prefixsearchCheckBox').checked;
-      if (tmp) {
-        tmp = 'alphabet';
-      } else {
-        tmp = 'frequency';
-      }
-      autocomplete('wordinput', 'prefixsearch.php?limit=30&sortby=' + tmp + '&word=', '');
+      var sortby = document.getElementById('prefixsearchCheckBox').checked
+        ? 'alphabet'
+        : 'frequency';
+      var caseSensitive = document.getElementById('csCheckBox').checked ? '1' : '0';
+      autocomplete(
+        'searchinput',
+        'prefixsearch.php?limit=30&sortby=' + sortby + '&cs=' + caseSensitive + '&word=',
+        '',
+        searchControlState(searchOptionsFromForm(document)).autocomplete,
+      );
     };
 
     var threeD = function (iframeid) {
@@ -316,85 +298,49 @@
 
     var linreg = function (iframeid) {
       loading(iframeid);
-      tmp = document.getElementById('wordinput').value.trim();
-      if (tmp.length > 0) {
-        if (document.getElementById(iframeid).src.includes('timeline.html')) {
-          document.getElementById(iframeid).src =
-            'linreg_chart.html?data=tokencountperyear.php&token=' + tmp + '&sort';
-        } else {
-          document.getElementById(iframeid).src =
-            'timeline.html?data=tokencountperyear.php&token=' + tmp + '&sort';
-        }
+      var term = document.getElementById('searchinput').value.trim();
+      if (term.length > 0) {
+        var urls = buildVisUrls('token', term, searchOptionsFromForm(document), 1);
+        var page = document.getElementById(iframeid).src.includes('linreg_chart.html')
+          ? 'timeline.html'
+          : 'linreg_chart.html';
+        document.getElementById(iframeid).src = urls.timeline.replace('timeline.html', page);
       }
-    };
-
-    var updateTimelineRegex = function () {
-      loading('timeline');
-      tmp = document.getElementById('regexsearch').value.trim();
-      if (tmp.length > 0) {
-        document.getElementById('timeline').src =
-          'timeline.html?data=regexsearch.php&token=' + encodeURIComponent(tmp) + '&sort';
-      }
-      document.getElementById('switchlinreg').disabled = true;
     };
 
     var callDolnoserbski = function () {
-      tmp = document.getElementById('wordinput').value.trim();
-      if (tmp.length > 0) {
-        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + tmp, '_blank');
+      var url = dolnoserbskiUrl(document.getElementById('searchinput').value);
+      if (url) {
+        window.open(url, '_blank');
       }
     };
 
     var switchpercenttimeline = function (elid) {
-      tmp = document.getElementById(elid);
-      url = tmp.src.replaceAll('sum.html', '.html').replaceAll('linreg_chart', 'timeline');
+      var frame = document.getElementById(elid);
+      var url = frame.src.replaceAll('sum.html', '.html').replaceAll('linreg_chart', 'timeline');
       if (url.includes('percenttimeline')) {
-        tmp.src = url.replace('percenttimeline', 'timeline');
+        frame.src = url.replace('percenttimeline', 'timeline');
       } else {
-        tmp.src = url.replace('timeline', 'percenttimeline');
+        frame.src = url.replace('timeline', 'percenttimeline');
       }
-    };
-
-    var addWordToList = function () {
-      tmp = document.getElementById('wordinput').value.trim();
-      tmp2 = document.getElementById('wordlist').value.trim();
-      str = '';
-      if (tmp.length > 0) {
-        if (tmp2.length > 0) {
-          str = ',';
-        }
-        str = tmp2 + str + tmp;
-        document.getElementById('wordlist').value = str;
-        updateTimelineWordList();
-      }
-    };
-
-    var updateTimelineWordList = function () {
-      loading('timeline');
-      tmp = document.getElementById('wordlist').value.trim();
-      if (tmp.length > 0) {
-        document.getElementById('timeline').src =
-          'timeline.html?data=tokencountperyear.php&token=' + tmp + '&sort';
-      }
-      document.getElementById('switchlinreg').disabled = true;
     };
 
     var updateTimeline = function () {
-      tmp = document.getElementById('wordinput').value.trim();
-      if (tmp.length > 0) {
+      var term = document.getElementById('searchinput').value.trim();
+      if (term.length > 0) {
         loading('timeline');
         loading('wordinfo');
-        document.getElementById('timeline').src =
-          'timeline.html?data=tokencountperyear.php&token=' + tmp + '&sort';
-        document.getElementById('wordinfo').src = 'wordinfo.html?data=token2lemma.php&token=' + tmp;
-        document.title = 'Word ' + tmp;
-        document.getElementById('switchlinreg').disabled = false;
+        var urls = buildVisUrls('token', term, searchOptionsFromForm(document), 1);
+        document.getElementById('timeline').src = urls.timeline;
+        document.getElementById('wordinfo').src = urls.wordinfo;
+        document.title = 'Word ' + term;
       }
     };
 
-    curword = getQueryVariable('word');
+    restoreSearchFromLocation(document, window.location.search, 'token');
+    applySearchExample(document, 'token');
+    var curword = document.getElementById('searchinput').value;
     if (curword.length > 0) {
-      document.getElementById('wordinput').value = curword;
       updateTimeline();
       document.getElementById('wordinfo').scrollIntoView();
     } else {

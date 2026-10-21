@@ -6,15 +6,16 @@
   <script src="../../js/my_language.js"></script>
   <script src="../../js/datahandler.js"></script>
   <script src="../../js/config.js"></script>
+  <script src="../../js/search.js"></script>
 </head>
 
 <body>
   <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
   <script>
     diagramtitle = '';
-    var dataset = getQueryVariable('data');
+    var dataset = phpUrlFromLocation('data', 'norm', window.location.search);
     var norm = getQueryVariable('norm');
-    var exact = getQueryVariable('exact');
+    var searchOptions = readSearchOptions(window.location.search);
     var focus = getQueryVariable('focus');
     var jitter = getQueryVariable('jitter');
     if (jitter.length == 0) {
@@ -27,7 +28,6 @@
     } else {
       focus = parseInt(focus);
     }
-    dataset = dataset + '?norm=' + norm + '&sort';
     if (focus == 3) {
       diagramtitle = 'Token von Normiering ';
     } else {
@@ -35,13 +35,12 @@
     }
     diagramtitle += norm;
 
-    if (exact == 1) {
-      dataset += '&exact';
-    } else {
+    if (searchOptions.ambig) {
       diagramtitle += ' inkl. ambig';
     }
 
-    data_arr = readPHP(dataset).split('\n');
+    var response = readPHPChecked(document, dataset);
+    data_arr = response === null ? [] : response.split('\n');
     if (data_arr.length > resultsetmax) {
       document.write(lang_error_resultset_too_large);
     } else {

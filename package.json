@@ -5,9 +5,10 @@
   "private": true,
   "license": "SEE LICENSE IN LICENSE.txt",
   "scripts": {
-    "test": "node --test tests/js/"
+    "test": "jest tests/js"
   },
   "devDependencies": {
+    "jest": "^30.4.2",
     "jsdom": "^24.1.3"
   }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DsbTests;
 
 use DsbTests\Support\DevServer;
+use DsbTests\Support\FixtureDb;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
@@ -13,22 +14,28 @@ final class LemmaprofileRegressionsTest extends TestCase
 {
 	private DevServer $server;
 
+	public static function setUpBeforeClass(): void
+	{
+		require_once dirname(__DIR__, 2) . '/public/php/dsb_collation.php';
+	}
+
 	protected function setUp(): void
 	{
 		$this->server = DevServer::boot();
 
 		$db = $this->server->dataDir() . '/lemmamapping.db';
 		@unlink($db);
-		$pdo = new \PDO('sqlite:' . $db);
+		$pdo = FixtureDb::open($db);
 
-		// Default autocomplete draws from lemmanonambig (flattened single lemmas).
+		// Default autocomplete draws from lemmanonambig (flattened single lemmas)
+		// and matches on sortkey, so fixtures must carry real dsb_sortkey() values.
 		$pdo->exec('CREATE TABLE lemmanonambig (lemma TEXT, frequency INTEGER, sortkey TEXT)');
-		$pdo->exec("INSERT INTO lemmanonambig VALUES ('|TO|', 10, 'to')");
+		$pdo->exec("INSERT INTO lemmanonambig VALUES ('|TO|', 10, '" . dsb_sortkey('TO') . "')");
 
 		// TO only occurs in an ambiguous record connected to the exact lemma TEN.
 		$pdo->exec('CREATE TABLE lemmafrequency (lemma TEXT, frequency INTEGER, sortkey TEXT)');
-		$pdo->exec("INSERT INTO lemmafrequency VALUES ('|TEN|', 8, 'ten')");
-		$pdo->exec("INSERT INTO lemmafrequency VALUES ('|TEN|TO|', 10, 'ten')");
+		$pdo->exec("INSERT INTO lemmafrequency VALUES ('|TEN|', 8, '" . dsb_sortkey('TEN') . "')");
+		$pdo->exec("INSERT INTO lemmafrequency VALUES ('|TEN|TO|', 10, '" . dsb_sortkey('TEN') . "')");
 		$pdo->exec('CREATE TABLE tokenlemmatypesubtypedatefrequency (token TEXT, lemma TEXT, type TEXT, subtype TEXT, date TEXT, frequency INTEGER)');
 		$pdo->exec("INSERT INTO tokenlemmatypesubtypedatefrequency VALUES ('ten', '|TEN|', '', '', '1870', 8)");
 		$pdo->exec("INSERT INTO tokenlemmatypesubtypedatefrequency VALUES ('tog', '|TEN|TO|', '', '', '1880', 10)");

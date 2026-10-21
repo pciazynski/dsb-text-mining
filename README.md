@@ -130,11 +130,11 @@ A generated `etl/config.py` is optional: the tests fall back to
 ### JavaScript
 
 ```bash
-npm install   # installs jsdom, the only dev dependency
+npm install   # installs Jest and jsdom
 npm test
 ```
 
-Run a single file with `node --test tests/js/config.test.js`.
+Run a single file with `npx jest tests/js/config.test.js`.
 
 ### PHP
 

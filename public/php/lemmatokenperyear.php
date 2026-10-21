@@ -1,19 +1,29 @@
 <?php
 header('Content-Type: text/plain');
 
-if (isset($_GET['lemma']) and isset($_GET['year'])) {
-	$PDO = new PDO('sqlite:../data/lemmamapping.db');
-	$query = 'SELECT lemma,token, SUM(frequency) as sumfreq FROM tokenlemmatypesubtypedatefrequency WHERE date ' . $_GET['year'];
-	(isset($_GET['exact']) and $_GET['exact'] == 1) ? $query .= ' AND lemma = "|' . $_GET['lemma'] . '|"' : $query .= ' AND lemma LIKE "%|' . str_replace(',', '|%" OR lemma LIKE "%|', $_GET['lemma']) . '|%"';
-	$query .= ' GROUP BY lemma,token';
-	(isset($_GET['sort'])) ? $query .= ' ORDER BY sumfreq DESC, token' : NULL;
+require_once __DIR__ . '/dsb_collation.php';
+require_once __DIR__ . '/searchfilter.php';
 
-	$tab = "\t";
-	$nl = "\n";
-	$res = "";
+$pdo = new PDO('sqlite:../data/lemmamapping.db');
+$cells = resolve_request_cells($pdo, 'lemma', $_GET);
+$year = year_clause(isset($_GET['year']) ? (string) $_GET['year'] : null);
 
-	foreach ($PDO->query($query . ';') as $row) {
-		$res .= $row['lemma'] . $tab . $row['token'] . $tab . $row['sumfreq'] . $nl;
-	}
-	print($res);
+if ($cells === [] || $year === null) {
+	exit;
 }
+
+$cellClause = in_clause('lemma', $cells);
+$query = 'SELECT lemma, token, SUM(frequency) AS sumfreq FROM tokenlemmatypesubtypedatefrequency WHERE '
+	. $cellClause['sql'] . ' AND ' . $year['sql'] . ' GROUP BY lemma, token';
+if (array_key_exists('sort', $_GET)) {
+	$query .= ' ORDER BY sumfreq DESC, token';
+}
+
+$statement = $pdo->prepare($query);
+$statement->execute([...$cellClause['params'], ...$year['params']]);
+
+$res = '';
+foreach ($statement as $row) {
+	$res .= $row['lemma'] . "\t" . $row['token'] . "\t" . $row['sumfreq'] . "\n";
+}
+print($res);

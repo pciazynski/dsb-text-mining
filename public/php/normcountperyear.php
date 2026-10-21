@@ -2,20 +2,26 @@
 header('Content-Type: text/plain');
 
 #token,lemma,norm,type,subtype,date,frequency
+require_once __DIR__ . '/dsb_collation.php';
+require_once __DIR__ . '/searchfilter.php';
 
-if (isset($_GET['norm'])) {
-	$norm = str_replace(",", '|%" OR norm LIKE "%|', $_GET['norm']);
-	$query = 'SELECT * FROM tokennormtypesubtypedatefrequency';
-	(isset($_GET['exact'])) ? $query .= ' WHERE norm = "|' . $norm . '|"' : $query .= ' WHERE norm LIKE "%|' . $norm . '|%"';
-	(isset($_GET['sort'])) ? $query .= ' ORDER BY date ASC' : NULL;
-
-	$tab = "\t";
-	$nl = "\n";
-	$res = '';
-
-	$PDO = new PDO('sqlite:../data/normmapping.db');
-	foreach ($PDO->query($query . ';') as $row) {
-		$res .= $row['norm'] . $tab . $row['date'] . $tab . $row['frequency'] . $tab . $row['token'] . $nl;
-	}
-	print($res);
+$PDO = new PDO('sqlite:../data/normmapping.db');
+$cells = resolve_request_cells($PDO, 'norm', $_GET);
+if ($cells === []) {
+	exit;
 }
+
+$clause = in_clause('norm', $cells);
+$query = 'SELECT * FROM tokennormtypesubtypedatefrequency WHERE ' . $clause['sql'];
+if (array_key_exists('sort', $_GET)) {
+	$query .= ' ORDER BY date ASC';
+}
+
+$statement = $PDO->prepare($query);
+$statement->execute($clause['params']);
+
+$res = '';
+foreach ($statement as $row) {
+	$res .= $row['norm'] . "\t" . $row['date'] . "\t" . $row['frequency'] . "\t" . $row['token'] . "\n";
+}
+print($res);

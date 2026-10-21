@@ -3,6 +3,7 @@
 <head>
   <script src="../../vendor/plotly.min.js"></script>
   <script src="../../js/datahandler.js"></script>
+  <script src="../../js/search.js"></script>
   <script src="../../js/config.js"></script>
 </head>
 
@@ -48,10 +49,9 @@
       }
       R2 = SQE / SQT;
     };
-    data = getQueryVariable('data');
+    var data = phpUrlFromLocation('data', 'token', window.location.search);
     var token = getQueryVariable('token');
-    dataset = data + '?token=' + token + '&sort';
-    dataset = readPHP(dataset).split('\n');
+    var response = readPHPChecked(document, data);
     var vorhersage = getQueryVariable('vorhersage');
 
     x1 = [];
@@ -59,14 +59,7 @@
     minY = 10000000000;
     maxY = -100000000000;
     diagramtitle = minDate + ' - ' + maxDate;
-    yearmapping = [];
-
-    for (var i = 0; i < dataset.length; i++) {
-      tmparr = dataset[i].split(sep);
-      year = parseInt(tmparr[1]);
-      val = parseInt(tmparr[2]);
-      yearmapping[year] = val;
-    }
+    yearmapping = countsByYear(response || '', sep);
 
     for (var i = minDate; i < maxDate; i++) {
       x1.push(i - minDate);

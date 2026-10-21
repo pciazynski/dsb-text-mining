@@ -1,0 +1,343 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DsbTests;
+
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
+
+#[CoversNothing]
+final class SearchFilterTest extends TestCase
+{
+  public static function setUpBeforeClass(): void
+  {
+    $file = dirname(__DIR__, 2) . '/public/php/searchfilter.php';
+
+    if (is_file($file)) {
+      require_once $file;
+    }
+  }
+
+  public function testSearchOptionsEmptyInputReturnsDefaults(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      $this->searchOptions([]),
+    );
+  }
+
+  public function testSearchOptionsFalseValuesTurnFlagsOff(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => false, 'ambig' => false],
+      $this->searchOptions(['cs' => '0', 'regex' => '', 'list' => 'false', 'trim' => '0', 'ambig' => 'false']),
+    );
+  }
+
+  public function testSearchOptionsBareValueTurnsFlagOff(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      $this->searchOptions(['cs' => '']),
+    );
+  }
+
+  public function testSearchOptionsTrueValuesTurnFlagsOn(): void
+  {
+    $this->assertSame(
+      ['cs' => true, 'regex' => true, 'list' => true, 'trim' => true, 'ambig' => true],
+      $this->searchOptions(['cs' => '1', 'regex' => 'true', 'list' => '1', 'trim' => 'true', 'ambig' => '1']),
+    );
+  }
+
+  public function testSearchOptionsExactOneTurnsAmbigOff(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => false],
+      $this->searchOptions(['exact' => '1']),
+    );
+  }
+
+  public function testSearchOptionsExactZeroTurnsAmbigOn(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      $this->searchOptions(['exact' => '0']),
+    );
+  }
+
+  public function testSearchOptionsExplicitAmbigOnWinsOverExact(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      $this->searchOptions(['ambig' => '1', 'exact' => '1']),
+    );
+  }
+
+  public function testSearchOptionsExplicitAmbigOffWinsOverExact(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => false],
+      $this->searchOptions(['ambig' => '0', 'exact' => '0']),
+    );
+  }
+
+  public function testSearchOptionsGarbageValuesFallBackToDefaults(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      $this->searchOptions([
+        'cs' => 'garbage',
+        'regex' => 'garbage',
+        'list' => 'garbage',
+        'trim' => 'garbage',
+        'ambig' => 'garbage',
+      ]),
+    );
+  }
+
+  public function testSearchOptionsUnknownParametersAreIgnored(): void
+  {
+    $this->assertSame(
+      ['cs' => false, 'regex' => false, 'list' => false, 'trim' => true, 'ambig' => true],
+      $this->searchOptions(['unknown' => '1']),
+    );
+  }
+
+  public function testSplitTermsListOffPreservesTheWholeString(): void
+  {
+    $this->assertSame(
+      ['/^drjewo,tej$/;alternatiwa'],
+      $this->splitTerms('/^drjewo,tej$/;alternatiwa', ['list' => false, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsListOnSplitsSemicolonAndLegacyCommaSeparators(): void
+  {
+    $this->assertSame(
+      ['drjewo', 'tej'],
+      $this->splitTerms('drjewo;tej', ['list' => true, 'trim' => true]),
+    );
+    $this->assertSame(
+      ['drjewo', 'tej'],
+      $this->splitTerms('drjewo,tej', ['list' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsTrimOnStripsSurroundingWhitespaceFromEachTerm(): void
+  {
+    $this->assertSame(
+      ['drjewo', 'tej'],
+      $this->splitTerms('drjewo, tej', ['list' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsTrimOnPreservesInternalSpaces(): void
+  {
+    $this->assertSame(
+      ['NJEBYŚ LI'],
+      $this->splitTerms(' NJEBYŚ LI ', ['list' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsTrimOffPreservesSurroundingWhitespace(): void
+  {
+    $this->assertSame(
+      ['drjewo', ' tej'],
+      $this->splitTerms('drjewo, tej', ['list' => true, 'trim' => false]),
+    );
+  }
+
+  public function testSplitTermsDropsEmptyTerms(): void
+  {
+    $this->assertSame(
+      ['a', 'b'],
+      $this->splitTerms('a;;b;', ['list' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsAllWhitespaceReturnsNoTerms(): void
+  {
+    $this->assertSame(
+      [],
+      $this->splitTerms(" \t\n ", ['list' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsTrimOnStripsUnicodeNonBreakingSpaces(): void
+  {
+    $this->assertSame(
+      ['drjewo'],
+      $this->splitTerms("\u{00A0}drjewo\u{00A0}", ['list' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsRegexListSplitsOnlyOnSemicolon(): void
+  {
+    $this->assertSame(
+      ['te(j|n)', 'bom'],
+      $this->splitTerms('te(j|n);bom', ['list' => true, 'regex' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsRegexListDoesNotTreatCommaAsSeparator(): void
+  {
+    $this->assertSame(
+      ['te(j|n),bom'],
+      $this->splitTerms('te(j|n),bom', ['list' => true, 'regex' => true, 'trim' => true]),
+    );
+  }
+
+  public function testSplitTermsRegexListKeepsCommaInsideQuantifier(): void
+  {
+    $this->assertSame(
+      ['a{2,5}'],
+      $this->splitTerms('a{2,5}', ['list' => true, 'regex' => true, 'trim' => true]),
+    );
+  }
+
+  public function testCompileTermPatternCaseSensitiveRegexIsFullyAnchored(): void
+  {
+    $this->assertCompileTermPatternExists();
+
+    $options = ['regex' => true, 'cs' => true];
+
+    $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'TEJ'));
+    $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'TEN'));
+    $this->assertSame(0, preg_match(compile_term_pattern('TE(J|N)', $options), 'tej'));
+    $this->assertSame(0, preg_match(compile_term_pattern('TE(J|N)', $options), 'XTEJ'));
+  }
+
+  public function testCompileTermPatternCaseInsensitiveRegexUsesUnicodeCasing(): void
+  {
+    $this->assertCompileTermPatternExists();
+
+    $options = ['regex' => true, 'cs' => false];
+
+    $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'tej'));
+    $this->assertSame(1, preg_match(compile_term_pattern('TE(J|N)', $options), 'Tej'));
+    $this->assertSame(1, preg_match(compile_term_pattern('ŚĚŠ', $options), 'śěš'));
+  }
+
+  public function testCompileTermPatternNeutralizesDelimiterInjection(): void
+  {
+    $this->assertCompileTermPatternExists();
+
+    $options = ['regex' => true, 'cs' => true];
+
+    foreach (['a/i', 'a#x', 'a}'] as $term) {
+      $pattern = compile_term_pattern($term, $options);
+
+      if ($pattern !== null) {
+        $this->assertSame(1, preg_match($pattern, $term));
+      } else {
+        $this->assertNull($pattern);
+      }
+    }
+  }
+
+  public function testCompileTermPatternInvalidRegexReturnsNull(): void
+  {
+    $this->assertCompileTermPatternExists();
+
+    $options = ['regex' => true, 'cs' => true];
+
+    $this->assertNull(compile_term_pattern('(', $options));
+    $this->assertNull(compile_term_pattern('a{2,1}', $options));
+  }
+
+  public function testCompileTermPatternRegexOffReturnsNull(): void
+  {
+    $this->assertCompileTermPatternExists();
+
+    $this->assertNull(compile_term_pattern('TE(J|N)', ['regex' => false, 'cs' => false]));
+  }
+
+  public static function yearClauses(): array
+  {
+    return [
+      'absent parameter' => [null, ['sql' => '1=1', 'params' => []]],
+      'empty parameter' => ['', ['sql' => '1=1', 'params' => []]],
+      'whitespace parameter' => ['   ', ['sql' => '1=1', 'params' => []]],
+      'exact year' => ['1870', ['sql' => 'date = ?', 'params' => ['1870']]],
+      'year range' => ['1870-1880', ['sql' => 'date BETWEEN ? AND ?', 'params' => ['1870', '1880']]],
+      'spaced year range' => [' 1870 - 1880 ', ['sql' => 'date BETWEEN ? AND ?', 'params' => ['1870', '1880']]],
+      'SQL injection' => ['> 0 OR 1=1 --', null],
+      'SQL expression' => ['BETWEEN 1 AND 2', null],
+      'range without end' => ['1870-', null],
+      'range without start' => ['-1880', null],
+      'three-part range' => ['1870-1880-1890', null],
+      'non-year text' => ['abcd', null],
+    ];
+  }
+
+  public function testYearClauseParsesOnlyExactYearsAndRanges(): void
+  {
+    $this->assertTrue(function_exists('year_clause'), 'year_clause() must be defined');
+
+    foreach (self::yearClauses() as [$input, $expected]) {
+      $this->assertSame($expected, year_clause($input));
+    }
+  }
+
+  public function testInClauseThreeCellsReturnsPlaceholdersAndOrderedParams(): void
+  {
+    $this->assertSame(
+      ['sql' => 'lemma IN (?,?,?)', 'params' => ['woda', '|bom|boma|', 'źěło']],
+      $this->inClause('lemma', ['woda', '|bom|boma|', 'źěło']),
+    );
+  }
+
+  public function testInClauseEmptyCellsReturnsNeverTrueClause(): void
+  {
+    $this->assertSame(
+      ['sql' => '1=0', 'params' => []],
+      $this->inClause('lemma', []),
+    );
+  }
+
+  public function testInClauseAcceptsWhitelistedColumns(): void
+  {
+    foreach (['lemma', 'norm', 'token', 'lemmabag', 'normbag'] as $column) {
+      $this->assertSame(
+        ['sql' => "$column IN (?)", 'params' => ['woda']],
+        $this->inClause($column, ['woda']),
+      );
+    }
+  }
+
+  public function testInClauseRejectsColumnOutsideWhitelist(): void
+  {
+    $this->assertTrue(function_exists('in_clause'), 'in_clause() must be defined');
+    $this->expectException(\InvalidArgumentException::class);
+
+    in_clause('lemma) OR 1=1 --', ['woda']);
+  }
+
+  private function searchOptions(array $get): array
+  {
+    $this->assertTrue(function_exists('search_options'), 'search_options() must be defined');
+
+    return search_options($get);
+  }
+
+  private function splitTerms(string $raw, array $opts): array
+  {
+    $this->assertTrue(function_exists('split_terms'), 'split_terms() must be defined');
+
+    return split_terms($raw, $opts);
+  }
+
+  private function assertCompileTermPatternExists(): void
+  {
+    $this->assertTrue(function_exists('compile_term_pattern'), 'compile_term_pattern() must be defined');
+  }
+
+  private function inClause(string $column, array $cells): array
+  {
+    $this->assertTrue(function_exists('in_clause'), 'in_clause() must be defined');
+
+    return in_clause($column, $cells);
+  }
+}

@@ -1,19 +1,27 @@
 <?php
 header('Content-Type: text/plain');
 
-if (isset($_GET['lemma'])) {
-	$PDO = new PDO('sqlite:../data/lemmamapping.db');
-	$query = 'SELECT token, lemma, frequency FROM lemmatokenfrequency';
-	(isset($_GET['exact']) and $_GET['exact'] == 1) ? $query .= ' WHERE lemma = "|' . str_replace(',', '|" OR lemma = "|', $_GET['lemma']) . '|"' : $query .= ' WHERE lemma LIKE "%|' . str_replace(',', '|%" OR lemma LIKE "%|', $_GET['lemma']) . '|%"';
+require_once __DIR__ . '/dsb_collation.php';
+require_once __DIR__ . '/searchfilter.php';
 
-	(isset($_GET['sort'])) ? $query .= ' ORDER BY frequency DESC, token' : NULL;
+$pdo = new PDO('sqlite:../data/lemmamapping.db');
+$cells = resolve_request_cells($pdo, 'lemma', $_GET);
 
-	$tab = "\t";
-	$nl = "\n";
-	$res = '';
-
-	foreach ($PDO->query($query . ';') as $row) {
-		$res .= $row['lemma'] . $tab . $row['token'] . $tab . $row['frequency'] . $nl;
-	}
-	print($res);
+if ($cells === []) {
+	exit;
 }
+
+$clause = in_clause('lemma', $cells);
+$query = 'SELECT token, lemma, frequency FROM lemmatokenfrequency WHERE ' . $clause['sql'];
+if (array_key_exists('sort', $_GET)) {
+	$query .= ' ORDER BY frequency DESC, token';
+}
+
+$statement = $pdo->prepare($query);
+$statement->execute($clause['params']);
+
+$res = '';
+foreach ($statement as $row) {
+	$res .= $row['lemma'] . "\t" . $row['token'] . "\t" . (int) $row['frequency'] . "\n";
+}
+print($res);

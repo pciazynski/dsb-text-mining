@@ -1,6 +1,6 @@
 //Adapted from https://www.w3schools.com/howto/howto_js_autocomplete.asp
 
-function autocomplete(input, datasource, functioncall) {
+function autocomplete(input, datasource, functioncall, enabled) {
   var inp = document.getElementById(input);
   if (!inp) {
     return;
@@ -10,18 +10,29 @@ function autocomplete(input, datasource, functioncall) {
   if (inp._autocompleteState) {
     inp._autocompleteState.datasource = datasource;
     inp._autocompleteState.functioncall = functioncall || '';
+    inp._autocompleteState.enabled = enabled !== false;
+    if (!inp._autocompleteState.enabled) {
+      var lists = document.getElementsByClassName('autocomplete-items');
+      while (lists.length > 0) {
+        lists[0].parentNode.removeChild(lists[0]);
+      }
+    }
     return;
   }
 
   var state = {
     datasource: datasource,
     functioncall: functioncall || '',
+    enabled: enabled !== false,
     currentFocus: -1,
     oldFocus: 0,
   };
   inp._autocompleteState = state;
 
   inp.addEventListener('input', function (e) {
+    if (!state.enabled) {
+      return false;
+    }
     var a,
       b,
       i,
@@ -109,4 +120,8 @@ function autocomplete(input, datasource, functioncall) {
   document.addEventListener('click', function (e) {
     closeAllLists(e.target);
   });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { autocomplete };
 }

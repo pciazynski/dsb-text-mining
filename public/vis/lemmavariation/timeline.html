@@ -4,12 +4,13 @@
   <script src="../../vendor/plotly.min.js"></script>
   <script src="../../js/datahandler.js"></script>
   <script src="../../js/config.js"></script>
+  <script src="../../js/search.js"></script>
 </head>
 
 <body>
   <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
   <script>
-    var dataset = getQueryVariable('data');
+    var dataset = phpUrlFromLocation('data', 'token', window.location.search);
     var token = getQueryVariable('token');
     var jitter = getQueryVariable('jitter');
     if (jitter.length == 0) {
@@ -17,8 +18,8 @@
     } else {
       jitter = parseFloat(jitter);
     }
-    dataset = dataset + '?token=' + token + '&sort';
-    data_arr = readPHP(dataset).split('\n');
+    var response = dataset === null ? null : readPHPChecked(document, dataset);
+    data_arr = response === null ? [] : response.split('\n');
     maxval = 0;
     minval = 10000000;
 

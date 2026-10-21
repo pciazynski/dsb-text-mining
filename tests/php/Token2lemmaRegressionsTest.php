@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DsbTests;
 
 use DsbTests\Support\DevServer;
+use DsbTests\Support\FixtureDb;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +20,7 @@ final class Token2lemmaRegressionsTest extends TestCase
 
 		$db = $this->server->dataDir() . '/lemmamapping.db';
 		@unlink($db);
-		$pdo = new \PDO('sqlite:' . $db);
+		$pdo = FixtureDb::open($db);
 		$pdo->exec('CREATE TABLE tokenlemmatypesubtypedatefrequency (token TEXT, lemma TEXT, type TEXT, subtype TEXT, date TEXT, frequency INTEGER)');
 		$pdo->exec("INSERT INTO tokenlemmatypesubtypedatefrequency VALUES ('woda', '|woda|', '', '', '1880', 5)");
 		$pdo->exec("INSERT INTO tokenlemmatypesubtypedatefrequency VALUES ('luft', '|luft|', '', '', '1880', 1)");
