@@ -9,6 +9,33 @@ function inlineSourceOf(document) {
     .join('\n');
 }
 
+describe('vis/lemmavariation/datalist.html', () => {
+  it('builds dolnoserbski links without a stray quote before the term', () => {
+    const source = inlineSourceOf(loadPage('vis/lemmavariation/datalist.html'));
+
+    expect(source).toContain("wuraz=' +");
+    expect(source).not.toContain('wuraz="\'');
+  });
+
+  it('encodes the lemma in bwlemma links', () => {
+    const source = inlineSourceOf(loadPage('vis/lemmavariation/datalist.html'));
+
+    expect(source).toContain("?lemma=' + encodeURIComponent(");
+  });
+
+  it('encodes the term in dolnoserbski links', () => {
+    const source = inlineSourceOf(loadPage('vis/lemmavariation/datalist.html'));
+
+    expect(source).toContain("wuraz=' + encodeURIComponent(");
+  });
+
+  it('encodes the word form in bwword links', () => {
+    const source = inlineSourceOf(loadPage('vis/lemmavariation/datalist.html'));
+
+    expect(source).toContain("?word=' + encodeURIComponent(");
+  });
+});
+
 describe('vis/lemmavariation/index.html', () => {
   it('opens dolnoserbski.de through the shared URL builder', () => {
     const source = inlineSourceOf(loadPage('vis/lemmavariation/index.html'));

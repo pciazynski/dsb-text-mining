@@ -31,21 +31,21 @@
           str =
             str +
             '<td style="border: 2px solid black;padding:5px 5px 5px 5px;"><a target="_blank" href="../bwlemma/?lemma=' +
-            arr[0].slice(1, -1) +
+            encodeURIComponent(arr[0].slice(1, -1)) +
             '">' +
             arr[0].slice(1, -1) +
             '</a></td>';
           str =
             str +
-            '<td style="border: 2px solid black;padding:5px 5px 5px 5px;"><a target="_blank" href="https://dolnoserbski.de/ndw/pytanje?wuraz="' +
-            arr[0].slice(1, -1).split('|')[0] +
+            '<td style="border: 2px solid black;padding:5px 5px 5px 5px;"><a target="_blank" href="https://dolnoserbski.de/ndw/pytanje?wuraz=' +
+            encodeURIComponent(arr[0].slice(1, -1).split('|')[0]) +
             '&slownik=*&psistup=serbski&pisanje=originalne&pozicija=slowo">' +
             arr[0].slice(1, -1).split('|')[0] +
             '</a></td>';
           str =
             str +
             '<td style="border: 2px solid black;padding:5px 5px 5px 5px;"><a target="_blank" href="../bwword/?word=' +
-            arr[1] +
+            encodeURIComponent(arr[1]) +
             '">' +
             arr[1] +
             '</a></td>';
