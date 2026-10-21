@@ -185,6 +185,28 @@ var listPlotTraces = function (rawData, separator) {
   return traces;
 };
 
+var countsByYear = function (rawData, separator) {
+  var counts = {};
+  var rows = String(rawData || '').split('\n');
+
+  rows.forEach(function (row) {
+    if (row.trim() === '') {
+      return;
+    }
+
+    var cells = row.split(separator);
+    var year = parseInt(cells[1], 10);
+    var count = parseInt(cells[2], 10);
+    if (!cells[0] || Number.isNaN(year) || Number.isNaN(count)) {
+      return;
+    }
+
+    counts[year] = (counts[year] || 0) + count;
+  });
+
+  return counts;
+};
+
 var splitTerms = function (raw, opts) {
   var separator = opts.regex ? ';' : /[;,]/;
   var terms = opts.list ? raw.split(separator) : [raw];
@@ -221,6 +243,11 @@ var searchControlState = function (options) {
 
 var applySearchControlState = function (doc, options) {
   var state = searchControlState(options);
+  var linreg = doc.getElementById('switchlinreg');
+  if (linreg) {
+    linreg.disabled = !state.linreg;
+  }
+
   var alphabetSort = doc.getElementById('prefixsearchCheckBox');
   if (alphabetSort) {
     alphabetSort.disabled = !state.alphabetSort;
@@ -368,6 +395,7 @@ if (typeof module !== 'undefined' && module.exports) {
     phpUrlFromLocation,
     listPlotUrlsFromLocation,
     listPlotTraces,
+    countsByYear,
     splitTerms,
     listTermsFromLocation,
     treeHasRoot,

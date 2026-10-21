@@ -52,7 +52,6 @@
     var data = phpUrlFromLocation('data', 'token', window.location.search);
     var token = getQueryVariable('token');
     var response = readPHPChecked(document, data);
-    dataset = response === null ? [] : response.split('\n');
     var vorhersage = getQueryVariable('vorhersage');
 
     x1 = [];
@@ -60,14 +59,7 @@
     minY = 10000000000;
     maxY = -100000000000;
     diagramtitle = minDate + ' - ' + maxDate;
-    yearmapping = [];
-
-    for (var i = 0; i < dataset.length; i++) {
-      tmparr = dataset[i].split(sep);
-      year = parseInt(tmparr[1]);
-      val = parseInt(tmparr[2]);
-      yearmapping[year] = val;
-    }
+    yearmapping = countsByYear(response || '', sep);
 
     for (var i = minDate; i < maxDate; i++) {
       x1.push(i - minDate);

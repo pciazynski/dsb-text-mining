@@ -1438,6 +1438,64 @@ describe('bwword iframe pages', () => {
       /phpUrlFromLocation\(\s*['"]data['"]\s*,\s*['"]token['"]\s*,\s*(?:window\.)?location\.search\s*\)/,
     );
   });
+
+  it('sums regression counts per year through countsByYear', () => {
+    const inlineSource = inlineSourceOf('linreg_chart.html');
+
+    expect(inlineSource).toContain('countsByYear(');
+    expect(inlineSource).not.toContain('yearmapping[year] = val');
+  });
+
+  it('does not force-enable the regression button', () => {
+    const inlineSource = inlineSourceOf('index.html');
+
+    expect(inlineSource).not.toContain("getElementById('switchlinreg').disabled = false");
+  });
+});
+
+describe('countsByYear', () => {
+  it('sums the counts of all tokens per year', () => {
+    const dom = withDom();
+    try {
+      const { countsByYear } = loadSearch();
+      const rawData = [
+        ['woni', '1900', '284'],
+        ['wona', '1900', '16'],
+        ['woni', '1901', '10'],
+      ]
+        .map((row) => row.join('\t'))
+        .join('\n');
+
+      expect(countsByYear(rawData, '\t')).toEqual({ 1900: 300, 1901: 10 });
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('ignores blank and malformed rows', () => {
+    const dom = withDom();
+    try {
+      const { countsByYear } = loadSearch();
+      const rawData = [['woni', '1900', '284'], ['woni', '1901', '10'], ['woni', '1902'], []]
+        .map((row) => row.join('\t'))
+        .join('\n');
+
+      expect(countsByYear(rawData, '\t')).toEqual({ 1900: 284, 1901: 10 });
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('returns an empty object for empty input', () => {
+    const dom = withDom();
+    try {
+      const { countsByYear } = loadSearch();
+
+      expect(countsByYear('', '\t')).toEqual({});
+    } finally {
+      dom.restore();
+    }
+  });
 });
 
 // PHP twin: tests/php/SearchFilterTest.php. Keep these splitTerms cases in sync.
@@ -1613,6 +1671,62 @@ describe('searchControlState', () => {
           ambig: false,
         }),
       ).toEqual({ autocomplete: true, alphabetSort: true, linreg: true });
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('applySearchControlState', () => {
+  it('disables the linear regression button for regex searches', () => {
+    const dom = withDom({ html: '<button id="switchlinreg"></button>' });
+    try {
+      const { applySearchControlState } = loadSearch();
+
+      applySearchControlState(dom.document, { regex: true, list: false });
+
+      expect(dom.document.getElementById('switchlinreg').disabled).toBe(true);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('disables the linear regression button for list searches', () => {
+    const dom = withDom({ html: '<button id="switchlinreg"></button>' });
+    try {
+      const { applySearchControlState } = loadSearch();
+
+      applySearchControlState(dom.document, { regex: false, list: true });
+
+      expect(dom.document.getElementById('switchlinreg').disabled).toBe(true);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('enables the linear regression button for literal searches', () => {
+    const dom = withDom({ html: '<button id="switchlinreg"></button>' });
+    try {
+      const { applySearchControlState } = loadSearch();
+      const button = dom.document.getElementById('switchlinreg');
+      button.disabled = true;
+
+      applySearchControlState(dom.document, { regex: false, list: false });
+
+      expect(button.disabled).toBe(false);
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('tolerates pages without the linear regression button', () => {
+    const dom = withDom({ html: '<main></main>' });
+    try {
+      const { applySearchControlState } = loadSearch();
+
+      expect(() =>
+        applySearchControlState(dom.document, { regex: true, list: false }),
+      ).not.toThrow();
     } finally {
       dom.restore();
     }
