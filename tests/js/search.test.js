@@ -779,26 +779,6 @@ describe('buildTreeUrls', () => {
   });
 });
 
-describe('appendToList', () => {
-  it.each([
-    ['', 'DRJEWO', 'DRJEWO'],
-    ['DRJEWO', 'BOM', 'DRJEWO;BOM'],
-    [' DRJEWO ', ' BOM ', 'DRJEWO;BOM'],
-    ['DRJEWO; BOM', ' BOM ', 'DRJEWO;BOM'],
-    ['DRJEWO;BOM', 'DRJEWO', 'DRJEWO;BOM'],
-  ])('appends %s and %s as %s', (existing, item, expected) => {
-    const dom = withDom();
-    try {
-      const { appendToList } = loadSearch();
-      expect(typeof appendToList).toBe('function');
-
-      expect(appendToList(existing, item)).toBe(expected);
-    } finally {
-      dom.restore();
-    }
-  });
-});
-
 describe('treeHasRoot', () => {
   it.each([
     ['?data=lemmatoken.php&lemma=DRJEWO&inclusive', true],

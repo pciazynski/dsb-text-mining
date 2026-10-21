@@ -209,15 +209,6 @@ var listTermsFromLocation = function (search, termKey) {
   return splitTerms(term, readSearchOptions(search));
 };
 
-var appendToList = function (existing, item) {
-  var terms = splitTerms(existing, { list: true, trim: true });
-  var next = String(item).trim();
-  if (next !== '' && terms.indexOf(next) === -1) {
-    terms.push(next);
-  }
-  return terms.join(';');
-};
-
 var treeHasRoot = function (search) {
   var options = readSearchOptions(search);
   return new URLSearchParams(search || '').has('inclusive') || options.regex || options.list;
@@ -379,7 +370,6 @@ if (typeof module !== 'undefined' && module.exports) {
     listPlotTraces,
     splitTerms,
     listTermsFromLocation,
-    appendToList,
     treeHasRoot,
     searchControlState,
     applySearchControlState,
