@@ -46,6 +46,17 @@
 
   <table class="optionmenu" align="center">
     <tr>
+      <td></td>
+      <td>
+        <label
+          ><input id="prefixsearchCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+          <script>
+            document.write(lang_prefixsearchalphabet);
+          </script></label
+        >
+      </td>
+    </tr>
+    <tr>
       <td style="text-align: center">
         <script>
           document.write(lang_searchitem);
@@ -72,10 +83,52 @@
         <script>
           autocomplete(
             'searchinput',
-            'prefixsearch.php?limit=30&sortby=alphabet&word=',
-            'updateTimeline',
+            'prefixsearch.php?limit=30&sortby=frequency&cs=0&word=',
+            '',
+            searchControlState(searchOptionsFromForm(document)).autocomplete,
           );
         </script>
+      </td>
+      <td>
+        <script>
+          document.write(lang_example);
+        </script>
+        <span id="searchexample"></span>
+      </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td style="padding: 0">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5em">
+          <label
+            ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_regex);
+            </script></label
+          >
+          <label
+            ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_list);
+            </script></label
+          >
+        </div>
+      </td>
+      <td style="text-align: left">
+        <div style="display: flex; gap: 0.5em; white-space: nowrap">
+          <label
+            ><input id="csCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_casesensitive);
+            </script></label
+          >
+          <label
+            ><input id="trimCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_trim);
+            </script></label
+          >
+        </div>
       </td>
     </tr>
   </table>
@@ -213,11 +266,23 @@
   <br /><br />
 
   <script>
+    var switchSearchOptions = function () {
+      var options = searchOptionsFromForm(document);
+      applySearchControlState(document, options);
+      applySearchExample(document, 'token');
+      switchPrefixsearch();
+    };
+
     var switchPrefixsearch = function () {
+      var sortby = document.getElementById('prefixsearchCheckBox').checked
+        ? 'alphabet'
+        : 'frequency';
+      var caseSensitive = document.getElementById('csCheckBox').checked ? '1' : '0';
       autocomplete(
         'searchinput',
-        'prefixsearch.php?limit=30&sortby=alphabet&word=',
-        'updateTimeline',
+        'prefixsearch.php?limit=30&sortby=' + sortby + '&cs=' + caseSensitive + '&word=',
+        '',
+        searchControlState(searchOptionsFromForm(document)).autocomplete,
       );
     };
 
@@ -235,7 +300,7 @@
       loading(iframeid);
       var term = document.getElementById('searchinput').value.trim();
       if (term.length > 0) {
-        var urls = buildVisUrls('token', term, {}, 1);
+        var urls = buildVisUrls('token', term, searchOptionsFromForm(document), 1);
         var page = document.getElementById(iframeid).src.includes('linreg_chart.html')
           ? 'timeline.html'
           : 'linreg_chart.html';
@@ -265,15 +330,18 @@
       if (term.length > 0) {
         loading('timeline');
         loading('wordinfo');
-        var urls = buildVisUrls('token', term, {}, 1);
+        var urls = buildVisUrls('token', term, searchOptionsFromForm(document), 1);
         document.getElementById('timeline').src = urls.timeline;
         document.getElementById('wordinfo').src = urls.wordinfo;
         document.title = 'Word ' + term;
-        document.getElementById('switchlinreg').disabled = false;
+        if (document.getElementById('switchlinreg')) {
+          document.getElementById('switchlinreg').disabled = false;
+        }
       }
     };
 
     restoreSearchFromLocation(document, window.location.search, 'token');
+    applySearchExample(document, 'token');
     var curword = document.getElementById('searchinput').value;
     if (curword.length > 0) {
       updateTimeline();
