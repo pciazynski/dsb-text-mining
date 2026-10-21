@@ -231,6 +231,7 @@ final class DoclistEndpointsRegressionsTest extends TestCase
       '|DRĚŚ|DRJEWO|',
       '|TEJ|',
       '|DRJEWOWY|',
+      '|NJEBYŚ LI|',
     ]);
     $this->insertLemmaRows($pdo, 'lemmanonambig', [
       '|DRJEWO|',
