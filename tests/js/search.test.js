@@ -723,7 +723,120 @@ describe('buildVisUrls', () => {
   });
 });
 
+describe('buildTreeUrls', () => {
+  it.each([false, true])('builds all lemma tree URLs with weight=%s', (weight) => {
+    const dom = withDom();
+    try {
+      const { buildTreeUrls } = loadSearch();
+      expect(typeof buildTreeUrls).toBe('function');
+      const suffix = weight ? '&weight' : '';
+
+      expect(buildTreeUrls('lemma', 'DRJEWO', {}, weight)).toEqual({
+        tree:
+          'lemmatree_dagre.html?data=lemmatoken.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&inclusive' +
+          suffix,
+        sunburst:
+          'sunburst.html?data=lemmatoken.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&inclusive' +
+          suffix,
+        traviz:
+          'traviz.html?data=lemmatoken.php&lemma=DRJEWO&cs=0&regex=0&list=0&trim=1&ambig=1&sort&inclusive' +
+          suffix,
+      });
+    } finally {
+      dom.restore();
+    }
+  });
+
+  it('keeps the standard endpoint and all chosen flags for a regex list', () => {
+    const dom = withDom();
+    try {
+      const { buildTreeUrls } = loadSearch();
+      expect(typeof buildTreeUrls).toBe('function');
+
+      expect(
+        buildTreeUrls(
+          'lemma',
+          'TE(J|N);BOM',
+          {
+            cs: true,
+            regex: true,
+            list: true,
+            trim: false,
+            ambig: false,
+          },
+          false,
+        ),
+      ).toEqual({
+        tree: 'lemmatree_dagre.html?data=lemmatoken.php&lemma=TE(J%7CN)%3BBOM&cs=1&regex=1&list=1&trim=0&ambig=0&sort&inclusive',
+        sunburst:
+          'sunburst.html?data=lemmatoken.php&lemma=TE(J%7CN)%3BBOM&cs=1&regex=1&list=1&trim=0&ambig=0&sort&inclusive',
+        traviz:
+          'traviz.html?data=lemmatoken.php&lemma=TE(J%7CN)%3BBOM&cs=1&regex=1&list=1&trim=0&ambig=0&sort&inclusive',
+      });
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('appendToList', () => {
+  it.each([
+    ['', 'DRJEWO', 'DRJEWO'],
+    ['DRJEWO', 'BOM', 'DRJEWO;BOM'],
+    [' DRJEWO ', ' BOM ', 'DRJEWO;BOM'],
+    ['DRJEWO; BOM', ' BOM ', 'DRJEWO;BOM'],
+    ['DRJEWO;BOM', 'DRJEWO', 'DRJEWO;BOM'],
+  ])('appends %s and %s as %s', (existing, item, expected) => {
+    const dom = withDom();
+    try {
+      const { appendToList } = loadSearch();
+      expect(typeof appendToList).toBe('function');
+
+      expect(appendToList(existing, item)).toBe(expected);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
+describe('treeHasRoot', () => {
+  it.each([
+    ['?data=lemmatoken.php&lemma=DRJEWO&inclusive', true],
+    ['?data=lemmatoken.php&lemma=TE(J%7CN)&regex=1', true],
+    ['?data=lemmatoken.php&lemma=DRJEWO;BOM&list=1', true],
+    ['?data=lemmatoken.php&lemma=DRJEWO', false],
+    ['?data=lemmatoken.php&lemma=DRJEWO,BOM&regex=0&list=0', false],
+  ])('decides root presence for %s', (search, expected) => {
+    const dom = withDom();
+    try {
+      const { treeHasRoot } = loadSearch();
+      expect(typeof treeHasRoot).toBe('function');
+
+      expect(treeHasRoot(search)).toBe(expected);
+    } finally {
+      dom.restore();
+    }
+  });
+});
+
 describe('phpUrlFromLocation', () => {
+  it('leaves inclusive and weight for the tree frontend to handle', () => {
+    const dom = withDom();
+    try {
+      const phpUrlFromLocation = loadPhpUrlFromLocation();
+
+      expect(
+        phpUrlFromLocation(
+          'data',
+          'lemma',
+          '?data=lemmatoken.php&lemma=DRJEWO&cs=1&regex=0&list=0&trim=0&ambig=0&sort&inclusive&weight',
+        ),
+      ).toBe('lemmatoken.php?lemma=DRJEWO&cs=1&regex=0&list=0&trim=0&ambig=0&sort');
+    } finally {
+      dom.restore();
+    }
+  });
+
   it('keeps search flags and sort while dropping visualization-only parameters', () => {
     const dom = withDom();
     try {
@@ -1216,6 +1329,100 @@ describe('bwnorm iframe pages', () => {
       ]);
     } finally {
       page.close();
+    }
+  });
+});
+
+describe('lemmavariation iframe pages', () => {
+  const pages = ['lemmatree_dagre.html', 'sunburst.html', 'traviz.html'];
+
+  function inlineSourceOf(page) {
+    const document = loadPage('vis/lemmavariation/' + page);
+    return [...document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .join('\n');
+  }
+
+  it.each(pages)('%s routes every synchronous fetch through readPHPChecked', (page) => {
+    const source = inlineSourceOf(page);
+
+    expect(source).toMatch(/\breadPHPChecked\(/);
+    expect(source).not.toMatch(/\breadPHP\(/);
+  });
+
+  it.each(pages)('%s loads js/search.js', (page) => {
+    const document = loadPage('vis/lemmavariation/' + page);
+    const sources = [...document.querySelectorAll('script[src]')].map((script) =>
+      script.getAttribute('src'),
+    );
+
+    expect(sources).toContain('../../js/search.js');
+  });
+
+  it.each(pages)('%s forwards lemma search flags through the shared PHP URL helper', (page) => {
+    expect(inlineSourceOf(page)).toMatch(
+      /phpUrlFromLocation\(\s*['"]data['"]\s*,\s*['"]lemma['"]\s*,\s*(?:window\.)?location\.search\s*\)/,
+    );
+  });
+
+  it.each(pages)('%s preserves its frontend-only inclusive and weight flags', (page) => {
+    const source = inlineSourceOf(page);
+
+    expect(source).toMatch(/['"]&inclusive['"]/);
+    expect(source).toMatch(/['"]&weight['"]/);
+  });
+
+  it('uses explicit search options instead of endpoint names or commas to decide the root', () => {
+    const source = inlineSourceOf('lemmatree_dagre.html');
+
+    expect(source).toMatch(/treeHasRoot\(\s*(?:window\.)?location\.search\s*\)/);
+    expect(source).not.toMatch(/dataset\.includes\(\s*['"]regex\.php['"]\s*\)/);
+    expect(source).not.toMatch(/lemma\.includes\(\s*['"],['"]\s*\)/);
+  });
+});
+
+describe('lemmavariation clicked nodes', () => {
+  function openPage() {
+    const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis/lemmavariation/index.html'), 'utf8');
+    const dom = new JSDOM(html, {
+      runScripts: 'outside-only',
+      url: 'https://example.test/vis/lemmavariation/index.html',
+    });
+    for (const script of dom.window.document.querySelectorAll('script[src]')) {
+      const file = path.join(PUBLIC_DIR, 'vis/lemmavariation', script.getAttribute('src'));
+      dom.window.eval(fs.readFileSync(file, 'utf8'));
+    }
+    const scripts = dom.window.document.querySelectorAll('script:not([src])');
+    dom.window.eval(scripts[scripts.length - 2].textContent);
+    return dom;
+  }
+
+  it('opens the exact ambiguous lemma cell in its count timeline', () => {
+    const dom = openPage();
+    try {
+      dom.window.lemmaclick('DRĚŚ|DRJEWO');
+
+      expect(dom.window.document.getElementById('timeline').getAttribute('src')).toBe(
+        'lemmatimeline.html?data=lemmacountperyear.php&lemma=DR%C4%9A%C5%9A%7CDRJEWO&cs=1&regex=0&list=0&trim=1&ambig=0&sort&focus=3',
+      );
+    } finally {
+      dom.window.close();
+    }
+  });
+
+  it('opens an exact historical token timeline and its encoded token info', () => {
+    const dom = openPage();
+    try {
+      dom.window.tokenclick('Pſchiżo');
+
+      expect(dom.window.document.getElementById('timeline').getAttribute('src')).toBe(
+        'timeline.html?data=tokencountperyear.php&token=P%C5%BFchi%C5%BCo&cs=1&regex=0&list=0&trim=1&ambig=0&sort',
+      );
+      expect(dom.window.document.getElementById('tokeninfo').getAttribute('src')).toBe(
+        'datalist.html?data=token2lemma.php&token=P%C5%BFchi%C5%BCo',
+      );
+    } finally {
+      dom.window.close();
     }
   });
 });

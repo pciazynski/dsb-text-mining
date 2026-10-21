@@ -5,6 +5,7 @@
   <script src="../../js/def_language.js"></script>
   <script src="../../js/my_language.js"></script>
   <script src="../../js/datahandler.js"></script>
+  <script src="../../js/search.js"></script>
   <script src="../../js/gui.js"></script>
   <script src="../../js/autocomplete.js"></script>
   <link rel="stylesheet" href="../../digilabstyles.css" />
@@ -58,10 +59,12 @@
     <tr>
       <td></td>
       <td>
-        <input id="prefixsearchCheckBox" checked type="checkbox" onchange="switchPrefixsearch()" />
-        <script>
-          document.write(lang_prefixsearchalphabet);
-        </script>
+        <label
+          ><input id="prefixsearchCheckBox" type="checkbox" onchange="switchPrefixsearch()" />
+          <script>
+            document.write(lang_prefixsearchalphabet);
+          </script></label
+        >
       </td>
       <td></td>
     </tr>
@@ -74,8 +77,8 @@
       <td>
         <div class="autocomplete">
           <input
-            style="width: 70%"
-            id="lemma"
+            style="width: 60%"
+            id="searchinput"
             type="text"
             onkeydown="
               if (event.key === 'Enter') {
@@ -83,88 +86,72 @@
               }
             "
           />
-          <button onclick="updateTree()">
+          <button id="ambigSearchButton" onclick="updateTree()">
             <script>
-              document.write(lang_enter);
+              document.write(lang_ambigsearch);
             </script>
           </button>
         </div>
         <script>
-          autocomplete('lemma', 'prefixlemmasearch.php?limit=30&lemma=', '');
+          autocomplete(
+            'searchinput',
+            'prefixlemmasearch.php?limit=30&sortby=frequency&cs=0&lemma=',
+            '',
+          );
         </script>
-      </td>
-      <td>
-        <script>
-          document.write(lang_redirect);
-        </script>
-        <button onclick="addLemmaToList()">
-          &#10149;
-          <script>
-            document.write(lang_list);
-          </script>
-        </button>
-        <button onclick="callDolnoserbski()">&#10149;dolnoserbski.de</button>
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align: right">
-        <script>
-          document.write(lang_list);
-        </script>
-      </td>
-      <td>
-        <input
-          style="width: 70%"
-          id="lemmalist"
-          type="text"
-          onchange=""
-          onkeydown="
-            if (event.key === 'Enter') {
-              updateTreeFromList();
-            }
-          "
-        />
-        <button onclick="updateTreeFromList()">
-          <script>
-            document.write(lang_enter);
-          </script>
-        </button>
       </td>
       <td>
         <script>
           document.write(lang_example);
         </script>
-        MŁYŃSKI,KRABAT
+        <span id="searchexample"></span>
+        <br />
+        <script>
+          document.write(lang_redirect);
+        </script>
+        <button onclick="callDolnoserbski()">&#10149;dolnoserbski.de</button>
       </td>
     </tr>
     <tr>
-      <td style="text-align: right">Regex</td>
-      <td>
-        <input
-          style="width: 70%"
-          id="lemmaregex"
-          type="text"
-          placeholder=""
-          onchange=""
-          onkeydown="
-            if (event.key === 'Enter') {
-              updateTreeFromRegex();
-            }
-          "
-        />
-        <button onclick="updateTreeFromRegex()">
-          <script>
-            document.write(lang_enter);
-          </script>
-        </button>
+      <td></td>
+      <td style="padding: 0">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5em">
+          <label
+            ><input id="regexCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_regex);
+            </script></label
+          >
+          <label
+            ><input id="listCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_list);
+            </script></label
+          >
+          <label
+            ><input id="ambigCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_ambig);
+            </script></label
+          >
+        </div>
       </td>
-      <td>
-        <label
-          ><script>
-            document.write(lang_example);
-          </script>
-          TE(J|N)</label
-        >
+      <td></td>
+      <td style="text-align: left">
+        <div style="display: flex; gap: 0.5em; white-space: nowrap">
+          <label
+            ><input id="csCheckBox" type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_casesensitive);
+            </script></label
+          >
+          <label
+            ><input id="trimCheckBox" checked type="checkbox" onchange="switchSearchOptions()" />
+            <script>
+              document.write(lang_search_trim);
+            </script></label
+          >
+        </div>
       </td>
     </tr>
   </table>
@@ -333,39 +320,64 @@
 
   <br /><br />
   <script>
+    var switchSearchOptions = function () {
+      var options = searchOptionsFromForm(document);
+      applySearchControlState(document, options);
+      applyAmbigButtonLabel(document);
+      applySearchExample(document);
+      switchPrefixsearch();
+    };
+
     var switchPrefixsearch = function () {
-      tmp = document.getElementById('prefixsearchCheckBox').checked;
-      if (tmp) {
-        tmp = 'alphabet';
-      } else {
-        tmp = 'frequency';
-      }
-      autocomplete('lemma', 'prefixlemmasearch.php?limit=30&sortby=' + tmp + '&lemma=', '');
+      var sortby = document.getElementById('prefixsearchCheckBox').checked
+        ? 'alphabet'
+        : 'frequency';
+      var caseSensitive = document.getElementById('csCheckBox').checked ? '1' : '0';
+      autocomplete(
+        'searchinput',
+        'prefixlemmasearch.php?limit=30&sortby=' + sortby + '&cs=' + caseSensitive + '&lemma=',
+        '',
+        searchControlState(searchOptionsFromForm(document)).autocomplete,
+      );
+    };
+
+    // The clicked item is a concrete lemma cell: literal, unambiguous, single term.
+    var exactOptions = { cs: true, regex: false, list: false, trim: true, ambig: false };
+
+    var setSrc = function (elid, url) {
+      document.getElementById(elid).src = url;
     };
 
     var tokenclick = function (tmp) {
       loading('timeline');
       loading('tokeninfo');
       if (tmp.length > 0) {
-        document.getElementById('timeline').src =
-          'timeline.html?data=tokencountperyear.php&token=' + tmp + '&sort';
-        document.getElementById('tokeninfo').src =
-          'datalist.html?data=token2lemma.php&token=' + tmp;
+        setSrc(
+          'timeline',
+          'timeline.html?data=tokencountperyear.php&' +
+            searchQueryString('token', tmp, exactOptions) +
+            '&sort',
+        );
+        setSrc('tokeninfo', 'datalist.html?data=token2lemma.php&token=' + encodeURIComponent(tmp));
       }
     };
 
     var lemmaclick = function (tmp) {
       loading('timeline');
       if (tmp.length > 0) {
-        document.getElementById('timeline').src =
-          'lemmatimeline.html?data=lemmacountperyear.php&lemma=' + tmp + '&sort&focus=3&exact=1';
+        setSrc(
+          'timeline',
+          'lemmatimeline.html?data=lemmacountperyear.php&' +
+            searchQueryString('lemma', tmp, exactOptions) +
+            '&sort&focus=3',
+        );
       }
     };
 
     var callDolnoserbski = function () {
-      curlemma = document.getElementById('lemma').value.trim();
-      if (curlemma.length > 0) {
-        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + curlemma, '_blank');
+      var curterm = document.getElementById('searchinput').value.trim();
+      if (curterm.length > 0) {
+        window.open('https://dolnoserbski.de/ortografija/slownik?wuraz=' + curterm, '_blank');
       }
     };
 
@@ -379,99 +391,33 @@
       }
     };
 
-    var updateTreeFromRegex = function () {
-      curlemma = document.getElementById('lemmaregex').value.trim();
-      if (curlemma.length > 0) {
-        loading('tree');
-        if (document.getElementById('weight').checked) {
-          weight = '&weight';
-        } else {
-          weight = '';
-        }
-        document.getElementById('tree').src =
-          'lemmatree_dagre.html?data=lemmatokenregex.php&sort&lemma=' +
-          encodeURIComponent(curlemma) +
-          weight;
-        document.getElementById('sunburst').src =
-          'sunburst.html?data=lemmatokenregex.php&sort&lemma=' +
-          encodeURIComponent(curlemma) +
-          weight;
-        document.getElementById('traviz').src =
-          'traviz.html?data=lemmatokenregex.php&sort&lemma=' +
-          encodeURIComponent(curlemma) +
-          weight;
-        document.title = curlemma + ' Lemmabaum';
-      }
-    };
-
-    var updateTreeFromList = function () {
-      curlemma = document.getElementById('lemmalist').value.trim();
-      if (curlemma.length > 0) {
-        loading('tree');
-        if (document.getElementById('weight').checked) {
-          weight = '&weight';
-        } else {
-          weight = '';
-        }
-        document.getElementById('tree').src =
-          'lemmatree_dagre.html?data=lemmatoken.php&sort&inclusive&lemma=' + curlemma + weight;
-        document.getElementById('sunburst').src =
-          'sunburst.html?data=lemmatoken.php&sort&inclusive&lemma=' + curlemma + weight;
-        document.getElementById('traviz').src =
-          'traviz.html?data=lemmatoken.php&sort&inclusive&lemma=' + curlemma + weight;
-        document.title = curlemma;
-      }
-    };
-
     var updateTree = function () {
-      curlemma = document.getElementById('lemma').value.trim();
-      if (curlemma.length > 0) {
-        loading('tree');
-        if (document.getElementById('weight').checked) {
-          weight = '&weight';
-        } else {
-          weight = '';
-        }
-        document.getElementById('tree').src =
-          'lemmatree_dagre.html?data=lemmatoken.php&sort&inclusive&lemma=' + curlemma + weight;
-        document.getElementById('sunburst').src =
-          'sunburst.html?data=lemmatoken.php&sort&inclusive&lemma=' + curlemma + weight;
-        document.getElementById('traviz').src =
-          'traviz.html?data=lemmatoken.php&sort&inclusive&lemma=' + curlemma + weight;
-        document.title = curlemma;
+      var term = document.getElementById('searchinput').value;
+      var urls = buildTreeUrls(
+        'lemma',
+        term,
+        searchOptionsFromForm(document),
+        document.getElementById('weight').checked,
+      );
+      if (!urls) {
+        return;
       }
-    };
-
-    var addLemmaToList = function () {
       loading('tree');
-      tmp = document.getElementById('lemma').value.trim();
-      tmp2 = document.getElementById('lemmalist').value.trim();
-      str = '';
-      if (tmp.length > 0) {
-        if (tmp2.length > 0) {
-          str = ',';
-        }
-        str = tmp2 + str + tmp;
-        document.getElementById('lemmalist').value = str;
-        document.getElementById('tree').src =
-          'lemmatree_dagre.html?data=lemmatoken.php&lemma=' + curlemma;
-      }
+      setSrc('tree', urls.tree);
+      setSrc('sunburst', urls.sunburst);
+      setSrc('traviz', urls.traviz);
+      document.title = term.trim();
     };
 
-    curlemma = getQueryVariable('lemma');
-    if (curlemma.length > 0) {
-      if (curlemma.includes(',')) {
-        document.getElementById('lemmalist').value = curlemma;
-        updateTreeFromList();
-      } else {
-        document.getElementById('lemma').value = curlemma;
-        updateTree();
-      }
-      document.getElementById('lemma').scrollIntoView();
+    restoreSearchFromLocation(document, window.location.search, 'lemma');
+    switchSearchOptions();
+    if (document.getElementById('searchinput').value.trim().length > 0) {
+      updateTree();
+      document.getElementById('searchinput').scrollIntoView();
     } else {
-      document.getElementById('tree').src = 'error_token.html';
+      document.title = lang_variation + ' ' + lang_lemmafy;
+      setSrc('tree', 'error_token.html');
     }
-    document.title = lang_variation + ' ' + lang_lemmafy;
   </script>
   <br /><br />
   <script>

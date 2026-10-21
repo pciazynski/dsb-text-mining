@@ -97,6 +97,22 @@ var buildVisUrls = function (kind, term, options, focus) {
   };
 };
 
+var buildTreeUrls = function (kind, term, options, weight) {
+  if (String(term).trim() === '') {
+    return null;
+  }
+
+  var searchOptions = Object.assign({}, searchDefaults, options || {});
+  var query = searchQueryString(kind, term, searchOptions);
+  var suffix = '&sort&inclusive' + (weight ? '&weight' : '');
+
+  return {
+    tree: 'lemmatree_dagre.html?data=lemmatoken.php&' + query + suffix,
+    sunburst: 'sunburst.html?data=lemmatoken.php&' + query + suffix,
+    traviz: 'traviz.html?data=lemmatoken.php&' + query + suffix,
+  };
+};
+
 var phpUrlFromLocation = function (dataKey, termKey, search) {
   var params = new URLSearchParams(search || '');
   var data = params.get(dataKey);
@@ -187,6 +203,20 @@ var listTermsFromLocation = function (search, termKey) {
   }
 
   return splitTerms(term, readSearchOptions(search));
+};
+
+var appendToList = function (existing, item) {
+  var terms = splitTerms(existing, { list: true, trim: true });
+  var next = String(item).trim();
+  if (next !== '' && terms.indexOf(next) === -1) {
+    terms.push(next);
+  }
+  return terms.join(';');
+};
+
+var treeHasRoot = function (search) {
+  var options = readSearchOptions(search);
+  return new URLSearchParams(search || '').has('inclusive') || options.regex || options.list;
 };
 
 var searchControlState = function (options) {
@@ -339,11 +369,14 @@ if (typeof module !== 'undefined' && module.exports) {
     searchOptionsFromForm,
     searchQueryString,
     buildVisUrls,
+    buildTreeUrls,
     phpUrlFromLocation,
     listPlotUrlsFromLocation,
     listPlotTraces,
     splitTerms,
     listTermsFromLocation,
+    appendToList,
+    treeHasRoot,
     searchControlState,
     applySearchControlState,
     ambigButtonLabel,
