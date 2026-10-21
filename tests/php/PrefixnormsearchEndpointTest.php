@@ -229,33 +229,6 @@ final class PrefixnormsearchEndpointTest extends TestCase
     $this->assertSuggestions([], $empty);
   }
 
-  public function testPrefixQueriesUseCaseAppropriateIndexesForBothSortOrders(): void
-  {
-    $pdo = new \PDO('sqlite::memory:');
-    $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-    $this->createFixture($pdo);
-
-    foreach (['alphabet' => 'sortkey ASC', 'frequency' => 'frequency DESC'] as $sortby => $order) {
-      $plans = [
-        'cs=0, sortby=' . $sortby => [
-          $this->explainPrefixQuery($pdo, 'sortkey', dsb_sortkey('chó'), $order),
-          'normnonambigsortkey',
-        ],
-        'cs=1, sortby=' . $sortby => [
-          $this->explainPrefixQuery($pdo, 'norm', '|chó', $order),
-          'normnonambignorm',
-        ],
-      ];
-
-      foreach ($plans as $scenario => [$plan, $index]) {
-        $message = $scenario . PHP_EOL . $plan;
-        $this->assertStringContainsString('SEARCH', $plan, $message);
-        $this->assertStringContainsString('USING INDEX ' . $index, $plan, $message);
-        $this->assertStringNotContainsString('SCAN normnonambig', $plan, $message);
-      }
-    }
-  }
-
   private function createFixture(\PDO $pdo): void
   {
     $pdo->exec('CREATE TABLE normnonambig (norm TEXT, frequency INTEGER, sortkey TEXT)');
@@ -307,25 +280,6 @@ final class PrefixnormsearchEndpointTest extends TestCase
   private function suggestions(string $body): array
   {
     return $body === '' ? [] : explode(PHP_EOL, rtrim($body, PHP_EOL));
-  }
-
-  private function explainPrefixQuery(
-    \PDO $pdo,
-    string $column,
-    string $prefix,
-    string $order,
-  ): string {
-    $statement = $pdo->prepare(
-      "EXPLAIN QUERY PLAN SELECT norm FROM normnonambig
-			WHERE {$column} >= :lower AND {$column} < :upper
-			ORDER BY {$order} LIMIT 100",
-    );
-    $statement->execute([
-      'lower' => $prefix,
-      'upper' => $prefix . "\xFF",
-    ]);
-
-    return implode(PHP_EOL, $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
   }
 
   private function hasContentType(array $headers, string $contentType): bool

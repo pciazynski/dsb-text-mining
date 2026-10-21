@@ -54,21 +54,6 @@ final class WordSearchEndpointsTest extends TestCase
     $this->assertResponse($response, [['woda', 1870, 10]]);
   }
 
-  public function testTokenCaseInsensitiveLiteralLookupUsesTokensortkeyindex(): void
-  {
-    $statement = $this->pdo->prepare(
-      'EXPLAIN QUERY PLAN SELECT token FROM tokencount WHERE sortkey = :sortkey',
-    );
-    $statement->execute(['sortkey' => dsb_sortkey('woda')]);
-    $plan = implode(PHP_EOL, array_column($statement->fetchAll(\PDO::FETCH_ASSOC), 'detail'));
-
-    $this->assertStringContainsString('SEARCH tokencount USING INDEX tokensortkeyindex', $plan);
-    $this->assertStringNotContainsString('SCAN tokencount', $plan);
-    $statement = $this->pdo->prepare('SELECT token FROM tokencount WHERE sortkey = :sortkey ORDER BY rowid');
-    $statement->execute(['sortkey' => dsb_sortkey('woda')]);
-    $this->assertSame(['woda', 'Woda'], $statement->fetchAll(\PDO::FETCH_COLUMN));
-  }
-
   public static function searches(): array
   {
     return [

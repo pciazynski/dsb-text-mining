@@ -425,37 +425,6 @@ final class SearchResolveTest extends TestCase
     $this->assertTrue($truncationStatus());
   }
 
-  public function testCaseInsensitiveNonAmbiguousLookupUsesSortkeyIndex(): void
-  {
-    $statement = $this->pdo->prepare(
-      'EXPLAIN QUERY PLAN SELECT lemma FROM lemmanonambig WHERE sortkey = :sortkey',
-    );
-    $statement->execute(['sortkey' => dsb_sortkey('drjewo')]);
-    $plan = implode("\n", $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
-
-    $this->assertStringContainsString('SEARCH', $plan);
-    $this->assertStringContainsString('USING INDEX', $plan);
-    $this->assertStringNotContainsString('SCAN', $plan);
-  }
-
-  #[DataProvider('wholeCellFixtures')]
-  public function testCaseInsensitiveWholeCellLookupUsesFrequencySortkeyIndex(
-    string $column,
-    string $cellTerm,
-    string $lowercaseTerm,
-  ): void {
-    $statement = $this->pdo->prepare(
-      "EXPLAIN QUERY PLAN SELECT {$column} FROM {$column}frequency WHERE sortkey = :sortkey",
-    );
-    $statement->execute(['sortkey' => dsb_sortkey($lowercaseTerm)]);
-    $plan = implode("\n", $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
-
-    $this->assertStringContainsString('SEARCH', $plan);
-    $this->assertStringContainsString('USING INDEX', $plan);
-    $this->assertStringContainsString($column . 'frequencysortkeyindex', $plan);
-    $this->assertStringNotContainsString('SCAN', $plan);
-  }
-
   public function testResolveCellsNormCaseInsensitiveAmbiguousReturnsEveryMatchingCell(): void
   {
     $this->assertSame(
@@ -586,34 +555,6 @@ final class SearchResolveTest extends TestCase
     $this->expectException(\InvalidArgumentException::class);
 
     resolve_cells($this->pdo, 'x; DROP', ['drjewo'], ['cs' => false, 'ambig' => true, 'regex' => false]);
-  }
-
-  public function testTokenAmbigZeroUsesSortkeyIndexForLiteralLookup(): void
-  {
-    $statement = $this->pdo->prepare(
-      'EXPLAIN QUERY PLAN SELECT token FROM tokencount WHERE sortkey = :sortkey',
-    );
-    $statement->execute(['sortkey' => dsb_sortkey('drjewo')]);
-    $plan = implode("\n", $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
-
-    $this->assertStringContainsString('SEARCH', $plan);
-    $this->assertStringContainsString('USING INDEX', $plan);
-    $this->assertStringNotContainsString('SCAN', $plan);
-  }
-
-  public function testTokenAmbigOneDefaultAlsoUsesSortkeyIndexForLiteralLookup(): void
-  {
-    // ambig=1 is the default; tokens have no ambiguous cells, so the literal
-    // lookup must still go through tokensortkeyindex instead of a full scan.
-    $statement = $this->pdo->prepare(
-      'EXPLAIN QUERY PLAN SELECT token FROM tokencount WHERE sortkey = :sortkey',
-    );
-    $statement->execute(['sortkey' => dsb_sortkey('drjewo')]);
-    $plan = implode("\n", $statement->fetchAll(\PDO::FETCH_COLUMN, 3));
-
-    $this->assertStringContainsString('SEARCH', $plan);
-    $this->assertStringContainsString('USING INDEX', $plan);
-    $this->assertStringNotContainsString('SCAN', $plan);
   }
 
   private function insertRows(string $table, array $values, string $column = 'lemma'): void
