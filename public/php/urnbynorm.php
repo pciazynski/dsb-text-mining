@@ -16,7 +16,7 @@ function literal_norm_matches(string $normCell, string $searchNorm, bool $caseSe
 
 		$match = $caseSensitive
 			? $searchNorm === $norm
-			: mb_strtoupper($searchNorm, 'UTF-8') === mb_strtoupper($norm, 'UTF-8');
+			: mb_strtolower($searchNorm, 'UTF-8') === mb_strtolower($norm, 'UTF-8');
 		if ($match) {
 			return true;
 		}

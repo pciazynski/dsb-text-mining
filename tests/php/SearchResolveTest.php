@@ -441,6 +441,42 @@ final class SearchResolveTest extends TestCase
     );
   }
 
+  public function testResolveCellsNormCaseInsensitiveKeepsLongSDistinctWhenAmbiguous(): void
+  {
+    $this->insertRows('normfrequency', ['|str.|', '|Str.|', '|ſtr.|'], 'norm');
+    $this->insertRows('normnonambig', ['|str.|', '|Str.|', '|ſtr.|'], 'norm');
+    $expected = ['|str.|', '|Str.|'];
+
+    $actual = $this->resolveNorm(['str.'], ['cs' => false, 'ambig' => true, 'regex' => false]);
+
+    sort($expected);
+    sort($actual);
+    $this->assertSame($expected, $actual);
+  }
+
+  public function testResolveCellsNormCaseInsensitiveKeepsLongSDistinctWhenNotAmbiguous(): void
+  {
+    $this->insertRows('normfrequency', ['|str.|', '|Str.|', '|ſtr.|'], 'norm');
+    $this->insertRows('normnonambig', ['|str.|', '|Str.|', '|ſtr.|'], 'norm');
+    $expected = ['|str.|', '|Str.|'];
+
+    $actual = $this->resolveNorm(['str.'], ['cs' => false, 'ambig' => false, 'regex' => false]);
+
+    sort($expected);
+    sort($actual);
+    $this->assertSame($expected, $actual);
+  }
+
+  public function testResolveCellsNormLongSTermMatchesOnlyLongS(): void
+  {
+    $this->insertRows('normfrequency', ['|str.|', '|Str.|', '|ſtr.|'], 'norm');
+    $this->insertRows('normnonambig', ['|str.|', '|Str.|', '|ſtr.|'], 'norm');
+
+    $actual = $this->resolveNorm(['ſtr.'], ['cs' => false, 'ambig' => false, 'regex' => false]);
+
+    $this->assertSame(['|ſtr.|'], $actual);
+  }
+
   public function testResolveCellsNormCaseSensitiveNonAmbiguousReturnsExactCaseOnly(): void
   {
     $this->assertSame(
@@ -512,6 +548,24 @@ final class SearchResolveTest extends TestCase
       ['DRJEWO', 'drjewo'],
       $this->resolveToken(['drjewo'], ['cs' => false, 'ambig' => true, 'regex' => false]),
     );
+  }
+
+  public function testResolveCellsTokenCaseInsensitiveKeepsLongSDistinct(): void
+  {
+    $this->insertRows('tokencount', ['se', 'ſe'], 'token');
+
+    $actual = $this->resolveToken(['se'], ['cs' => false]);
+
+    $this->assertSame(['se'], $actual);
+  }
+
+  public function testResolveCellsTokenCaseInsensitiveKeepsSharpSDistinct(): void
+  {
+    $this->insertRows('tokencount', ['ßerbſkeje', 'Sserbſkeje'], 'token');
+
+    $actual = $this->resolveToken(['ßerbſkeje'], ['cs' => false]);
+
+    $this->assertSame(['ßerbſkeje'], $actual);
   }
 
   public function testResolveCellsTokenCaseSensitiveReturnsOnlyExactToken(): void

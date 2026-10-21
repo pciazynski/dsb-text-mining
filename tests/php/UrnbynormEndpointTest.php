@@ -64,6 +64,24 @@ final class UrnbynormEndpointTest extends TestCase
     $this->assertTextResponse($response, ['1870', '1875', '1880', '1890']);
   }
 
+  public function testCaseInsensitiveSearchDoesNotMatchLongSDocuments(): void
+  {
+    $pdo = FixtureDb::open($this->server->dataDir() . '/normmapping.db');
+    foreach (['normfrequency', 'normnonambig'] as $table) {
+      $statement = $pdo->prepare("INSERT INTO {$table} VALUES (?, ?, ?)");
+      foreach (['|str.|', '|ſtr.|'] as $cell) {
+        $statement->execute([$cell, 1, dsb_sortkey(trim($cell, '|'))]);
+      }
+    }
+    $statement = $pdo->prepare('INSERT INTO urndatenormbag VALUES (?, ?, ?)');
+    $statement->execute(['urn:doc:1920', '1920', '|ſtr.|']);
+    $statement->execute(['urn:doc:1930', '1930', '|str.|']);
+
+    $response = $this->server->get('/php/urnbynorm.php?norm=str.');
+
+    $this->assertTextResponse($response, ['1930']);
+  }
+
   public function testAmbigDisabledReturnsOnlyUnambiguousCells(): void
   {
     $response = $this->server->get('/php/urnbynorm.php?norm=buda&ambig=0&sort');

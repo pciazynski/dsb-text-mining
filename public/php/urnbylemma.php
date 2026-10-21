@@ -20,7 +20,7 @@ function literal_lemma_matches(string $lemmaCell, string $searchLemma, bool $cas
 
 		$match = $caseSensitive
 			? $searchLemma === $lemma
-			: mb_strtoupper($searchLemma, 'UTF-8') === mb_strtoupper($lemma, 'UTF-8');
+			: mb_strtolower($searchLemma, 'UTF-8') === mb_strtolower($lemma, 'UTF-8');
 		if ($match) {
 			return true;
 		}

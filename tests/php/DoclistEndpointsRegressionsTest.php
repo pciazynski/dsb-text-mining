@@ -38,6 +38,22 @@ final class DoclistEndpointsRegressionsTest extends TestCase
     ]));
   }
 
+  public function testUrnbylemmaCaseInsensitiveSearchDoesNotMatchLongSDocuments(): void
+  {
+    $pdo = FixtureDb::open($this->server->dataDir() . '/lemmamapping.db');
+    $this->insertLemmaRows($pdo, 'lemmafrequency', ['|SE|', '|ſE|']);
+    $this->insertLemmaRows($pdo, 'lemmanonambig', ['|SE|', '|ſE|']);
+    $statement = $pdo->prepare('INSERT INTO urndatelemmabag VALUES (?, ?, ?)');
+    $statement->execute(['urn:doc:1920', '1920', '|ſE|']);
+    $statement->execute(['urn:doc:1930', '1930', '|SE|']);
+
+    $response = $this->server->get('/php/urnbylemma.php?lemma=se');
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1930', '1930'],
+    ]));
+  }
+
   public function testUrnByLemmaAmbigDisabledReturnsOnlyUnambiguousCells(): void
   {
     $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo&ambig=0&sort');

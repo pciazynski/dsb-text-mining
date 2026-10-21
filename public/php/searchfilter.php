@@ -264,7 +264,11 @@ function _resolve_nonambiguous_cells(
       $cell = $row[$column];
       $part = trim($cell, '|');
 
-      if (isset($seen[$cell]) || ($caseSensitive && $part !== $term)) {
+      if (
+        isset($seen[$cell])
+        || ($caseSensitive ? $part : mb_strtolower($part, 'UTF-8'))
+        !== ($caseSensitive ? $term : mb_strtolower($term, 'UTF-8'))
+      ) {
         continue;
       }
       $seen[$cell] = true;
