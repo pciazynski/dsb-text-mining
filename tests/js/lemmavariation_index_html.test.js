@@ -20,19 +20,19 @@ describe('vis/lemmavariation/datalist.html', () => {
   it('encodes the lemma in bwlemma links', () => {
     const source = inlineSourceOf(loadPage('vis/lemmavariation/datalist.html'));
 
-    expect(source).toContain("?lemma=' + encodeURIComponent(");
+    expect(source).toMatch(/\?lemma='\s*\+\s*encodeURIComponent\(/);
   });
 
   it('encodes the term in dolnoserbski links', () => {
     const source = inlineSourceOf(loadPage('vis/lemmavariation/datalist.html'));
 
-    expect(source).toContain("wuraz=' + encodeURIComponent(");
+    expect(source).toMatch(/wuraz='\s*\+\s*encodeURIComponent\(/);
   });
 
   it('encodes the word form in bwword links', () => {
     const source = inlineSourceOf(loadPage('vis/lemmavariation/datalist.html'));
 
-    expect(source).toContain("?word=' + encodeURIComponent(");
+    expect(source).toMatch(/\?word='\s*\+\s*encodeURIComponent\(/);
   });
 });
 
