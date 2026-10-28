@@ -155,6 +155,31 @@ final class DoclistEndpointsRegressionsTest extends TestCase
     ]));
   }
 
+  public function testUrnByLemmaReadsHashDelimitedDocumentBags(): void
+  {
+    $pdo = FixtureDb::open($this->server->dataDir() . '/lemmamapping.db');
+    $pdo->exec('DELETE FROM urndatelemmabag');
+    $statement = $pdo->prepare('INSERT INTO urndatelemmabag VALUES (?, ?, ?)');
+    foreach (
+      [
+        ['urn:doc:1870', '1870', '#|TEJ|#|DRJEWO|#'],
+        ['urn:doc:1875', '1875', '#|TEJ|#|DRĚŚ|DRJEWO|#'],
+        ['urn:doc:1880', '1880', '#|drjewo|#'],
+        ['urn:doc:1890', '1890', '#|TEJ|#'],
+      ] as $row
+    ) {
+      $statement->execute($row);
+    }
+
+    $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo&sort');
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1870', '1870'],
+      ['urn:doc:1875', '1875'],
+      ['urn:doc:1880', '1880'],
+    ]));
+  }
+
   public function testUrnByLemmaExactYearReturnsOnlyThatYear(): void
   {
     $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo&year=1870&sort');
@@ -171,6 +196,53 @@ final class DoclistEndpointsRegressionsTest extends TestCase
     $response = $this->server->get('/php/urnbylemma.php?lemma=drjewo&year=' . $payload);
 
     $this->assertTextResponse($response, '');
+  }
+
+  public function testUrnByWordYearRangeIncludesBothBoundaries(): void
+  {
+    $this->seedWordDocuments();
+
+    $response = $this->server->get('/php/urnbyword.php?word=woda&year=1870-1880&sort');
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1870', '1870'],
+      ['urn:doc:1880', '1880'],
+    ]));
+  }
+
+  public function testUrnByWordExactYearReturnsOnlyThatYear(): void
+  {
+    $this->seedWordDocuments();
+
+    $response = $this->server->get('/php/urnbyword.php?word=woda&year=1880&sort');
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1880', '1880'],
+    ]));
+  }
+
+  public function testUrnByWordWithoutYearReturnsAllMatchingDocuments(): void
+  {
+    $this->seedWordDocuments();
+
+    $response = $this->server->get('/php/urnbyword.php?word=woda&sort');
+
+    $this->assertTextResponse($response, $this->urnBody([
+      ['urn:doc:1870', '1870'],
+      ['urn:doc:1880', '1880'],
+      ['urn:doc:1890', '1890'],
+    ]));
+  }
+
+  public function testUrnByWordMissingOrEmptyWordReturnsNoDocuments(): void
+  {
+    $this->seedWordDocuments();
+
+    $missing = $this->server->get('/php/urnbyword.php');
+    $empty = $this->server->get('/php/urnbyword.php?word=');
+
+    $this->assertTextResponse($missing, '');
+    $this->assertTextResponse($empty, '');
   }
 
   public static function metadataFilters(): array
@@ -214,6 +286,25 @@ final class DoclistEndpointsRegressionsTest extends TestCase
     $response = $this->server->get('/php/metadata.php?' . $parameter . '=' . $payload);
 
     $this->assertTextResponse($response, '');
+  }
+
+  private function seedWordDocuments(): void
+  {
+    $path = $this->server->dataDir() . '/bagofwords.db';
+    @unlink($path);
+    $pdo = FixtureDb::open($path);
+    $pdo->exec('CREATE TABLE urndatewordbag (urn TEXT, date INTEGER, wordbag TEXT)');
+    $statement = $pdo->prepare('INSERT INTO urndatewordbag VALUES (?, ?, ?)');
+    foreach (
+      [
+        ['urn:doc:1870', 1870, '|woda|'],
+        ['urn:doc:1875', 1875, '|druge|'],
+        ['urn:doc:1880', 1880, '|woda|'],
+        ['urn:doc:1890', 1890, '|woda|'],
+      ] as $row
+    ) {
+      $statement->execute($row);
+    }
   }
 
   private function seedLemmaMapping(): void

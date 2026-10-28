@@ -140,6 +140,65 @@ function year_clause(?string $value): ?array
   return null;
 }
 
+/** Legacy "|a||b|c|" or current "#|a|#|b|c|#" → frequency-table cells "|a|", "|b|c|". */
+function search_bag_cells(string $bag): array
+{
+  $cells = str_contains($bag, '#|')
+    ? explode('|#|', trim($bag, '#'))
+    : explode('||', trim($bag, '|'));
+
+  return array_map(
+    static fn(string $cell): string => '|' . trim($cell, '|#') . '|',
+    $cells,
+  );
+}
+
+function print_matching_document_urns(
+  \PDO $pdo,
+  string $table,
+  string $bagColumn,
+  array $cellSet,
+  array $get,
+): void {
+  $allowedBags = [
+    'urndatelemmabag' => 'lemmabag',
+    'urndatenormbag' => 'normbag',
+  ];
+  if (($allowedBags[$table] ?? null) !== $bagColumn) {
+    throw new \InvalidArgumentException('Unsupported document bag table');
+  }
+
+  $yearClause = array_key_exists('year', $get)
+    ? year_clause((string) $get['year'])
+    : ['sql' => '1=1', 'params' => []];
+  if ($yearClause === null) {
+    return;
+  }
+
+  $query = "SELECT urn, date, $bagColumn FROM $table WHERE " . $yearClause['sql'];
+  if (isset($get['sort'])) {
+    $query .= ' ORDER BY date ASC';
+  }
+
+  $statement = $pdo->prepare($query);
+  $statement->execute($yearClause['params']);
+  $results = [];
+  foreach ($statement as $row) {
+    foreach (search_bag_cells($row[$bagColumn]) as $cell) {
+      if (isset($cellSet[$cell])) {
+        $results[$row['urn']] = $row['date'];
+        break;
+      }
+    }
+  }
+
+  $body = '';
+  foreach ($results as $urn => $date) {
+    $body .= $urn . "\t" . $date . "\n";
+  }
+  print($body);
+}
+
 /** Whole request path: read the flags, split the term(s) of the $column param, resolve them to cells. */
 function resolve_request_cells(\PDO $pdo, string $column, array $get): array
 {

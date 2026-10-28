@@ -1212,6 +1212,158 @@ describe('token-per-year Traviz URLs', () => {
   );
 });
 
+describe('Dok.-Belege year filters', () => {
+  const searches = [
+    ['lemma', 'lemma', 'KRABAT', 'updateLemma', 'doclistlemma.html', 'urnbylemma.php'],
+    ['norm form', 'norm', 'Krabat', 'updateNorm', 'doclistnorm.html', 'urnbynorm.php'],
+  ];
+
+  function openPage() {
+    const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis/docreferences/index.html'), 'utf8');
+    const dom = new JSDOM(html, {
+      runScripts: 'outside-only',
+      url: 'https://example.test/vis/docreferences/index.html',
+    });
+
+    for (const script of dom.window.document.querySelectorAll('script[src]')) {
+      const file = path.join(PUBLIC_DIR, 'vis/docreferences', script.getAttribute('src'));
+      dom.window.eval(fs.readFileSync(file, 'utf8'));
+    }
+    dom.window.minDate = 1800;
+    dom.window.maxDate = 1900;
+    for (const id of ['yearminslider', 'yearmaxslider']) {
+      const slider = dom.window.document.getElementById(id);
+      slider.min = '1800';
+      slider.max = '1900';
+    }
+    dom.window.document.getElementById('yearminslider').value = '1800';
+    dom.window.document.getElementById('yearmaxslider').value = '1900';
+    const controls = [...dom.window.document.querySelectorAll('script:not([src])')]
+      .map((script) => script.textContent)
+      .find((source) => source.includes('updateTimeframe'));
+    dom.window.eval(controls);
+    return dom;
+  }
+
+  function selectYearRange(dom) {
+    dom.window.document.getElementById('yearminslider').value = '1870';
+    dom.window.document.getElementById('yearmaxslider').value = '1880';
+  }
+
+  function expectYearRange(dom, page, endpoint, termKey, term) {
+    const query = ['data=' + endpoint, termKey + '=' + term, 'year=1870-1880'].join('&');
+    expect(dom.window.document.getElementById('doclist').src).toBe(
+      'https://example.test/vis/docreferences/' + page + '?' + query,
+    );
+    expect(dom.window.document.getElementById('timeline').src).toBe(
+      'https://example.test/vis/docreferences/timeline.html?' + query,
+    );
+  }
+
+  it.each(searches)(
+    'uses the selected year range when searching for a %s',
+    (_label, termKey, term, update, page, endpoint) => {
+      const dom = openPage();
+      try {
+        selectYearRange(dom);
+        dom.window.updateTimeframe();
+        dom.window.document.getElementById(termKey).value = term;
+        dom.window[update]();
+
+        expectYearRange(dom, page, endpoint, termKey, term);
+      } finally {
+        dom.window.close();
+      }
+    },
+  );
+
+  it.each(searches)(
+    'updates the year range of an existing %s search',
+    (_label, termKey, term, update, page, endpoint) => {
+      const dom = openPage();
+      try {
+        dom.window.document.getElementById(termKey).value = term;
+        dom.window[update]();
+        selectYearRange(dom);
+        dom.window.updateTimeframe();
+
+        expectYearRange(dom, page, endpoint, termKey, term);
+      } finally {
+        dom.window.close();
+      }
+    },
+  );
+});
+
+describe('Dok.-Belege document lists', () => {
+  const pages = [
+    ['word', 'doclist.html', 'urnbyword.php', 'word', 'krabat'],
+    ['lemma', 'doclistlemma.html', 'urnbylemma.php', 'lemma', 'KRABAT'],
+    ['norm', 'doclistnorm.html', 'urnbynorm.php', 'norm', 'Krabat'],
+  ];
+
+  async function renderPage(page, search, documents) {
+    const html = fs.readFileSync(path.join(PUBLIC_DIR, 'vis/docreferences', page), 'utf8');
+    const dom = new JSDOM(html, {
+      runScripts: 'outside-only',
+      url: 'https://example.test/vis/docreferences/' + page + search,
+    });
+    for (const script of dom.window.document.querySelectorAll('script[src]')) {
+      const file = path.join(PUBLIC_DIR, 'vis/docreferences', script.getAttribute('src'));
+      dom.window.eval(fs.readFileSync(file, 'utf8'));
+    }
+    dom.window.fetch = async (url) => ({
+      text: async () => (url.includes('metadata.php') ? '' : documents),
+    });
+
+    let error = null;
+    try {
+      const source = dom.window.document.querySelector('script[type="module"]').textContent;
+      await dom.window.eval('(async () => {' + source + '\n})()');
+    } catch (caught) {
+      error = caught;
+    }
+    return { dom, error };
+  }
+
+  const oneDocument = [['urn:cts:dsb:krabat.test.1', '1870'].join('\t'), ''].join('\n');
+
+  it.each(pages)(
+    'renders a matching %s document even when there is only one',
+    async (_kind, page, endpoint, termKey, term) => {
+      const { dom, error } = await renderPage(
+        page,
+        '?data=' + endpoint + '&' + termKey + '=' + term,
+        oneDocument,
+      );
+      try {
+        expect(error).toBeNull();
+        expect(dom.window.document.querySelectorAll('tr')).toHaveLength(2);
+        expect(dom.window.document.querySelectorAll('tr')[1].cells[0].textContent).toBe('1870');
+      } finally {
+        dom.window.close();
+      }
+    },
+  );
+
+  it.each(pages)(
+    'renders no document rows without crashing when a %s has no matches',
+    async (_kind, page, endpoint, termKey, term) => {
+      const { dom, error } = await renderPage(
+        page,
+        '?data=' + endpoint + '&' + termKey + '=' + term,
+        '',
+      );
+      try {
+        expect(error).toBeNull();
+        expect(dom.window.document.querySelectorAll('td')).toHaveLength(0);
+      } finally {
+        dom.window.close();
+      }
+    },
+  );
+});
+
 describe('bwlemma iframe pages', () => {
   const pages = [
     'timeline.html',

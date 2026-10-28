@@ -38,11 +38,22 @@ def main(argv=None):
 
     print(ns)
     run(["python3", "bagofwords.py"])
+    run(["python3", "singleusewords.py"])
+    run(["python3", "metadata.py"])
+    run(["python3", "authors.py"])
+    run(["python3", "characters.py"])
     run(["python3", "lemmatisierowasch.py"])
     run(["python3", "lemmaeval.py"])
     run(["python3", "normierowasch.py"])
     run(["python3", "normeval.py"])
+    run(["python3", "ngram.py", "2"])
+    run(["python3", "ngram.py", "3"])
+    run(["python3", "ngram.py", "5"])
+    run(["python3", "collocation.py"])
+    run(["python3", "spoznajrec.py", "3"])
     run(["python3", "psedcytas.py", "3"])
+    run(["python3", "stats.py"])
+    run(["python3", "typorecognition.py"])
     run(["python3", "docu.py"])
 
 

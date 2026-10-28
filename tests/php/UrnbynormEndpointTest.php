@@ -64,6 +64,27 @@ final class UrnbynormEndpointTest extends TestCase
     $this->assertTextResponse($response, ['1870', '1875', '1880', '1890']);
   }
 
+  public function testReadsHashDelimitedDocumentBags(): void
+  {
+    $pdo = FixtureDb::open($this->server->dataDir() . '/normmapping.db');
+    $pdo->exec('DELETE FROM urndatenormbag');
+    $statement = $pdo->prepare('INSERT INTO urndatenormbag VALUES (?, ?, ?)');
+    foreach (
+      [
+        ['urn:doc:1870', '1870', '#|weto|#|buda|#'],
+        ['urn:doc:1875', '1875', '#|weto|#|Bóda|buda|Buda|#'],
+        ['urn:doc:1880', '1880', '#|Buda|#'],
+        ['urn:doc:1890', '1890', '#|buda|#'],
+      ] as $row
+    ) {
+      $statement->execute($row);
+    }
+
+    $response = $this->server->get('/php/urnbynorm.php?norm=buda&sort');
+
+    $this->assertTextResponse($response, ['1870', '1875', '1880', '1890']);
+  }
+
   public function testCaseInsensitiveSearchDoesNotMatchLongSDocuments(): void
   {
     $pdo = FixtureDb::open($this->server->dataDir() . '/normmapping.db');
