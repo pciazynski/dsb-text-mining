@@ -58,12 +58,6 @@
       annotations: watermarke(),
     };
     myPlot = Plotly.newPlot('myDiv', data, layout, plotlyconfiguration);
-    myPlot = document.getElementById('myDiv');
-    myPlot.on('plotly_click', function (data) {
-      if (dataset.includes('tokenlength')) {
-        alert(readPHP('tokenfrequencybylength.php?length=' + data.points[0].x));
-      }
-    });
     document.title = diagramtitle;
   </script>
 </body>

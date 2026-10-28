@@ -42,22 +42,21 @@ Visualization folders are under `public/vis/`, PHP files under `public/php/`, ET
 - Wortform uses `metadata.db` for document information and `collocation.db` for word profiles; their production paths are not reviewed as features. Wortform also links to the unreviewed `collocation/` and `docreferences/` views. Conversely, Dok.-Belege uses Wortform search and document-reference endpoints.
 - Tests are organized under `tests/js/`, `tests/php/`, and `tests/python/`. They include Wortform, search, mapping, bag-of-words, and pipeline regression coverage; the presence of a test does not imply full feature coverage.
 - `etl/psedcytas.py` uses `etl/learn/dnw-audio-urls.txt`. SpoznajRec also uses language data under `etl/learn/`. `scripts/install-libs.sh` downloads frontend vendor libraries; vendor output is not tracked.
+- Klay (`klayjs` and `cytoscape-klay`) is still required by `collocation/globalwordnetklay.html` and `metadatadochierarchy/treenetwork.html`; both views are reachable from their feature pages.
+- Evaluation uses `lemmaeval/piechart.html` and `normeval/piechart.html` for mapping uniqueness, not token lengths. Their obsolete token-length click handlers were already broken in the original repository and have been removed; no additional PHP endpoint is needed.
+- Dok.Hierarchie uses the shared `public/digilabstyles.css`. Its extra `mydigilabstyles.css` link was removed because that file is absent from both this fork and the reference repository.
 
 ## Files Removed From The Original Work
 
 This repository is a fork of the original work linked in the README. The following files are absent because they were obsolete, unused, or not usable in the current fork; the reasons differ by group:
 
 - Wortform regex endpoints: `lemmaregex2token.php`, `lemmaregexgroup.php`, `lemmaregexsearch.php`, `lemmatokenregex.php`, `normregex2token.php`, `normregexgroup.php`, `normregexsearch.php`, `regexsearch.php`. The current search filter replaces them.
-- PHP endpoints with no known callers: `authors.php`, `authorcount.php`, `authorcountperyear.php`, `collocationperyear.php`, `lemmabylength.php`, `lemmabytype.php`, `lemmacountpertoken.php`, `lemmadaterange.php`, `lemmatypes.php`, `normbylength.php`. `tokenfrequencybylength.php` is also absent but still referenced by an evaluation chart; see known issues.
+- PHP endpoints with no known callers: `authors.php`, `authorcount.php`, `authorcountperyear.php`, `collocationperyear.php`, `lemmabylength.php`, `lemmabytype.php`, `lemmacountpertoken.php`, `lemmadaterange.php`, `lemmatypes.php`, `normbylength.php`, `tokenfrequencybylength.php`. The original evaluation charts referenced `tokenbylength.php`, which is absent even from the reference repository; their obsolete handlers have been removed rather than restoring an unrelated endpoint.
 - ETL scripts: `_charmix.py` has no consumer for its output; `_zelenjerec.py` was disabled in the original setup; `_mjenjoweda.py` required the missing `learn/ortsliste.txt` and did not run.
-- Obsolete view files: `lemmastats.html`, `lemmatree.html`, `normtree.html`, and `*_klay.html` variants.
+- Obsolete view files: `lemmastats.html`, `lemmatree.html`, `normtree.html`, and `*_klay.html` variants. `statsword/tokeninfo.html` was also removed because no application page referenced it. The actively used `collocation/globalwordnetklay.html` and `metadatadochierarchy/treenetwork.html` remain.
 - Old tooling and unused data: `versionize.py`, `update.bat`, `version.txt`, `deu_intermediateresults.txt`, and `deu_mixed-typical_2011_1M-wordsorig.txt`. Historical reports in the original `etl/doc/` are not runtime inputs and were not copied as a separate legacy documentation tree.
 
 ## Known Issues
 
 - Several unreviewed PHP endpoints build SQL from raw `$_GET` values, creating SQL injection risk. `langDetect*.php` also builds its database filename from the `n` query parameter.
-- `statsword/tokeninfo.html` links to the nonexistent `../bwtoken/` page and sends `psedcytassearch.php?token=`, while the endpoint expects `word=`.
-- `normeval/piechart.html` references the absent `tokenfrequencybylength.php` endpoint; `lemmaeval/piechart.html` references the absent `tokenbylength.php` endpoint.
-- The `klayjs` version `0.4.1` in `scripts/install-libs.sh` is a best guess.
 - `metadata.py`, `authors.py`, `characters.py`, `singleusewords.py`, `ngram.py`, `collocation.py`, `spoznajrec.py`, `stats.py`, and `typorecognition.py` have no dedicated tests.
-- `metadatadochierarchy/index.html` references `../../mydigilabstyles.css`, which is not present under `public/`; that stylesheet request returns 404.
