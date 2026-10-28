@@ -1,3 +1,7 @@
+# Parallel versions of code, for reference
+reference/
+plan.md
+
 # Project-generated datasets and reports
 public/data/
 etl/doc/
