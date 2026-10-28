@@ -184,22 +184,56 @@ function header() {
   if (headerconf[0] !== '0') {
     str +=
       '<td>' +
-      // +'<a href="../metadatarestricted?headerconf='+headerconf+'">'+lang_restricted+'</a> | '
-      // +'<a href="../metadataauthor?headerconf='+headerconf+'">'+lang_author+'</a> | '
-      // +'<a href="../metadatadochierarchy?headerconf='+headerconf+'">'+lang_dochierarchy+'</a> | '
-      // +'<a href="../metadatalang?headerconf='+headerconf+'">'+lang_lang+'</a>'
-      'temporarily disabled' +
+      '<a href="../metadatarestricted?headerconf=' +
+      headerconf +
+      '">' +
+      lang_restricted +
+      '</a> | ' +
+      '<a href="../metadataauthor?headerconf=' +
+      headerconf +
+      '">' +
+      lang_author +
+      '</a> | ' +
+      '<a href="../metadatadochierarchy?headerconf=' +
+      headerconf +
+      '">' +
+      lang_dochierarchy +
+      '</a> | ' +
+      '<a href="../metadatalang?headerconf=' +
+      headerconf +
+      '">' +
+      lang_lang +
+      '</a>' +
       '</td>';
   }
   if (headerconf[1] !== '0') {
     str +=
       '<td>' +
-      // +'<a href="../docreferences?headerconf='+headerconf+'">'+lang_docreferences+'</a> | '
-      // +'<a href="../typorecognition?headerconf='+headerconf+'">'+lang_typorec+'</a> | '
-      // +'<a href="../stats?headerconf='+headerconf+'">'+lang_statistics+'</a> | '
-      // +'<a href="../tokenrec?headerconf='+headerconf+'">'+lang_coverage+'</a> | '
-      // +'<a href="../bwtime?headerconf='+headerconf+'">'+lang_genesis_disappear+'</a>'
-      'temporarily disabled' +
+      '<a href="../docreferences?headerconf=' +
+      headerconf +
+      '">' +
+      lang_docreferences +
+      '</a> | ' +
+      '<a href="../typorecognition?headerconf=' +
+      headerconf +
+      '">' +
+      lang_typorec +
+      '</a> | ' +
+      '<a href="../stats?headerconf=' +
+      headerconf +
+      '">' +
+      lang_statistics +
+      '</a> | ' +
+      '<a href="../tokenrec?headerconf=' +
+      headerconf +
+      '">' +
+      lang_coverage +
+      '</a> | ' +
+      '<a href="../bwtime?headerconf=' +
+      headerconf +
+      '">' +
+      lang_genesis_disappear +
+      '</a>' +
       '</td>';
   }
   if (headerconf[2] !== '0') {
@@ -233,17 +267,36 @@ function header() {
   if (headerconf[4] !== '0') {
     str +=
       '<td>' +
-      // +'<a href="../collocation?headerconf='+headerconf+'">'+lang_collocation+'</a> | '
-      // +'<a href="../ngram?headerconf='+headerconf+'&n=3">'+lang_trigram+'</a>'
-      'temporarily disabled' +
+      '<a href="../collocation?headerconf=' +
+      headerconf +
+      '">' +
+      lang_collocation +
+      '</a> | ' +
+      '<a href="../ngram?headerconf=' +
+      headerconf +
+      '&n=3">' +
+      lang_trigram +
+      '</a>' +
       '</td>';
   }
   if (headerconf[5] !== '0') {
     str +=
       '<td>' +
-      // +'<a href="../langdetect?headerconf='+headerconf+'&n=3">'+lang_langdetect+'</a> | <a href="../langrec/?headerconf='+headerconf+'&n=3">'+lang_langrec+'</a> | '
-      // +'<a href="../langsep?headerconf='+headerconf+'">'+lang_langsep+'</a>'
-      'temporarily disabled' +
+      '<a href="../langdetect?headerconf=' +
+      headerconf +
+      '&n=3">' +
+      lang_langdetect +
+      '</a> | ' +
+      '<a href="../langrec/?headerconf=' +
+      headerconf +
+      '&n=3">' +
+      lang_langrec +
+      '</a> | ' +
+      '<a href="../langsep?headerconf=' +
+      headerconf +
+      '">' +
+      lang_langsep +
+      '</a>' +
       '</td>';
   }
   str += '<td id="resetmenubutton">';
