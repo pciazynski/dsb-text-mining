@@ -26,10 +26,10 @@
 		<td>
 			<div class='autocomplete'>
 				<input style='width:70%' id='word' type='text'>
-				<button onclick = 'updateWord()'><script>document.write(lang_enter)</script></button> 
+				<button onclick = 'updateWord()'><script>document.write(lang_enter)</script></button>
 			</div>
 			<script>
-				autocomplete('word', 'prefixsearch.php?limit=30&sortby=alphabet&word=', ''); 
+				autocomplete('word', 'prefixsearch.php?limit=30&sortby=alphabet&word=', '');
 			</script>
 		</td>
 		<td>
@@ -41,10 +41,10 @@
 		<td>
 			<div class='autocomplete'>
 				<input style='width:70%' id='lemma' type='text'>
-				<button onclick = 'updateLemma()'><script>document.write(lang_enter)</script></button> 
+				<button onclick = 'updateLemma()'><script>document.write(lang_enter)</script></button>
 			</div>
 			<script>
-				autocomplete("lemma", "prefixlemmasearch.php?limit=30&sortby=alphabet&lemma=", ""); 
+				autocomplete("lemma", "prefixlemmasearch.php?limit=30&sortby=alphabet&lemma=", "");
 			</script>
 		</td>
 		<td>
@@ -56,10 +56,10 @@
 		<td>
 			<div class='autocomplete'>
 				<input style='width:70%' id='norm' type='text'>
-				<button onclick = 'updateNorm()'><script>document.write(lang_enter)</script></button> 
+				<button onclick = 'updateNorm()'><script>document.write(lang_enter)</script></button>
 			</div>
 			<script>
-				autocomplete("norm", "prefixnormsearch.php?limit=30&sortby=alphabet&norm=", ""); 
+				autocomplete("norm", "prefixnormsearch.php?limit=30&sortby=alphabet&norm=", "");
 			</script>
 		</td>
 		<td>
@@ -97,7 +97,7 @@
 	}
 	yearminslider.min=minDate
 
-	
+
 	yearmaxslider.min = minDate
 	yearmaxslider.max = maxDate
 	yearminslider.min = minDate
@@ -123,10 +123,10 @@
 			</td>
 		</tr>
 		<tr>
-			<td>		
+			<td>
 				<iframe class='resized' width='100%' height='475px' id='timeline' scrolling='yes'></iframe>
 			</td>
-			<td>		
+			<td>
 				<iframe class='resized' width='100%' height='475px' id='doclist' scrolling='yes'></iframe>
 			</td>
 		</tr>
@@ -156,8 +156,8 @@
 	var switchPrefixsearch = function(){
 		tmp = document.getElementById('prefixsearchCheckBox').checked
 		if(tmp){tmp = 'alphabet'}else{tmp = 'frequency'}
-		autocomplete("word", "prefixsearch.php?limit=30&sortby="+tmp+"&word=", ""); 
-		autocomplete("lemma", "prefixlemmasearch.php?limit=30&sortby="+tmp+"&lemma=", ""); 
+		autocomplete("word", "prefixsearch.php?limit=30&sortby="+tmp+"&word=", "");
+		autocomplete("lemma", "prefixlemmasearch.php?limit=30&sortby="+tmp+"&lemma=", "");
 		autocomplete("norm", "prefixnormsearch.php?limit=30&sortby="+tmp+"&norm=", "");
 	}
 
@@ -166,19 +166,19 @@
 		yearmin = document.getElementById("yearminslider").value
 		yearmax = document.getElementById("yearmaxslider").value
 		if(yearmin > minDate || yearmax < maxDate){
-			yearval = "&year=BETWEEN "+yearmin + " AND "+yearmax
+			yearval = "&year="+yearmin + "-"+yearmax
 		}
 		document.getElementById('doclist').src = document.getElementById('doclist').src.split("&year=")[0]+yearval
 		document.getElementById('timeline').src = document.getElementById('timeline').src.split("&year=")[0]+yearval
 	}
-	
+
 	var callDolnoserbski = function(){
 		tmp = document.getElementById('token').value.trim()
 		if(tmp.length>0){
 			window.open('https://dolnoserbski.de/ortografija/slownik?wuraz='+tmp, '_blank')
 		}
 	}
-	
+
 	var updateWord = function(){
 		tmp = document.getElementById('word').value.trim()
 		if(tmp.length>0){
@@ -189,7 +189,7 @@
 			document.title=tmp+" Dok.nachweise "
 		}
 	}
-	
+
 	var updateNorm = function(){
 		tmp = document.getElementById('norm').value.trim()
 		if(tmp.length>0){
@@ -211,7 +211,7 @@
 			document.title=tmp+" Dok.nachweise "
 		}
 	}
-	
+
 	document.title="Dok.nachweise"
 	yearval = getQueryVariable('year')
 	if(yearval.length>0){yearval = "&year="+yearval}

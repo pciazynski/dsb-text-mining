@@ -38,7 +38,6 @@ def main(argv=None):
 
     print(ns)
     run(["python3", "bagofwords.py"])
-    # UNREVIEWED: restored scripts, see docs/feature-review-map.md
     run(["python3", "singleusewords.py"])
     run(["python3", "metadata.py"])
     run(["python3", "authors.py"])

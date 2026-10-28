@@ -56,9 +56,8 @@ This repository is a fork of the original work linked in the README. The followi
 ## Known Issues
 
 - Several unreviewed PHP endpoints build SQL from raw `$_GET` values, creating SQL injection risk. `langDetect*.php` also builds its database filename from the `n` query parameter.
-- Dok.-Belege sends `year=BETWEEN X AND Y`; `urnbylemma.php` and `urnbynorm.php` expect `YYYY-YYYY` instead.
 - `statsword/tokeninfo.html` links to the nonexistent `../bwtoken/` page and sends `psedcytassearch.php?token=`, while the endpoint expects `word=`.
 - `normeval/piechart.html` references the absent `tokenfrequencybylength.php` endpoint; `lemmaeval/piechart.html` references the absent `tokenbylength.php` endpoint.
-- `metadata.py`, `authors.py`, `characters.py`, `singleusewords.py`, `ngram.py`, `collocation.py`, `spoznajrec.py`, `stats.py`, and `typorecognition.py` have no dedicated tests.
 - The `klayjs` version `0.4.1` in `scripts/install-libs.sh` is a best guess.
+- `metadata.py`, `authors.py`, `characters.py`, `singleusewords.py`, `ngram.py`, `collocation.py`, `spoznajrec.py`, `stats.py`, and `typorecognition.py` have no dedicated tests.
 - `metadatadochierarchy/index.html` references `../../mydigilabstyles.css`, which is not present under `public/`; that stylesheet request returns 404.
