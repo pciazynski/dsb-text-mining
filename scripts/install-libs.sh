@@ -26,3 +26,5 @@ download "https://cdn.jsdelivr.net/npm/cytoscape-dagre@4.0.0/dist/cytoscape-dagr
 download "https://cdn.jsdelivr.net/npm/dagre@0.7.4/dist/dagre.min.js" "$vendor_dir/dagre.min.js"
 download "https://cdn.jsdelivr.net/npm/plotly.js-dist-min@3.1.2/plotly.min.js" "$vendor_dir/plotly.min.js"
 download "https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" "$vendor_dir/bootstrap/bootstrap.css"
+download "https://cdn.jsdelivr.net/npm/klayjs@0.4.1/klay.js" "$vendor_dir/klay.js"
+download "https://cdn.jsdelivr.net/npm/cytoscape-klay@3.1.3/cytoscape-klay.min.js" "$vendor_dir/cytoscape-klay.min.js"
