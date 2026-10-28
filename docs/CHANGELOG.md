@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-28
+- Added a feature review map documenting restored areas, exclusions, cross-dependencies, and known issues.
+
 ## 2026-10-21
 - Search input field UI was simplified for Timeline, Variation and Evaluation (Wortform).
 - Now there's just one input field instead of three (previously regexp and list was separately).

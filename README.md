@@ -186,6 +186,8 @@ This repository is a modified fork of the following original work.
 
 Look at docs/CHANGELOG.md for more details.
 
+Feature review status and dependencies: [docs/feature-review-map.md](docs/feature-review-map.md).
+
 ### Redistribution Reminder
 
 Redistributions of this fork should preserve attribution to the original work,
