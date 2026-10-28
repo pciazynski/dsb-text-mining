@@ -55,8 +55,3 @@ This repository is a fork of the original work linked in the README. The followi
 - ETL scripts: `_charmix.py` has no consumer for its output; `_zelenjerec.py` was disabled in the original setup; `_mjenjoweda.py` required the missing `learn/ortsliste.txt` and did not run.
 - Obsolete view files: `lemmastats.html`, `lemmatree.html`, `normtree.html`, and `*_klay.html` variants. `statsword/tokeninfo.html` was also removed because no application page referenced it. The actively used `collocation/globalwordnetklay.html` and `metadatadochierarchy/treenetwork.html` remain.
 - Old tooling and unused data: `versionize.py`, `update.bat`, `version.txt`, `deu_intermediateresults.txt`, and `deu_mixed-typical_2011_1M-wordsorig.txt`. Historical reports in the original `etl/doc/` are not runtime inputs and were not copied as a separate legacy documentation tree.
-
-## Known Issues
-
-- Several unreviewed PHP endpoints build SQL from raw `$_GET` values, creating SQL injection risk. `langDetect*.php` also builds its database filename from the `n` query parameter.
-- `metadata.py`, `authors.py`, `characters.py`, `singleusewords.py`, `ngram.py`, `collocation.py`, `spoznajrec.py`, `stats.py`, and `typorecognition.py` have no dedicated tests.
